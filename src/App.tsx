@@ -7,6 +7,7 @@ import Layout from "./MyComponents/Layout";
 import Products from "./MyComponents/Products";
 import Login from "./MyComponents/Login";
 import SignUp from "./MyComponents/SignUp";
+import Client from "./Pages/Client";
 
 function App() {
   const routes = createBrowserRouter([
@@ -15,8 +16,12 @@ function App() {
       { path: "about", element: <About /> },
       { path: "parent", element: <Parent /> },
       { path: "products", element: <Products /> },
-      { path: "login", element: <Login /> },
-      { path: "signup", element: <SignUp /> },
+      { path: "client", element: <Client /> , children:[
+        {index:true ,  element:<Login/>},
+        { path: "signup", element: <SignUp /> },
+      ] },
+
+
       {path:'*' , element:<NotFound/>}
     ]},
  

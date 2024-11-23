@@ -1,6 +1,6 @@
 
 
-import React,{ useEffect, useState } from "react"
+import React,{ useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Github, Mail, AlertCircle, Eye, EyeOff, Loader2,X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -100,65 +100,8 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
   )
 }
 
-const Home4UAnimation = () => {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const items = [
-    { src: "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=800&auto=format&fit=crop&q=60", alt: "Modern Kitchen Appliances" },
-    { src: "https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=800&auto=format&fit=crop&q=60", alt: "Smart Home Devices" },
-    { src: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=800&auto=format&fit=crop&q=60", alt: "Vacuum Cleaner" },
-    { src: "https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=800&auto=format&fit=crop&q=60", alt: "Home Entertainment System" },
-    { src: "https://images.unsplash.com/photo-1632829882891-5047ccc421bc?w=800&auto=format&fit=crop&q=60", alt: "Power Tools" },
-    { src: "https://images.unsplash.com/photo-1507207611509-ec012433ff52?w=800&auto=format&fit=crop&q=60", alt: "Smart Thermostat" },
-    { src: "https://images.unsplash.com/photo-1632829882891-5047ccc421bc?w=800&auto=format&fit=crop&q=60", alt: "Power Tools" },
-    { src: "https://images.unsplash.com/photo-1605117882932-f9e32b03fea9?w=800&auto=format&fit=crop&q=60", alt: "Coffee Maker" },
-  ]
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % items.length)
-    }, 3000)
-    return () => clearInterval(timer)
-  }, [items.length])
 
-  return (
-    <div className="relative w-full h-full bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 overflow-hidden">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&auto=format&fit=crop&q=60')] bg-cover bg-center opacity-20"></div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <motion.div
-          className="w-full h-full"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={currentIndex}
-              src={items[currentIndex].src}
-              alt={items[currentIndex].alt}
-              className="w-full h-full object-cover rounded-lg shadow-2xl"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.5 }}
-            />
-          </AnimatePresence>
-        </motion.div>
-      </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent " />
-      <motion.div
-        className="absolute inset-x-0 bottom-0 p-8"
-        initial={{ y: "100%" }}
-        animate={{ y: "0%" }}
-        transition={{ duration: 1, delay: 0.5 }}
-      >
-        <div className="flex justify-center mb-4">
-          <h2 className="text-4xl font-bold text-white text-center mb-4">Welcome to Home4U</h2>
-        </div>
-        <p className="text-xl text-white text-center">Your one-stop shop for home appliances and smart devices</p>
-      </motion.div>
-    </div>
-  )
-}
 
 
 const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
@@ -245,6 +188,8 @@ export default function SignUp() {
   return (
     <>
           <AnimatePresence>
+
+
         {alert && (
           <Alert
             message={alert.message}
@@ -254,13 +199,16 @@ export default function SignUp() {
         )}
       </AnimatePresence>
       
-    <div className="flex min-h-screen">
+   
       <div className="flex-1 flex items-center justify-center p-6 bg-background">
         <Card className="w-full max-w-md p-6">
           <div className="flex flex-col space-y-2 text-center mb-6">
             <h1 className="text-2xl font-semibold tracking-tight">Sign up for Home4U</h1>
             <p className="text-sm text-muted-foreground">Your one-stop shop for home appliances and smart devices</p>
           </div>
+
+
+          
 
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4">
@@ -441,10 +389,8 @@ export default function SignUp() {
           </p>
         </Card>
       </div>
-      <div className="hidden md:block flex-1 relative overflow-hidden">
-        <Home4UAnimation />
-      </div>
-    </div>
+
+  
     </>
   )
 }
