@@ -71,3 +71,7 @@
 .product:hover{
   box-shadow: 1px 1px 10px #4fa74f;
 }
+.btn{
+  font-family: "IBM Plex Sans Arabic", sans-serif;
+  font-weight:700 ;
+}
