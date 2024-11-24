@@ -8,6 +8,9 @@ import Products from "./MyComponents/Products";
 import Login from "./MyComponents/Login";
 import SignUp from "./MyComponents/SignUp";
 import Client from "./Pages/Client";
+import Company from "./Pages/JoinUs/Company";
+import Engineer from "./Pages/JoinUs/Engineer";
+import Technical from "./Pages/JoinUs/Technical";
 
 function App() {
   const routes = createBrowserRouter([
@@ -20,6 +23,9 @@ function App() {
         {index:true ,  element:<Login/>},
         { path: "signup", element: <SignUp /> },
       ] },
+      {path:'company' , element:<Company/>},
+      {path:'engineer' , element:<Engineer/>},
+      {path:'consultative' , element:<Technical/>},
 
 
       {path:'*' , element:<NotFound/>}

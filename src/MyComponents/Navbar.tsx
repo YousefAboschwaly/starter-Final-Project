@@ -100,7 +100,7 @@ export default function Navbar() {
 function LoginButton() {
   return (
     <Link to={'/client'} 
-      className="bg-gradient-to-r from-[#545476] to-[#0D132C] text-white hover:opacity-90 transition-opacity duration-200 rounded-[16px] px-4 py-2 btn text-base font-bold leading-6 text-center"
+      className="primary-grad  rounded-[8px] px-4 py-2 btn text-base font-bold leading-6 text-center"
     >
       Login
     </Link>
@@ -115,7 +115,7 @@ function JoinUsButton() {
       <DropdownMenuTrigger asChild>
        
        <Button 
-          className="bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] text-[#2D2D4C] hover:opacity-90 transition-opacity duration-200 rounded-[16px] px-4 py-2 btn text-base font-bold leading-6 text-center"
+          className="secondary-grad  rounded-[8px] px-4 py-2 btn text-base font-bold leading-6 text-center"
         >
           Join Us
           <ChevronDown className={`ml-2 h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
@@ -123,9 +123,16 @@ function JoinUsButton() {
        
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[160px] animate-in slide-in-from-top-2 duration-200">
-        <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Engineer</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Company</DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Consultative</DropdownMenuItem>
+      <Link to='/engineer' >
+      <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Engineer</DropdownMenuItem>
+      </Link>
+      <Link to='/company' >
+      <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Company</DropdownMenuItem>
+      </Link>
+      <Link to='/consultative' >
+      <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Consultative</DropdownMenuItem>
+      </Link>
+       
       </DropdownMenuContent>
     </DropdownMenu>
   )

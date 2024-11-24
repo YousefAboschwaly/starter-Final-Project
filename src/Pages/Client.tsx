@@ -1,32 +1,11 @@
 
-import * as React from "react"
-import { Lock , X } from "lucide-react"
+import {useEffect,useState} from "react"
+import { Lock  } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Outlet } from "react-router-dom"
+import { Link, Outlet } from "react-router-dom"
 
 
-const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
-  React.useEffect(() => {
-    const timer = setTimeout(onClose, 10000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 100 }}
-      className={`fixed top-4 right-4 p-4 rounded-md shadow-md flex items-center justify-between z-50 ${
-        type === 'success' ? 'bg-green-500' : 'bg-red-500'
-      } text-white`}
-    >
-      <span>{message}</span>
-      <button onClick={onClose} className="ml-4 focus:outline-none">
-        <X className="h-5 w-5" />
-      </button>
-    </motion.div>
-  );
-};
 const BackgroundSlider = () => {
   const images = [
     "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1200&auto=format&fit=crop&q=60",
@@ -35,9 +14,9 @@ const BackgroundSlider = () => {
     "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=1200&auto=format&fit=crop&q=60",
     "https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?w=1200&auto=format&fit=crop&q=60",
   ]
-  const [currentIndex, setCurrentIndex] = React.useState(0)
+  const [currentIndex, setCurrentIndex] = useState(0)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length)
     }, 5000)
@@ -106,33 +85,39 @@ const LoginAnimation = () => {
 }
 
 
-
 export default function Client() {
- 
-  const [alert, setAlert] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  
+  let [logIn , setLogIn] =useState(true)
   return (
     <>
-      <AnimatePresence>
-        {alert && (
-          <Alert
-            message={alert.message}
-            type={alert.type}
-            onClose={() => setAlert(null)}
-          />
-        )}
-      </AnimatePresence>
-      
-      <div className="flex min-h-screen">
 
-      <div className="hidden md:block flex-1 relative overflow-hidden">
+      
+      <div className="flex min-h-screen  ">
+
+      <div className="hidden md:block w-1/2 relative overflow-hidden">
         <LoginAnimation />
       </div>
 
 
-      <Outlet/>
-
-
+      <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
+      <div className="w-full max-w-md">
+        <div className="flex border-b mb-8  ">
+          <Link to="" className={`flex-1 py-2 text-center border-b-2 ${logIn?'border-primary font-semibold':'border-transparent'}`} onClick={()=>setLogIn(true)}>
+            Log in
+          </Link>
+          <Link to="signup" className={`flex-1 py-2 text-center border-b-2 ${!logIn?'border-primary font-semibold':'border-transparent'}`} onClick={()=>setLogIn(false)}>
+            Sign up
+          </Link>
+        </div>
+        <Outlet/>
+        </div>
       </div>
+
+
+
+    </div>
+
+
     </>
   )
 }

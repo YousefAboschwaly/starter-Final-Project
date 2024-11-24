@@ -1,21 +1,20 @@
-
-
-import React,{ useState } from "react"
+import React, { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Github, Mail, AlertCircle, Eye, EyeOff, Loader2,X } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useFormik } from "formik"
 import axios from "axios"
 import * as Yup from "yup"
 
 interface ISignUpForm {
-  name: string
+  firstName: string
+  lastName: string
   email: string
-  phone:string
+  phone: string
   password: string
   rePassword: string
 }
@@ -28,6 +27,7 @@ interface PasswordInputProps {
   onBlur: (e: React.FocusEvent<HTMLInputElement>) => void
   error?: string
   touched?: boolean
+  placeholder: string
 }
 
 const InputAnimation = ({ children }: { children: React.ReactNode }) => (
@@ -53,8 +53,6 @@ const ErrorMessage = ({ message }: { message: string }) => (
   </motion.div>
 )
 
-
-
 const PasswordInput: React.FC<PasswordInputProps> = ({
   id,
   name,
@@ -63,16 +61,18 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
   onBlur,
   error,
   touched,
+  placeholder
 }) => {
   const [showPassword, setShowPassword] = useState(false)
 
   const togglePasswordVisibility = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault() // Prevent form submission
+    e.preventDefault()
     setShowPassword(!showPassword)
   }
 
   return (
     <div className="relative">
+      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
       <Input
         id={id}
         name={name}
@@ -80,66 +80,52 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
-        className={`${error && touched ? "border-red-500" : ""} pr-10`}
+        className={`${error && touched ? "border-red-500" : ""} pl-10 pr-10`}
+        placeholder={placeholder}
       />
-      <motion.button
+      <button
         type="button"
-        whileTap={{ scale: 0.9 }}
-        onClick={togglePasswordVisibility }
-        className={`absolute right-2 top-2   text-gray-500 hover:text-gray-700 focus:outline-none`}
+        onClick={togglePasswordVisibility}
+        className="absolute right-2 top-2 text-gray-500 hover:text-gray-700 focus:outline-none"
         aria-label={showPassword ? "Hide password" : "Show password"}
-
       >
         {showPassword ? (
           <EyeOff className="h-5 w-5" />
         ) : (
           <Eye className="h-5 w-5" />
         )}
-      </motion.button>
+      </button>
     </div>
   )
 }
 
-
-
-
-
-const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
-  React.useEffect(() => {
-    const timer = setTimeout(onClose, 10000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
+const Alert = ({ message, type }: { message: string; type: 'success' | 'error' }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 100 }}
-      className={`fixed top-4 right-4 p-4 rounded-md shadow-md flex items-center justify-between z-50 ${
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className={`p-4 rounded-md shadow-md ${
         type === 'success' ? 'bg-green-500' : 'bg-red-500'
-      } text-white`}
+      } text-white mb-4`}
     >
-      <span>{message}</span>
-      <button onClick={onClose} className="ml-4 focus:outline-none">
-        <X className="h-5 w-5" />
-      </button>
+      {message}
     </motion.div>
-  );
-};
+  )
+}
 
 export default function SignUp() {
-  const [showAccounts, setShowAccounts] = useState(false)
-  const [provider, setProvider] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [alert, setAlert] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  let navigate = useNavigate()
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const navigate = useNavigate()
 
-  let validationSchema = Yup.object().shape({
-    name: Yup.string().required("Full name is required"),
+  const validationSchema = Yup.object().shape({
+    firstName: Yup.string().required("First name is required"),
+    lastName: Yup.string().required("Last name is required"),
     email: Yup.string().email("Invalid email").required("Email is required"),
-    password: Yup.string().matches(/^[A-Z].{5,8}$/,'password must start with capital character and from  5 to 8 characters')
+    password: Yup.string().matches(/^[A-Z].{5,8}$/, 'Password must start with a capital letter and be 6-9 characters long')
       .required("Password is required"),
-    phone:Yup.string().matches(/^01[0125][0-9]{8}$/ , 'Invalid Phone number').required("Phone is required"),
+    phone: Yup.string().matches(/^01[0125][0-9]{8}$/, 'Invalid phone number').required("Phone is required"),
     rePassword: Yup.string()
       .oneOf([Yup.ref('password')], "Passwords must match")
       .required("Please confirm your password"),
@@ -153,23 +139,23 @@ export default function SignUp() {
         formValues
       )
       if (data.message === "success") {
-        setAlert({ message: "SignUp Successful. Welcome to Home4U!", type: 'success' });
+        setAlert({ message: "SignUp Successful. Welcome to Home4U!", type: 'success' })
         setTimeout(() => {navigate("/") ; setIsLoading(false)}, 3000);  // Small delay to show toaster before navigating
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        setAlert({ message: error.response.data.message || "An error occurred during SignUp.", type: 'error' });
-        setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 5000); 
+        setAlert({ message: error.response.data.message || "An error occurred during SignUp.", type: 'error' })
       } else {
-        setAlert({ message: "An unexpected error occurred. Please try again.", type: 'error' });
-        setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 5000); 
+        setAlert({ message: "An unexpected error occurred. Please try again.", type: 'error' })
       }
+      setIsLoading(false)
     }
   }
 
   const { handleChange, handleBlur, values, handleSubmit, errors, touched } = useFormik({
     initialValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phone: "",
       password: "",
@@ -178,62 +164,64 @@ export default function SignUp() {
     validationSchema,
     onSubmit: handleSignup,
   })
-  
 
-  const handleProviderClick = (providerName: string) => {
-    setProvider(providerName)
-    setShowAccounts(true)
-  }
 
   return (
-    <>
-          <AnimatePresence>
+    <div className="flex-1 flex items-center justify-center bg-background">
+      <Card className="w-full max-w-md p-6">
+        <AnimatePresence>
+          {alert && (
+            <Alert message={alert.message} type={alert.type} />
+          )}
+        </AnimatePresence>
 
-
-        {alert && (
-          <Alert
-            message={alert.message}
-            type={alert.type}
-            onClose={() => setAlert(null)}
-          />
-        )}
-      </AnimatePresence>
-      
-   
-      <div className="flex-1 flex items-center justify-center p-6 bg-background">
-        <Card className="w-full max-w-md p-6">
-          <div className="flex flex-col space-y-2 text-center mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight">Sign up for Home4U</h1>
-            <p className="text-sm text-muted-foreground">Your one-stop shop for home appliances and smart devices</p>
-          </div>
-
-
-          
-
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4">
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <InputAnimation>
                 <div className="grid gap-2">
-                  <Label htmlFor="full-name">Full name</Label>
+                  <Label htmlFor="first-name">First Name</Label>
                   <Input
-                    id="full-name"
-                    placeholder="Enter name"
+                    id="first-name"
+                    placeholder="First Name"
                     type="text"
-                    name="name"
-                    value={values.name}
+                    name="firstName"
+                    value={values.firstName}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={errors.name && touched.name ? "border-red-500" : ""}
+                    className={errors.firstName && touched.firstName ? "border-red-500" : ""}
                   />
                   <AnimatePresence>
-                    {errors.name && touched.name && <ErrorMessage message={errors.name} />}
+                    {errors.firstName && touched.firstName && <ErrorMessage message={errors.firstName} />}
                   </AnimatePresence>
                 </div>
               </InputAnimation>
 
               <InputAnimation>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email address</Label>
+                  <Label htmlFor="last-name">Last Name</Label>
+                  <Input
+                    id="last-name"
+                    placeholder="Last Name"
+                    type="text"
+                    name="lastName"
+                    value={values.lastName}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={errors.lastName && touched.lastName ? "border-red-500" : ""}
+                  />
+                  <AnimatePresence>
+                    {errors.lastName && touched.lastName && <ErrorMessage message={errors.lastName} />}
+                  </AnimatePresence>
+                </div>
+              </InputAnimation>
+            </div>
+             
+            <InputAnimation>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400  w-4 h-4" />
                   <Input
                     id="email"
                     placeholder="hello@example.com"
@@ -242,155 +230,114 @@ export default function SignUp() {
                     value={values.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    className={errors.email && touched.email ? "border-red-500" : ""}
+                    className={`pl-10 ${errors.email && touched.email ? "border-red-500" : ""}`}
                   />
-                  <AnimatePresence>
-                    {errors.email && touched.email && <ErrorMessage message={errors.email} />}
-                  </AnimatePresence>
                 </div>
-              </InputAnimation>
+                <AnimatePresence>
+                  {errors.email && touched.email && <ErrorMessage message={errors.email} />}
+                </AnimatePresence>
+              </div>
+            </InputAnimation>
 
-              <InputAnimation>
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">phone </Label>
-                  <Input
-                    id="phone"
-                    placeholder="01010203040"
-                    name="phone"
-                    type="tel"
-                    value={values.phone}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={errors.phone && touched.phone ? "border-red-500" : ""}
-                  />
-                  <AnimatePresence>
-                    {errors.phone && touched.phone && <ErrorMessage message={errors.phone} />}
-                  </AnimatePresence>
-                </div>
-              </InputAnimation>
+            <InputAnimation>
+              <div className="grid gap-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  placeholder="phone number"
+                  name="phone"
+                  type="tel"
+                  value={values.phone}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={errors.phone && touched.phone ? "border-red-500" : ""}
+                />
+                <AnimatePresence>
+                  {errors.phone && touched.phone && <ErrorMessage message={errors.phone} />}
+                </AnimatePresence>
+              </div>
+            </InputAnimation>
 
-              <InputAnimation>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <PasswordInput
-                    id="password"
-                    name="password"
-                    value={values.password}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.password}
-                    touched={touched.password}
-                  />
-                  <AnimatePresence>
-                    {errors.password && touched.password && <ErrorMessage message={errors.password} />}
-                  </AnimatePresence>
-                </div>
-              </InputAnimation>
+            <InputAnimation>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  value={values.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.password}
+                  touched={touched.password}
+                  placeholder={`password`}
+                />
+                <AnimatePresence>
+                  {errors.password && touched.password && <ErrorMessage message={errors.password} />}
+                </AnimatePresence>
+              </div>
+            </InputAnimation>
 
-              <InputAnimation>
-                <div className="grid gap-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
-                  <PasswordInput
-                    id="confirm-password"
-                    name="rePassword"
-                    value={values.rePassword}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.rePassword}
-                    touched={touched.rePassword}
-                  />
-                  <AnimatePresence>
-                    {errors.rePassword && touched.rePassword && <ErrorMessage message={errors.rePassword} />}
-                  </AnimatePresence>
-                </div>
-              </InputAnimation>
+           <InputAnimation>
+              <div className="grid gap-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <PasswordInput
+                  id="confirm-password"
+                  name="rePassword"
+                  value={values.rePassword}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={errors.rePassword}
+                  touched={touched.rePassword}
+                  placeholder={`Confirm password`}
+                />
+                <AnimatePresence>
+                  {errors.rePassword && touched.rePassword && <ErrorMessage message={errors.rePassword} />}
+                </AnimatePresence>
+              </div>
+            </InputAnimation>
 
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing Up...
-                  </>
-                ) : (
-                  "Sign Up"
-                )}
-              </Button>
-            </div>
-          </form>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleProviderClick("Google")}
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Google
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleProviderClick("GitHub")}
-            >
-              <Github className="mr-2 h-4 w-4" />
-              GitHub
+            <Button type="submit" disabled={isLoading}  className="btn primary-grad">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing Up...
+                </>
+              ) : (
+                "Sign Up"
+              )}
             </Button>
           </div>
-          {showAccounts && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mt-4 p-4 bg-muted rounded-md"
-            >
-              <h3 className="text-sm font-semibold mb-2">Select a {provider} account to sign up with:</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Button variant="ghost" className="w-full justify-start">
-                    {provider === "Google" ? "example@gmail.com" : "github_user1"}
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="w-full justify-start">
-                    {provider === "Google" ? "another@gmail.com" : "github_user2"}
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="w-full justify-start">
-                    Use another account
-                  </Button>
-                </li>
-              </ul>
-            </motion.div>
-          )}
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link to="/login" className="underline underline-offset-4 hover:text-primary">
-              Sign in
-            </Link>
-          </p>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            By signing up, you agree to our{" "}
-            <Link to="/terms" className="underline underline-offset-4 hover:text-primary">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link to="/privacy" className="underline underline-offset-4 hover:text-primary">
-              Privacy Policy
-            </Link>
-          </p>
-        </Card>
+        </form>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+        <Button variant="outline" className="w-full btn font-medium">
+          <img
+            src="https://www.google.com/favicon.ico"
+            alt="Google"
+            className="mr-2 h-6 w-6"
+          />
+          Continue with Google
+        </Button>
+        <Button variant="outline" className="w-full btn font-medium">
+          <img
+            src="https://www.facebook.com/favicon.ico"
+            alt="Facebook"
+            className="mr-2 h-6 w-6"
+          />
+          Continue with Facebook
+        </Button>
       </div>
-
-  
-    </>
+      </Card>
+    </div>
   )
 }
+

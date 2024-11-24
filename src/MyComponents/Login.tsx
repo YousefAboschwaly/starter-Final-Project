@@ -1,8 +1,7 @@
 'use client'
-
-import * as React from "react"
+import React , { useState} from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Github, Mail, AlertCircle, Eye, EyeOff, Loader2, X } from "lucide-react"
+import { AlertCircle, Eye, EyeOff, Loader2, X, Mail, LockKeyhole } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,6 +10,19 @@ import { Link, useNavigate } from "react-router-dom"
 import { useFormik } from "formik"
 import axios from "axios"
 import * as Yup from "yup"
+
+
+
+interface PasswordInputProps {
+  id: string
+  name: string
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onBlur: (e: React.FocusEvent<HTMLInputElement>) => void
+  error?: string
+  touched?: boolean
+  placeholder: string
+}
 
 const InputAnimation = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -22,7 +34,7 @@ const InputAnimation = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 )
 
-const PasswordInput = ({
+const PasswordInput: React.FC<PasswordInputProps> = ({
   id,
   name,
   value,
@@ -30,24 +42,13 @@ const PasswordInput = ({
   onBlur,
   error,
   touched,
-}: {
-  id: string
-  name: string
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  onBlur: (e: React.FocusEvent<HTMLInputElement>) => void
-  error?: string
-  touched?: boolean
+  placeholder
 }) => {
-  const [showPassword, setShowPassword] = React.useState(false)
-
-  const togglePasswordVisibility = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    setShowPassword(!showPassword)
-  }
+  const [showPassword, setShowPassword] = useState(false)
 
   return (
     <div className="relative">
+      <LockKeyhole className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
       <Input
         id={id}
         name={name}
@@ -55,21 +56,20 @@ const PasswordInput = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
-        className={`${error && touched ? "border-red-500" : ""} pr-10`}
+        className={`${error && touched ? "border-red-500" : ""} pl-10 pr-10`}
+        placeholder={placeholder}
       />
-      <motion.button
+      <button
         type="button"
-        whileTap={{ scale: 0.9 }}
-        onClick={togglePasswordVisibility}
-        className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none"
-        aria-label={showPassword ? "Hide password" : "Show password"}
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-2 top-2 text-gray-500 hover:text-gray-700 focus:outline-none"
       >
         {showPassword ? (
           <EyeOff className="h-5 w-5" />
         ) : (
           <Eye className="h-5 w-5" />
         )}
-      </motion.button>
+      </button>
     </div>
   )
 }
@@ -120,10 +120,9 @@ interface ILogInForm {
 }
 
 export default function Login() {
-  const [showAccounts, setShowAccounts] = React.useState(false)
-  const [provider, setProvider] = React.useState("")
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [alert, setAlert] = React.useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   let navigate = useNavigate()
 
   let validationSchema = Yup.object().shape({
@@ -131,10 +130,7 @@ export default function Login() {
     password: Yup.string().required("Password is required"),
   })
 
-  const handleProviderClick = (providerName: string) => {
-    setProvider(providerName)
-    setShowAccounts(true)
-  }
+
 
   async function handleLogIn(formValues: ILogInForm) {
     setIsLoading(true);
@@ -174,35 +170,41 @@ export default function Login() {
   return (
     <>
 
+<AnimatePresence>
+        {alert && (
+          <Alert
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
+      </AnimatePresence>
+
       
   
 
-      <div className="flex-1 flex items-center justify-center p-6 bg-background">
+      <div className="flex-1 flex items-center justify-center py-2 bg-background">
         <Card className="w-full max-w-md p-6">
-          <div className="flex flex-col space-y-2 text-center mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Login to Home4U
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Enter your credentials to access your account
-            </p>
-          </div>
+
 
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4">
-              <InputAnimation>
+            <InputAnimation>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    placeholder="Enter your Email"
-                    name="email"
-                    type="email"
-                    value={values.email}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={errors.email && touched.email ? "border-red-500" : ""}
-                  />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="email"
+                      placeholder="Enter your Email"
+                      name="email"
+                      type="email"
+                      value={values.email}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className={`pl-10 ${errors.email && touched.email ? "border-red-500" : ""}`}
+                    />
+                  </div>
                   <AnimatePresence>
                     {errors.email && touched.email && (
                       <ErrorMessage message={errors.email} />
@@ -212,32 +214,39 @@ export default function Login() {
               </InputAnimation>
 
               <InputAnimation>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <PasswordInput
-                    id="password"
-                    name="password"
-                    value={values.password}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={errors.password}
-                    touched={touched.password}
-                  />
-                  <AnimatePresence>
-                    {errors.password && touched.password && (
-                      <ErrorMessage message={errors.password} />
-                    )}
-                  </AnimatePresence>
-                </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="password">Password</Label>
+                      <PasswordInput
+                        id="password"
+                        name="password"
+                        value={values.password}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        error={errors.password}
+                        touched={touched.password}
+                        placeholder="password"
+                      />
+                      {errors.password && touched.password && (
+                        <ErrorMessage message={errors.password} />
+                      )}
+                    </div>
               </InputAnimation>
-              <Button type="submit" disabled={isLoading}>
+
+
+
+              <div className="text-right">
+        <Link to="/forgot-password" className="text-sm text-primary hover:underline btn font-medium">
+          forgot password?
+        </Link>
+      </div>
+              <Button type="submit" disabled={isLoading} className="btn primary-grad">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Logging in...
                   </>
                 ) : (
-                  "Log In"
+                  "Log in"
                 )}
               </Button>
             </div>
@@ -253,71 +262,27 @@ export default function Login() {
               </span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleProviderClick("Google")}
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              Google
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleProviderClick("GitHub")}
-            >
-              <Github className="mr-2 h-4 w-4" />
-              GitHub
-            </Button>
-          </div>
-          {showAccounts && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mt-4 p-4 bg-muted rounded-md"
-            >
-              <h3 className="text-sm font-semibold mb-2">
-                Select a {provider} account to log in with:
-              </h3>
-              <ul className="space-y-2">
-                <li>
-                  <Button variant="ghost" className="w-full justify-start">
-                    {provider === "Google"
-                      ? "example@gmail.com"
-                      : "github_user1"}
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="w-full justify-start">
-                    {provider === "Google"
-                      ? "another@gmail.com"
-                      : "github_user2"}
-                  </Button>
-                </li>
-                <li>
-                  <Button variant="ghost" className="w-full justify-start">
-                    Use another account
-                  </Button>
-                </li>
-              </ul>
-            </motion.div>
-          )}
-          <div className="mt-4 text-center text-sm">
-            <Link
-              to="/forgot-password"
-              className="text-primary hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
+
+          <div className="grid gap-2">
+        <Button variant="outline" className="w-full btn font-medium">
+          <img
+            src="https://www.google.com/favicon.ico"
+            alt="Google"
+            className="mr-2 h-6 w-6"
+          />
+          Continue with Google
+        </Button>
+        <Button variant="outline" className="w-full btn font-medium">
+          <img
+            src="https://www.facebook.com/favicon.ico"
+            alt="Facebook"
+            className="mr-2 h-6 w-6"
+          />
+          Continue with Facebook
+        </Button>
+      </div>
+
+        
         </Card>
       </div>
  
