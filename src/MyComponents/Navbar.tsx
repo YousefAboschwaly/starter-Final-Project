@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from 'react'
-import { Home, ChevronDown, Menu } from 'lucide-react'
+import { useContext, useState } from 'react'
+import { Home, ChevronDown, Menu, Heart, ShoppingCart } from 'lucide-react'
+import user from '../../public/user.webp'
 
 import { Button } from "@/components/ui/button"
 import {
@@ -13,10 +14,16 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 import { Link } from 'react-router-dom';
+import { UserContext } from '@/Contexts/UserContext'
 
 
 export default function Navbar() {
 
+  let {userToken , setUserToken} = useContext(UserContext)
+  function logout(){
+    setUserToken('')
+    localStorage.removeItem('userToken')
+  }
 
   return (
     <header className={`sticky top-0 z-50 w-full border-b  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 `}>
@@ -29,7 +36,7 @@ export default function Navbar() {
           <span className="transition-colors duration-300 group-hover:text-primary">Home4U</span>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-6">
+        {userToken && <nav className="hidden md:flex items-center space-x-6">
           <Link
             to="/"
             className="text-base font-normal  leading-[23.52px] transition-colors hover:text-primary"
@@ -54,18 +61,22 @@ export default function Navbar() {
           >
             Brands
           </Link>
-        </nav>
+        </nav>}
+
+
+        
+        <div className={`flex items-center ml-auto  ${userToken&&' md:ml-0'}  gap-4 `}>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-4">
-            <LoginButton />
+          {!userToken && <div className="hidden md:flex items-center gap-4">
             <JoinUsButton />
-          </div>
-
-          <div className="flex md:hidden items-center justify-center flex-grow gap-2 w-full max-w-[300px]">
             <LoginButton />
-            <JoinUsButton />
           </div>
+}
+          {!userToken && <div className="flex md:hidden items-center justify-center flex-grow gap-2 w-full max-w-[300px]">
+            <JoinUsButton />
+            <LoginButton />
+          </div>}
 
           <Sheet>
             <SheetTrigger asChild>
@@ -75,7 +86,7 @@ export default function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
-              <nav className="grid gap-4">
+             {userToken &&  <nav className="grid gap-4">
                 <Link to="/" className="text-lg font-semibold">
                   Home
                 </Link>
@@ -88,10 +99,50 @@ export default function Navbar() {
                 <Link to="/brands" className="text-lg font-semibold">
                   Brands
                 </Link>
-              </nav>
+              </nav>}
             </SheetContent>
           </Sheet>
         </div>
+
+            {userToken &&<div className="hidden md:flex items-center gap-4">
+            <Link to="/wishlist" className="text-muted-foreground hover:text-primary">
+              <Heart className="h-5 w-5" />
+            </Link>
+            <Link to="/cart" className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-green-600 text-[10px] font-bold text-white flex items-center justify-center">
+                7
+              </span>
+            </Link>
+          </div>}
+
+        {   userToken &&       <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <img
+                  alt="Avatar"
+                  className="rounded-full w-8 h-8"
+                  height="32"
+                  src={user}
+                  style={{
+                    aspectRatio: "1 / 1",
+                    objectFit: "cover",
+                  }}
+                  width="32"
+                />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem  className=" p-0">
+                <Link to="/client" className="flex w-full p-1" onClick={logout}>
+                  Logout
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>}
+        </div>
+      
       </div>
     </header>
   )
@@ -100,7 +151,7 @@ export default function Navbar() {
 function LoginButton() {
   return (
     <Link to={'/client'} 
-      className="primary-grad  rounded-[8px] px-4 py-2 btn text-base font-bold leading-6 text-center"
+      className="primary-grad  rounded-[8px] px-10  py-2 btn text-base font-bold leading-6 text-center"
     >
       Login
     </Link>
@@ -115,7 +166,8 @@ function JoinUsButton() {
       <DropdownMenuTrigger asChild>
        
        <Button 
-          className="secondary-grad  rounded-[8px] px-4 py-2 btn text-base font-bold leading-6 text-center"
+       
+          className=" bg-transparent rounded-[8px]  px-4 py-2 btn text-base font-bold leading-6 text-center text-[#2D2D4C] hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] "
         >
           Join Us
           <ChevronDown className={`ml-2 h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />

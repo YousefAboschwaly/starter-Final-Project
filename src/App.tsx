@@ -11,21 +11,28 @@ import Client from "./Pages/Client";
 import Company from "./Pages/JoinUs/Company";
 import Engineer from "./Pages/JoinUs/Engineer";
 import Technical from "./Pages/JoinUs/Technical";
+import ForgetPassword from "./Pages/ForgetPassword";
+import ProtectedRoute from "./MyComponents/ProtectedRoute";
+import UserContextProvider from "./Contexts/UserContext";
+
+
 
 function App() {
   const routes = createBrowserRouter([
     { path: "", element: <Layout /> , children:[
-      { index:true, element: <Home /> },
-      { path: "about", element: <About /> },
-      { path: "parent", element: <Parent /> },
-      { path: "products", element: <Products /> },
+      { index:true, element:<ProtectedRoute><Home /></ProtectedRoute>  },
+      { path: "about", element:<ProtectedRoute><About /></ProtectedRoute> },
+      { path: "parent", element:<ProtectedRoute><Parent /></ProtectedRoute> },
+      { path: "products", element:<ProtectedRoute><Products /> </ProtectedRoute>},
       { path: "client", element: <Client /> , children:[
         {index:true ,  element:<Login/>},
         { path: "signup", element: <SignUp /> },
       ] },
+      {path:'forgot-password' , element:<ForgetPassword/>},
       {path:'company' , element:<Company/>},
       {path:'engineer' , element:<Engineer/>},
       {path:'consultative' , element:<Technical/>},
+
 
 
       {path:'*' , element:<NotFound/>}
@@ -35,7 +42,10 @@ function App() {
 
   return (
     <>
+    <UserContextProvider>
+
      <RouterProvider router={routes}/> 
+    </UserContextProvider>
     </>
   );
 }

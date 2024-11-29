@@ -222,7 +222,6 @@ const CompanyAnimation = () => {
 export default function Company() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const validationSchema = Yup.object().shape({
     firstName: Yup.string().required("First name is required"),
@@ -253,6 +252,30 @@ export default function Company() {
     personalCard: Yup.mixed().nullable().required("Personal Card is required"),
     coverPhoto: Yup.mixed().nullable().required("Cover Photo is required"),
   })
+  async function handleSignUp (values:ICompanyForm)  {
+    setIsLoading(true)
+    try {
+      const formData = new FormData()
+      Object.entries(values).forEach(([key, value]) => {
+        if (value !== null) {
+          if (value instanceof File) {
+            formData.append(key, value, value.name)
+          } else {
+            formData.append(key, value)
+          }
+        }
+      })
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log("Form submitted:", Object.fromEntries(formData))
+      
+    } catch (error) {
+      console.error("Submission error:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const formik = useFormik<ICompanyForm>({
     initialValues: {
@@ -276,31 +299,7 @@ export default function Company() {
       coverPhoto: null
     },
     validationSchema,
-    onSubmit: async (values) => {
-      setIsLoading(true)
-      try {
-        const formData = new FormData()
-        Object.entries(values).forEach(([key, value]) => {
-          if (value !== null) {
-            if (value instanceof File) {
-              formData.append(key, value, value.name)
-            } else {
-              formData.append(key, value)
-            }
-          }
-        })
-        
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        console.log("Form submitted:", Object.fromEntries(formData))
-        setSuccessMessage("Company registration successful!")
-        
-      } catch (error) {
-        console.error("Submission error:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    onSubmit: handleSignUp
   })
 
   const { handleSubmit, handleChange, handleBlur, values, errors, touched, setFieldValue } = formik
@@ -311,11 +310,7 @@ export default function Company() {
         <CompanyAnimation />
       </div>
       <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-50 p-4">
-        {successMessage && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span className="block sm:inline">{successMessage}</span>
-          </div>
-        )}
+       
         <Card className="w-full max-w-md p-6">
           <form onSubmit={handleSubmit} className="grid gap-4">
             <AnimatePresence mode="wait">

@@ -1,5 +1,5 @@
 'use client'
-import React , { useState} from "react"
+import React , { useContext, useState} from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AlertCircle, Eye, EyeOff, Loader2, X, Mail, LockKeyhole } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useFormik } from "formik"
 import axios from "axios"
 import * as Yup from "yup"
+import { UserContext } from "@/Contexts/UserContext"
 
 
 
@@ -124,6 +125,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   let navigate = useNavigate()
+  let { setUserToken} = useContext(UserContext)
 
   let validationSchema = Yup.object().shape({
     email: Yup.string().email("Invalid email").required("Email is required"),
@@ -140,8 +142,10 @@ export default function Login() {
         formValues
       );
       if (data.message === "success") {
+        localStorage.setItem('userToken' , data?.token)
+
         setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
-        setTimeout(() => {navigate("/") ; setIsLoading(false)}, 3000);  // Small delay to show toaster before navigating
+        setTimeout(() => {navigate("/") ; setIsLoading(false); setUserToken( data?.token)}  , 3000);  // Small delay to show toaster before navigating
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -266,7 +270,7 @@ export default function Login() {
           <div className="grid gap-2">
         <Button variant="outline" className="w-full btn font-medium">
           <img
-            src="https://www.google.com/favicon.ico"
+            src="../../public/Google.png"
             alt="Google"
             className="mr-2 h-6 w-6"
           />
@@ -274,7 +278,7 @@ export default function Login() {
         </Button>
         <Button variant="outline" className="w-full btn font-medium">
           <img
-            src="https://www.facebook.com/favicon.ico"
+            src="../../public/Facebook.png"
             alt="Facebook"
             className="mr-2 h-6 w-6"
           />
