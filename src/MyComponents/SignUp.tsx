@@ -119,7 +119,11 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const navigate = useNavigate()
-  let {setUserToken} = useContext(UserContext)
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { setUserToken } = userContext;
 
   const validationSchema = Yup.object().shape({
     firstName: Yup.string().required("First name is required"),

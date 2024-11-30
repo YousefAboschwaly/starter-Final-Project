@@ -125,8 +125,12 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   let navigate = useNavigate()
-  let { setUserToken} = useContext(UserContext)
-
+  // Use context and check for null
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { setUserToken } = userContext;
   let validationSchema = Yup.object().shape({
     email: Yup.string().email("Invalid email").required("Email is required"),
     password: Yup.string().required("Password is required"),

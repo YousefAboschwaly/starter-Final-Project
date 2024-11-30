@@ -19,7 +19,12 @@ import { UserContext } from '@/Contexts/UserContext'
 
 export default function Navbar() {
 
-  let {userToken , setUserToken} = useContext(UserContext)
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { userToken,setUserToken } = userContext;
+
   function logout(){
     setUserToken('')
     localStorage.removeItem('userToken')
@@ -64,7 +69,7 @@ export default function Navbar() {
         </nav>}
 
 
-        
+
         <div className={`flex items-center ml-auto  ${userToken&&' md:ml-0'}  gap-4 `}>
 
         <div className="flex items-center gap-4">
