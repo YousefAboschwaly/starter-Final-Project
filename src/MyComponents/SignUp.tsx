@@ -10,6 +10,8 @@ import { useFormik } from "formik"
 import axios from "axios"
 import * as Yup from "yup"
 import { UserContext } from '../Contexts/UserContext';
+import google from '../../public/Google.png'
+import facebook from '../../public/Facebook.png'
 
 interface ISignUpForm {
   firstName: string
@@ -328,7 +330,7 @@ export default function SignUp() {
         <div className="grid gap-2">
         <Button variant="outline" className="w-full btn font-medium">
           <img
-            src="../../public/Google.png"
+            src={google}
             alt="Google"
             className="mr-2 h-6 w-6"
           />
@@ -336,7 +338,7 @@ export default function SignUp() {
         </Button>
         <Button variant="outline" className="w-full btn font-medium">
           <img
-            src="../../public/Facebook.png"
+            src={facebook}
             alt="Facebook"
             className="mr-2 h-6 w-6"
           />
