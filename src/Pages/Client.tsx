@@ -1,10 +1,7 @@
-
-import {useEffect,useState} from "react"
-import { Lock  } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Link, Outlet } from "react-router-dom"
-
-
+import { useState, useEffect } from "react";
+import { Lock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link, Outlet, useLocation } from "react-router-dom";
 
 const BackgroundSlider = () => {
   const images = [
@@ -13,15 +10,15 @@ const BackgroundSlider = () => {
     "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=1200&auto=format&fit=crop&q=60",
     "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=1200&auto=format&fit=crop&q=60",
     "https://images.unsplash.com/photo-1594026112284-02bb6f3352fe?w=1200&auto=format&fit=crop&q=60",
-  ]
-  const [currentIndex, setCurrentIndex] = useState(0)
+  ];
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -39,8 +36,8 @@ const BackgroundSlider = () => {
       </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 backdrop-blur-sm" />
     </div>
-  )
-}
+  );
+};
 
 const LoginAnimation = () => {
   return (
@@ -81,43 +78,53 @@ const LoginAnimation = () => {
         </motion.div>
       </div>
     </div>
-  )
-}
-
+  );
+};
 
 export default function Client() {
-  
-  let [logIn , setLogIn] =useState(true)
+  const location = useLocation();
+  const [logIn, setLogIn] = useState(true);
+
+  // Update logIn state based on the current path
+  useEffect(() => {
+    if (location.pathname === "/client/signup") {
+      setLogIn(false);
+    } else {
+      setLogIn(true);
+    }
+  }, [location.pathname]);
+
   return (
-    <>
-
-      
-      <div className="flex min-h-screen  ">
-
+    <div className="flex min-h-screen">
       <div className="hidden md:block w-1/2 relative overflow-hidden">
         <LoginAnimation />
       </div>
 
-
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8">
-      <div className="w-full max-w-md">
-        <div className="flex border-b mb-8  ">
-          <Link to="" className={`flex-1 py-2 text-center border-b-2 ${logIn?'border-primary font-semibold':'border-transparent'}`} onClick={()=>setLogIn(true)}>
-            Log in
-          </Link>
-          <Link to="signup" className={`flex-1 py-2 text-center border-b-2 ${!logIn?'border-primary font-semibold':'border-transparent'}`} onClick={()=>setLogIn(false)}>
-            Sign up
-          </Link>
-        </div>
-        <Outlet/>
+        <div className="w-full max-w-md">
+          <div className="flex border-b mb-8">
+            <Link
+              to=""
+              className={`flex-1 py-2 text-center border-b-2 ${
+                logIn ? "border-primary font-semibold" : "border-transparent"
+              }`}
+              onClick={() => setLogIn(true)}
+            >
+              Log in
+            </Link>
+            <Link
+              to="signup"
+              className={`flex-1 py-2 text-center border-b-2 ${
+                !logIn ? "border-primary font-semibold" : "border-transparent"
+              }`}
+              onClick={() => setLogIn(false)}
+            >
+              Sign up
+            </Link>
+          </div>
+          <Outlet />
         </div>
       </div>
-
-
-
     </div>
-
-
-    </>
-  )
+  );
 }

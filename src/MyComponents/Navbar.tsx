@@ -1,6 +1,6 @@
 "use client"
 
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { Home, ChevronDown, Menu, Heart, ShoppingCart } from 'lucide-react'
 import user from '../../public/user.webp'
 
@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 import { Link } from 'react-router-dom';
 import { UserContext } from '@/Contexts/UserContext'
+import axios from 'axios'
 
 
 export default function Navbar() {
@@ -163,8 +164,38 @@ function LoginButton() {
   )
 }
 
+interface IUserTypes{
+  
+    "id": number;
+    "code": string;
+    "name": string;
+
+}
+
 function JoinUsButton() {
   const [isOpen, setIsOpen] = useState(false)
+  const [userTypes, setUserTypes] = useState<IUserTypes[]>([])
+
+
+// get All user types
+
+useEffect(() => {
+  async function getUserTypes() {
+    try {
+      const { data } = await axios.get(
+        "https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/user-types",
+        {
+          headers: { 'Accept-Language': 'en' }
+        }
+      );
+      setUserTypes(data.data);
+      console.log("user Types:", data.data);
+    } catch (error) {
+      console.error("Error fetching User Types:", error);
+    }
+  }
+  getUserTypes();
+}, []);
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -180,15 +211,11 @@ function JoinUsButton() {
        
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[160px] animate-in slide-in-from-top-2 duration-200">
-      <Link to='/engineer' >
-      <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Engineer</DropdownMenuItem>
-      </Link>
-      <Link to='/company' >
-      <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Company</DropdownMenuItem>
-      </Link>
-      <Link to='/consultative' >
-      <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">Consultative</DropdownMenuItem>
-      </Link>
+        {userTypes.map((userType)=>
+              <Link to={`/Join-as/${userType.name}`} key={userType.id} >
+              <DropdownMenuItem className="cursor-pointer transition-colors hover:bg-secondary">{userType.name}</DropdownMenuItem>
+
+              </Link>)}
        
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,7 +1,7 @@
 'use client'
 import React , { useContext, useState} from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { AlertCircle, Eye, EyeOff, Loader2, X, Mail, LockKeyhole } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff, Loader2, Mail, LockKeyhole, CheckCircle2, XCircle } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -98,17 +98,31 @@ const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 100 }}
-      className={`fixed top-4 right-4 p-4 rounded-md shadow-md flex items-center justify-between z-50 ${
-        type === 'success' ? 'bg-green-500' : 'bg-red-500'
-      } text-white`}
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className={`fixed z-50 top-4 left-0 right-0 flex justify-center items-center `}
     >
-      <span>{message}</span>
-      <button onClick={onClose} className="ml-4 focus:outline-none">
-        <X className="h-5 w-5" />
-      </button>
+<div className="text-center flex justify-center items-center">
+<div
+            className={`px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 ${
+              type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white`}
+          >
+            {type === 'success' ? (
+              <CheckCircle2  className="w-6 h-6" />
+            ) : (
+              <XCircle className="w-6 h-6" />
+            )}
+            <span className="font-medium">{message}</span>
+            <button
+              onClick={onClose}
+              className="ml-auto text-white hover:text-gray-200 focus:outline-none"
+            >
+              ×
+            </button>
+          </div>
+</div>
     </motion.div>
   );
 };
@@ -118,7 +132,7 @@ const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 
 
 
 interface ILogInForm {
-  email: string
+  emailOrPhone: string 
   password: string
 }
 
@@ -134,43 +148,102 @@ export default function Login() {
   }
   const { setUserToken } = userContext;
   let validationSchema = Yup.object().shape({
-    email: Yup.string().email("Invalid email").required("Email is required"),
-    password: Yup.string().required("Password is required"),
+    emailOrPhone: Yup.string().test(
+      "email-or-phone", // Test name
+      "Must be a valid email or phone number", // Validation error message
+      (value) => {
+        if (!value) return false; // Ensure it's not empty
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Email validation regex
+        const phoneRegex = /^01[0125][0-9]{8}$/; // Phone number validation regex (e.g., +1234567890 or 1234567890)
+        return emailRegex.test(value) || phoneRegex.test(value);
+      }
+    )
+    .required("Email or phone is required"),
+    password: Yup.string().min(8,"Password must be at least 8 characters").required("Password is required"),
   })
 
 
 
   async function handleLogIn(formValues: ILogInForm) {
     setIsLoading(true);
+    console.log(formValues)
     try {
       let { data } = await axios.post(
-        `https://ecommerce.routemisr.com/api/v1/auth/signin`,
-        formValues
+        `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/auth/login`,
+        formValues,{
+          headers: {
+            'Accept-Language':'en'
+          }
+        }
       );
-      if (data.message === "success") {
-        localStorage.setItem('userToken' , data?.token)
+      console.log(data)
+      if (data.success ) {
+        localStorage.setItem('userToken' , data.data.token)
+        localStorage.setItem('user-RefreshToken' , data.data.refreshToken)
 
         setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
-        setTimeout(() => {navigate("/") ; setIsLoading(false); setUserToken( data?.token)}  , 3000);  // Small delay to show toaster before navigating
+        setTimeout(() => {navigate("/") ; setIsLoading(false); setUserToken( data.data.token)}  , 3000);  // Small delay to show toaster before navigating
       }
+    
+    
+       
+        else{
+        setAlert({ message: data.message, type: 'error' });
+        setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 5000); }
+      
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
+        console.log(error)
+        if (error.response.data.message =='Your account is not enabled'){
+          sendOtp()
+        }
         setAlert({ message: error.response.data.message || "An error occurred during login.", type: 'error' });
         setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 5000); 
-      } else {
-        setAlert({ message: "An unexpected error occurred. Please try again.", type: 'error' });
-        setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 5000); 
-      }
+      } 
+   
+      
     }
  
   }
 
+  
+async function sendOtp() {
+  try {
+    let { data } = await axios.post(
+      `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/auth/send-otp?email=${values.emailOrPhone}`,
+      {},{
+        headers: {
+          'Accept-Language':'en'
+        }
+      }
+    );
+    console.log(data)
+    if (data.success ) {
+
+      setAlert({ message: data.data, type: 'success' });
+      setTimeout(() => { navigate( `/access-account/${values.emailOrPhone}`)
+      ; setIsLoading(false)}  , 3000);  // Small delay to show toaster before navigating
+    }
+  
+  
+
+    
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.log(error)
+  
+      setAlert({ message: error.response.data.message || "An error occurred during login.", type: 'error' });
+      setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 5000); 
+    } 
+ 
+}
+}
 
 
   let { values, handleBlur, handleChange, handleSubmit, errors, touched } =
     useFormik({
       initialValues: {
-        email: "",
+        emailOrPhone: "",
         password: "",
       },
       validationSchema,
@@ -201,23 +274,23 @@ export default function Login() {
             <div className="grid gap-4">
             <InputAnimation>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email or Phone</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
                       id="email"
-                      placeholder="Enter your Email"
-                      name="email"
-                      type="email"
-                      value={values.email}
+                      placeholder="Enter your Email or Phone"
+                      name="emailOrPhone"
+                      type='text'
+                      value={values.emailOrPhone}
                       onChange={handleChange}
                       onBlur={handleBlur}
-                      className={`pl-10 ${errors.email && touched.email ? "border-red-500" : ""}`}
+                      className={`pl-10 ${errors.emailOrPhone && touched.emailOrPhone ? "border-red-500" : ""}`}
                     />
                   </div>
                   <AnimatePresence>
-                    {errors.email && touched.email && (
-                      <ErrorMessage message={errors.email} />
+                    {errors.emailOrPhone && touched.emailOrPhone && (
+                      <ErrorMessage message={errors.emailOrPhone} />
                     )}
                   </AnimatePresence>
                 </div>
@@ -299,3 +372,4 @@ export default function Login() {
     </>
   )
 }
+

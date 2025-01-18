@@ -1,7 +1,6 @@
 import { createBrowserRouter , RouterProvider } from "react-router-dom";
 import Home from "./MyComponents/Home";
 import About from "./MyComponents/About";
-import Parent from "./MyComponents/Parent";
 import NotFound from "./MyComponents/NotFound";
 import Layout from "./MyComponents/Layout";
 import Products from "./MyComponents/Products";
@@ -14,7 +13,7 @@ import Technical from "./Pages/JoinUs/Technical";
 import ForgetPassword from "./Pages/ForgetPassword";
 import ProtectedRoute from "./MyComponents/ProtectedRoute";
 import UserContextProvider from "./Contexts/UserContext";
-
+import AccessAccount from "./MyComponents/AccessAccount";
 
 
 function App() {
@@ -22,14 +21,14 @@ function App() {
     { path: "", element: <Layout /> , children:[
       { index:true, element:<ProtectedRoute><Home /></ProtectedRoute>  },
       { path: "about", element:<ProtectedRoute><About /></ProtectedRoute> },
-      { path: "parent", element:<ProtectedRoute><Parent /></ProtectedRoute> },
       { path: "products", element:<ProtectedRoute><Products /> </ProtectedRoute>},
       { path: "client", element: <Client /> , children:[
         {index:true ,  element:<Login/>},
         { path: "signup", element: <SignUp /> },
       ] },
       {path:'forgot-password' , element:<ForgetPassword/>},
-      {path:'company' , element:<Company/>},
+      {path:'access-account/:email' , element:<AccessAccount/>},
+      {path:'join-as/:userType' , element:<Company/>},
       {path:'engineer' , element:<Engineer/>},
       {path:'consultative' , element:<Technical/>},
 

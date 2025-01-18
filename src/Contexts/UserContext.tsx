@@ -13,7 +13,8 @@ export default function UserContextProvider({ children }: { children: ReactNode 
   const [userToken, setUserToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("userToken");
+    const storedToken = localStorage.getItem("userToken")
+
     if (storedToken) {
       setUserToken(storedToken);
     }

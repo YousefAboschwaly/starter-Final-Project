@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Check, Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useFormik } from "formik";
@@ -7,17 +7,12 @@ import axios from "axios";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
 import { Link, useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { OTPVerificationForm } from "../MyComponents/OTPVerificationForm";
 
 // API Configuration
-const BASE_URL = "https://ecommerce.routemisr.com/api/v1";
+const BASE_URL = "https://dynamic-mouse-needlessly.ngrok-free.app";
 
 // Validation Schemas
 const emailValidationSchema = Yup.object().shape({
@@ -29,11 +24,7 @@ const emailValidationSchema = Yup.object().shape({
 const newPasswordSchema = Yup.object().shape({
   newPassword: Yup.string()
     .required("Password is required")
-    .min(6, "Password must be at least 6 characters")
-    .matches(
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)/,
-      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
-    ),
+    .matches(/^.{8,}$/,"Password must be at least 8 characters"),
   confirmPassword: Yup.string()
     .required("Please confirm your password")
     .oneOf([Yup.ref("newPassword")], "Passwords must match"),
@@ -67,7 +58,17 @@ interface AlertProps {
   type: 'success' | 'error';
 }
 
+
 function Alert({ message, isVisible, onClose, type }: AlertProps) {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
   return (
     <AnimatePresence>
       {isVisible && (
@@ -76,32 +77,33 @@ function Alert({ message, isVisible, onClose, type }: AlertProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -50 }}
           transition={{ duration: 0.3 }}
-          className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4"
-        >
-          <div 
-            className={`px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 ${
-              type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            } text-white`}
+          className="fixed z-50 top-4 w-full "
           >
-            {type === 'success' ? (
-              <CheckCircle2 className="w-6 h-6" />
-            ) : (
-              <XCircle className="w-6 h-6" />
-            )}
-            <span className="font-medium">{message}</span>
-            <button
-              onClick={onClose}
-              className="ml-auto text-white hover:text-gray-200 focus:outline-none"
+          <div className="text-center flex justify-center items-center">
+            <div
+              className={`px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+              } text-white`}
             >
-              ×
-            </button>
+              {type === 'success' ? (
+                <CheckCircle2 className="w-6 h-6" />
+              ) : (
+                <XCircle className="w-6 h-6" />
+              )}
+              <span className="font-medium">{message}</span>
+              <button
+                onClick={onClose}
+                className="ml-auto text-white hover:text-gray-200 focus:outline-none"
+              >
+                ×
+              </button>
+            </div>
           </div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
-
 // Progress Stepper Component
 function ProgressStepper({
   currentStep,
@@ -150,7 +152,13 @@ function ProgressStepper({
 }
 
 // Email Step Component
-function EmailStep({ onNext }: { onNext: (email: string) => void }) {
+function EmailStep({
+  onNext,
+  setAlert,
+}: {
+  onNext: (email: string) => void;
+  setAlert: (alert: { show: boolean; message: string; type: "success" | "error" }) => void;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -163,16 +171,29 @@ function EmailStep({ onNext }: { onNext: (email: string) => void }) {
       setIsLoading(true);
       setError("");
       try {
-        const response = await axios.post(`${BASE_URL}/auth/forgotPasswords`, {
-          email: values.email,
-        });
-        if (response.data.statusMsg === "success") {
-          onNext(values.email);
+        const { data } = await axios.post(
+          `${BASE_URL}/api/v1/auth/send-otp?email=${values.email}`,
+          {},
+          {
+            headers: { "Accept-Language": "en" },
+          }
+        );
+        if (data.success) {
+          setAlert({
+            show: true,
+            message: data.data || "Verification code sent successfully",
+            type: "success",
+          });
+          setTimeout(() => onNext(values.email), 3000);
+        } else {
+          setAlert({ show: true, message: data.message, type: "error" });
         }
       } catch (err: any) {
-        setError(
-          err.response?.data?.message || "Failed to send verification code"
-        );
+        setAlert({
+          show: true,
+          message: err.response?.data?.message || "Failed to send verification code",
+          type: "error",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -180,45 +201,45 @@ function EmailStep({ onNext }: { onNext: (email: string) => void }) {
   });
 
   return (
-    <form onSubmit={formik.handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-normal text-center btn mb-7">
-          Forget Password
-        </h2>
-        <div className="space-y-2">
-          <Input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            className={
-              formik.touched.email && formik.errors.email
-                ? "border-red-500"
-                : ""
-            }
-          />
-          <AnimatePresence>
-            {(formik.touched.email && formik.errors.email) || error ? (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="text-red-500 text-sm flex items-center"
-              >
-                <AlertCircle className="w-4 h-4 mr-1" />
-                {formik.errors.email || error}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
+        <h2 className="text-2xl font-semibold text-center">Forgot Password</h2>
+        <p className="text-sm text-center text-gray-600">
+          Enter your email to receive a verification code
+        </p>
       </div>
-
+      <div className="space-y-2">
+        <Input
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          value={formik.values.email}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+          className={formik.touched.email && formik.errors.email ? "border-red-500" : ""}
+        />
+        <AnimatePresence>
+          {(formik.touched.email && formik.errors.email) || error ? (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-red-500 text-sm flex items-center"
+            >
+              <AlertCircle className="w-4 h-4 mr-1" />
+              {formik.errors.email || error}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
+      </div>
       <Button
         type="submit"
-        className="w-full btn primary-grad py-4"
+        className="w-full"
         disabled={isLoading}
+        onClick={(e) => {
+          e.preventDefault(); // Prevent default form behavior
+          formik.handleSubmit(); // Call the form submission
+        }}
       >
         {isLoading ? (
           <>
@@ -229,108 +250,44 @@ function EmailStep({ onNext }: { onNext: (email: string) => void }) {
           "Send Verification Code"
         )}
       </Button>
-
-      <p className="text-sm text-center btn">
-        <span className="font-light text-base">Don't have an account? </span>
-        <Link
-          to="/signup"
-          className="hover:underline font-medium text-lg text-[#2D2D4C]"
-        >
+      <p className="text-sm text-center">
+        <span className="text-gray-600">Don't have an account? </span>
+        <Link to="/signup" className="font-medium text-primary hover:underline">
           Create a new account
         </Link>
       </p>
-    </form>
+    </div>
   );
 }
 
+
 // Verification Step Component
-function VerificationStep({ onNext }: { onNext: (code: string) => void }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [code, setCode] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Automatically focus on the first input when the component mounts
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, []);
-
-  async function handleVerifyCode(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+function VerificationStep({ onNext, email, setAlert }: { onNext: (code: string) => void, email: string, setAlert: (alert: {show: boolean, message: string, type: 'success' | 'error'}) => void }) {
+  const handleVerifyCode = async (code: string) => {
     try {
-      const { data } = await axios.post(`${BASE_URL}/auth/verifyResetCode`, {
-        resetCode: code,
+      const { data } = await axios.post(`${BASE_URL}/api/v1/auth/activate-the-account?email=${email}&otp=${code}`, {}, {
+        headers: {
+          'Accept-Language': 'en'
+        }
       });
-      if (data.status === "Success") {
-        onNext(code);
+      if (data.success) {
+        setAlert({show: true, message: data.data || "Verification successful", type: 'success'});
+        setTimeout(() => onNext(code), 3000);
+      } else {
+        setAlert({show: true, message: data.message, type: 'error'});
       }
     } catch (err: any) {
-      console.log(err);
-      setError(err.response?.data?.message || "Failed to verify code");
-    } finally {
-      setIsLoading(false);
+      throw new Error(err.response?.data?.message || "Failed to verify code");
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleVerifyCode} className="space-y-4">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold text-center">
-          Verification Code
-        </h2>
-        <p className="text-sm text-center text-gray-600">
-          Enter the verification code we sent to your email
-        </p>
-      </div>
-
-      <div className="flex justify-center">
-        <InputOTP
-          maxLength={6}
-          pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
-          value={code}
-          onChange={(value: string) => setCode(value)}
-        >
-          <InputOTPGroup className="flex justify-center items-center gap-2">
-            <InputOTPSlot index={0} ref={inputRef} />
-            <InputOTPSlot index={1} />
-            <InputOTPSlot index={2} />
-            <InputOTPSlot index={3} />
-            <InputOTPSlot index={4} />
-            <InputOTPSlot index={5} />
-          </InputOTPGroup>
-        </InputOTP>
-      </div>
-
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 text-sm flex items-center justify-center"
-        >
-          <AlertCircle className="w-4 h-4 mr-1" />
-          {error}
-        </motion.div>
-      )}
-
-      <Button
-        type="submit"
-        className="w-full btn primary-grad"
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Verifying...
-          </>
-        ) : (
-          "Verify Code"
-        )}
-      </Button>
-    </form>
+    <OTPVerificationForm
+      onSubmit={handleVerifyCode}
+      title="Verification Code"
+      subtitle="Enter the verification code we sent to your email"
+      buttonText="Verify Code"
+    />
   );
 }
 
@@ -339,11 +296,11 @@ function VerificationStep({ onNext }: { onNext: (code: string) => void }) {
 function NewPasswordStep({
   email,
   onNext,
-  onError,
+  setAlert,
 }: {
   email: string;
   onNext: (password: string) => void;
-  onError: (message: string) => void;
+  setAlert: (alert: { show: boolean; message: string; type: "success" | "error" }) => void;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
@@ -361,25 +318,42 @@ function NewPasswordStep({
     onSubmit: async (values) => {
       setIsLoading(true);
       try {
-        const response = await axios.put(`${BASE_URL}/auth/resetPassword`, {
-          email,
-          newPassword: values.newPassword,
-        });
-        if (response.data.token) {
-          onNext(values.newPassword);
-          setTimeout(() => {setIsLoading(false);navigate("/client")}, 4000);
+        const { data } = await axios.put(
+          `${BASE_URL}/api/v1/auth/reset-password?email=${email}&newPassword=${formik.values.newPassword}`,
+          {},
+          {
+            headers: {
+              "Accept-Language": "en",
+            },
+          }
+        );
+        if (data.success) {
+          setAlert({ show: true, message: data.data || "Password reset successful", type: "success" });
+          setTimeout(() => {
+            onNext(values.newPassword);
+            navigate("/client");
+          }, 3000);
+        } else {
+          setAlert({ show: true, message: data.message, type: "error" });
         }
       } catch (err: any) {
-        onError(err.response?.data?.message || "Failed to reset password");
+        setAlert({
+          show: true,
+          message: err.response?.data?.message || "Failed to reset password",
+          type: "error",
+        });
+      } finally {
         setIsLoading(false);
-
-      } 
+      }
     },
   });
 
   return (
-    <form onSubmit={formik.handleSubmit} className="space-y-6">
-      <h2 className="text-2xl font-semibold text-center">New Password</h2>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold text-center">New Password</h2>
+        <p className="text-sm text-center text-gray-600">Enter your new password</p>
+      </div>
       <div className="space-y-4">
         <div className="space-y-2">
           <div className="relative">
@@ -391,23 +365,15 @@ function NewPasswordStep({
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={`pr-10 ${
-                formik.touched.newPassword && formik.errors.newPassword
-                  ? "border-red-500"
-                  : ""
+                formik.touched.newPassword && formik.errors.newPassword ? "border-red-500" : ""
               }`}
             />
             <button
               type="button"
-              onClick={() =>
-                setShowPasswords({ ...showPasswords, new: !showPasswords.new })
-              }
+              onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
               className="absolute right-3 top-1/2 -translate-y-1/2"
             >
-              {showPasswords.new ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {formik.touched.newPassword && formik.errors.newPassword && (
@@ -432,26 +398,17 @@ function NewPasswordStep({
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={`pr-10 ${
-                formik.touched.confirmPassword && formik.errors.confirmPassword
-                  ? "border-red-500"
-                  : ""
+                formik.touched.confirmPassword && formik.errors.confirmPassword ? "border-red-500" : ""
               }`}
             />
             <button
               type="button"
               onClick={() =>
-                setShowPasswords({
-                  ...showPasswords,
-                  confirm: !showPasswords.confirm,
-                })
+                setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })
               }
               className="absolute right-3 top-1/2 -translate-y-1/2"
             >
-              {showPasswords.confirm ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
           {formik.touched.confirmPassword && formik.errors.confirmPassword && (
@@ -466,11 +423,14 @@ function NewPasswordStep({
           )}
         </div>
       </div>
-
       <Button
         type="submit"
-        className="w-full btn primary-grad"
+        className="w-full"
         disabled={isLoading}
+        onClick={(e) => {
+          e.preventDefault();
+          formik.handleSubmit();
+        }}
       >
         {isLoading ? (
           <>
@@ -481,7 +441,7 @@ function NewPasswordStep({
           "Reset Password"
         )}
       </Button>
-    </form>
+    </div>
   );
 }
 
@@ -509,25 +469,14 @@ export default function ForgetPassword() {
         break;
       case 3:
         setData({ ...data, newPassword: stepData });
-        setAlert({
-          show: true,
-          message: "Password Reset Successful! Your password has been successfully reset.",
-          type: 'success'
-        });
-        setTimeout(() => {
-          setAlert({ ...alert, show: false });
-          // Handle successful password reset (e.g., redirect to login)
-        }, 3000);
+        // The alert for the final step is now handled in the NewPasswordStep component
         break;
     }
   };
 
-  const handleError = (message: string) => {
-    setAlert({ show: true, message, type: 'error' });
-  };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-gray-50">
       {/* Left side - Image */}
       <div className="hidden md:block w-1/2 relative bg-gray-100">
         <div className="absolute inset-0">
@@ -548,11 +497,10 @@ export default function ForgetPassword() {
       </div>
 
       {/* Right side - Form */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md space-y-8">
-          <ProgressStepper currentStep={step} steps={steps} />
-
-          <Card className="w-full max-w-md p-6">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-gray-50">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6">
+            <ProgressStepper currentStep={step} steps={steps} />
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -562,19 +510,19 @@ export default function ForgetPassword() {
                 exit="exit"
                 transition={{ duration: 0.3 }}
               >
-                {step === 1 && <EmailStep onNext={handleNext} />}
-                {step === 2 && <VerificationStep onNext={handleNext} />}
+                {step === 1 && <EmailStep onNext={handleNext} setAlert={setAlert} />}
+                {step === 2 && <VerificationStep onNext={handleNext} email={data.email} setAlert={setAlert} />}
                 {step === 3 && (
                   <NewPasswordStep 
                     email={data.email} 
                     onNext={handleNext}
-                    onError={handleError}
+                    setAlert={setAlert}
                   />
                 )}
               </motion.div>
             </AnimatePresence>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Alert
