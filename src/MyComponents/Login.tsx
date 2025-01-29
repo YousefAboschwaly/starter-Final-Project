@@ -11,8 +11,8 @@ import { useFormik } from "formik"
 import axios from "axios"
 import * as Yup from "yup"
 import { UserContext } from "@/Contexts/UserContext"
-import google from '../../public/Google.png'
-import facebook from '../../public/Facebook.png'
+import google from '/Google.png'
+import facebook from '/Facebook.png'
 
 
 
@@ -180,6 +180,7 @@ export default function Login() {
       if (data.success ) {
         localStorage.setItem('userToken' , data.data.token)
         localStorage.setItem('user-RefreshToken' , data.data.refreshToken)
+        
 
         setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
         setTimeout(() => {navigate("/") ; setIsLoading(false); setUserToken( data.data.token)}  , 3000);  // Small delay to show toaster before navigating

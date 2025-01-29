@@ -1,8 +1,8 @@
 "use client"
 
 import { useContext, useEffect, useState } from 'react'
-import { Home, ChevronDown, Menu, Heart, ShoppingCart } from 'lucide-react'
-import user from '../../public/user.webp'
+import { Home, ChevronDown, Menu} from 'lucide-react'
+import user from '/user.webp'
 
 import { Button } from "@/components/ui/button"
 import {
@@ -32,7 +32,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className={`sticky top-0 z-50 w-full border-b  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 `}>
+    <header className={` sticky top-0 z-50 w-full border-b  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 `}>
       <div className="container flex h-16 items-center justify-between px-4 md:px-8">
         <Link
           to="/"
@@ -111,15 +111,11 @@ export default function Navbar() {
         </div>
 
             {userToken &&<div className="hidden md:flex items-center gap-4">
-            <Link to="/wishlist" className="text-muted-foreground hover:text-primary">
-              <Heart className="h-5 w-5" />
-            </Link>
-            <Link to="/cart" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-green-600 text-[10px] font-bold text-white flex items-center justify-center">
-                7
-              </span>
-            </Link>
+              <Link to="/upgrade">
+  <Button className='text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out'>
+    Upgrade to pro
+  </Button>
+</Link>
           </div>}
 
         {   userToken &&       <DropdownMenu>
@@ -140,8 +136,13 @@ export default function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem  className=" p-0">
-                <Link to="/client" className="flex w-full p-1" onClick={logout}>
+              <DropdownMenuItem  className=" p-0  ">
+              <Link to="/profile" className="flex w-full p-1 ">
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem  className=" p-0  ">
+                <Link to="/client" className="flex w-full p-1 " onClick={logout}>
                   Logout
                 </Link>
               </DropdownMenuItem>

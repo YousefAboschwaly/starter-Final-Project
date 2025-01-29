@@ -59,7 +59,7 @@ export default function SignUp() {
         </div>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-2 ">
         <Button variant="outline" className="w-full btn font-medium">
           <img
             src={google}

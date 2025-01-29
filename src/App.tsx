@@ -14,11 +14,15 @@ import ForgetPassword from "./Pages/ForgetPassword";
 import ProtectedRoute from "./MyComponents/ProtectedRoute";
 import UserContextProvider from "./Contexts/UserContext";
 import AccessAccount from "./MyComponents/AccessAccount";
+import ProfileEditor from './Pages/profile-editor';
+import Profile from "./Pages/profile";
 
 
 function App() {
   const routes = createBrowserRouter([
     { path: "", element: <Layout /> , children:[
+      {path:'edit_profile' , element:<ProfileEditor/>},
+      {path:'profile' , element:<Profile/>},
       { index:true, element:<ProtectedRoute><Home /></ProtectedRoute>  },
       { path: "about", element:<ProtectedRoute><About /></ProtectedRoute> },
       { path: "products", element:<ProtectedRoute><Products /> </ProtectedRoute>},
