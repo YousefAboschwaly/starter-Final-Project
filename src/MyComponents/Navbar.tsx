@@ -24,11 +24,13 @@ export default function Navbar() {
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider");
   }
-  const { userToken,setUserToken } = userContext;
+  const { userToken,setUserToken,setUserId } = userContext;
 
   function logout(){
     setUserToken('')
+    setUserId('')
     localStorage.removeItem('userToken')
+    localStorage.removeItem('user-id')
   }
 
   return (
@@ -190,7 +192,7 @@ useEffect(() => {
         }
       );
       setUserTypes(data.data);
-      console.log("user Types:", data.data);
+   
     } catch (error) {
       console.error("Error fetching User Types:", error);
     }

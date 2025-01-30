@@ -141,12 +141,19 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   let navigate = useNavigate()
+
+
   // Use context and check for null
   const userContext = useContext(UserContext);
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider");
   }
-  const { setUserToken } = userContext;
+  const { setUserToken ,isMakeOtp ,setIsMakeOtp,} = userContext;
+
+
+
+
+
   let validationSchema = Yup.object().shape({
     emailOrPhone: Yup.string().test(
       "email-or-phone", // Test name
@@ -177,12 +184,18 @@ export default function Login() {
         }
       );
       console.log(data)
+      console.log(data.data.user.id)
       if (data.success ) {
         localStorage.setItem('userToken' , data.data.token)
         localStorage.setItem('user-RefreshToken' , data.data.refreshToken)
-        
-
+        localStorage.setItem('user-id' , data.data.user.id)
+      
         setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
+        if(isMakeOtp){
+          setTimeout(() => {navigate("/edit_profile") ; setIsLoading(false); setUserToken( data.data.token)}  , 3000);  // Small delay to show toaster before navigating
+          setIsMakeOtp(false)
+        }
+
         setTimeout(() => {navigate("/") ; setIsLoading(false); setUserToken( data.data.token)}  , 3000);  // Small delay to show toaster before navigating
       }
     

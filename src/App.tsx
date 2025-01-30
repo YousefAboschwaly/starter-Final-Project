@@ -27,7 +27,7 @@ function App() {
       { path: "about", element:<ProtectedRoute><About /></ProtectedRoute> },
       { path: "products", element:<ProtectedRoute><Products /> </ProtectedRoute>},
       { path: "client", element: <Client /> , children:[
-        {index:true ,  element:<Login/>},
+        {index:true ,  element: <Login/>},
         { path: "signup", element: <SignUp /> },
       ] },
       {path:'forgot-password' , element:<ForgetPassword/>},
@@ -45,9 +45,10 @@ function App() {
 
   return (
     <>
+    
     <UserContextProvider>
 
-     <RouterProvider router={routes}/> 
+        <RouterProvider router={routes}/> 
     </UserContextProvider>
     </>
   );

@@ -1,6 +1,102 @@
 "use client"
 
-import { useState, useRef } from "react"
+interface IUser {
+  user: {
+    id: number | null;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string | null;
+    personalPhoto: File | null;
+    password: string;
+    userType: {
+      id: number | null;
+      code: string;
+      name: string | null;
+    };
+    governorate?: {
+      id: number | null;
+      code: string;
+      name: string | null;
+    };
+    city?: {
+      id: number | null;
+      code: string;
+      name: string | null;
+    };
+    engineer: null;
+    technicalWorker: null;
+    enabled: boolean;
+  };
+  type?: {
+    id: number;
+    code: string;
+    name: string;
+    nameAr: string;
+    nameEn: string;
+  };
+  yearsOfExperience?: number;
+  engineerServ?: Array<{
+    id: number;
+    code: string;
+    name: string;
+    nameAr: string;
+    nameEn: string;
+    engineerType: {
+      id: number;
+      code: string;
+      name: string | null;
+      nameAr: string;
+      nameEn: string;
+    };
+  }>;
+  bio?: string | null;
+  linkedin?: string | null;
+  behance?: string | null;
+}
+const defaultObj: IUser = {
+  user: {
+    id: null,
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: null,
+    personalPhoto: null,
+    password: "",
+    userType: {
+      id: null,
+      code: "",
+      name: null,
+    },
+    governorate: {
+      id: null,
+      code: "",
+      name: null,
+    },
+    city: {
+      id: null,
+      code: "",
+      name: null,
+    },
+    engineer: null,
+    technicalWorker: null,
+    enabled: true,
+  },
+  type: {
+    id: 0,
+    code: "",
+    name: "",
+    nameAr: "",
+    nameEn: "",
+  },
+  yearsOfExperience: 0,
+  engineerServ: [],
+  bio: null,
+  linkedin: null,
+  behance: null,
+};
+
+import { useState, useRef, useContext, useEffect } from "react"
 import { ChevronLeft, Briefcase, Award, User, Link2, Mail, Phone, Eye, EyeOff, Upload, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -14,9 +110,19 @@ import { FileUpload } from "../MyComponents/file-upload"
 import { Toaster } from "react-hot-toast"
 import toast from "react-hot-toast"
 import { Link, useNavigate } from "react-router-dom"
+import axios from "axios"
+import { UserContext } from "@/Contexts/UserContext"
 
 export default function ProfileEditor() {
   const navigate=useNavigate()
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const {userToken,userId} = userContext;
+
+  
+  console.log('UserId-->',userId)
 
   const [activeTab, setActiveTab] = useState("basic")
   const [certificates, setCertificates] = useState<File[]>([])
@@ -24,6 +130,12 @@ export default function ProfileEditor() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [coverPhotoName, setCoverPhotoName] = useState<string>("")
   const [isOpen, setIsOpen] = useState(false)
+
+/* Form Management   */
+const [tempDta, setTempDta] = useState<IUser>(defaultObj);
+// const [governates, setGovernates] = useState([])
+// const [cities, setCities] = useState([])
+
 
   const basicRef = useRef<HTMLDivElement>(null)
   const certificationsRef = useRef<HTMLDivElement>(null)
@@ -74,6 +186,119 @@ export default function ProfileEditor() {
     
   }
 
+
+/*-------------------Fetch Apis------------------------ */
+
+// ----Get user Data-------
+useEffect(() => {
+
+  const controller = new AbortController();
+  const signal = controller.signal;
+
+  async function getUserData() {
+    try {
+      const { data } = await axios.get(
+        `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/engineers/user?userId=${userId||localStorage.getItem('user-id')}`,
+        {
+          headers: {
+            "Accept-Language": "en",
+            Authorization: `Bearer ${userToken}`,
+          },
+          signal, // Pass the signal to handle aborting
+        }
+      );
+      setTempDta(data.data)
+      console.log("Data from API -->", data);
+    } catch (error: any) {
+      console.log(error)
+      }
+    }
+  
+
+  getUserData();
+
+  return () => {
+    controller.abort();
+  };
+}, [userId,userToken]); // Ensure we fetch only when both are available
+
+
+
+// ----Get Governate Data-------
+
+// useEffect(() => {
+
+//   const controller = new AbortController();
+//   const signal = controller.signal;
+
+//   async function getUserData() {
+//     try {
+//       const { data } = await axios.get(
+//         `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/governorates`,
+//         {
+//           headers: {
+//             "Accept-Language": "en",
+//             Authorization: `Bearer ${userToken}`,
+//           },
+//           signal, // Pass the signal to handle aborting
+//         }
+//       );
+//       setTempDta(data.data)
+//       console.log("Data from API -->", data);
+//     } catch (error: any) {
+//       console.log(error)
+//       }
+//     }
+  
+
+//   getUserData();
+
+//   return () => {
+//     controller.abort();
+//   };
+// }, [userId,userToken]); // Ensure we fetch only when both are available
+
+
+// ----Get City Data-------
+
+// useEffect(() => {
+
+//   const controller = new AbortController();
+//   const signal = controller.signal;
+
+//   async function getUserData() {
+//     try {
+//       const { data } = await axios.get(
+//         `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/engineers/user?userId=${userId||localStorage.getItem('user-id')}`,
+//         {
+//           headers: {
+//             "Accept-Language": "en",
+//             Authorization: `Bearer ${userToken}`,
+//           },
+//           signal, // Pass the signal to handle aborting
+//         }
+//       );
+//       setTempDta(data.data)
+//       console.log("Data from API -->", data);
+//     } catch (error: any) {
+//       console.log(error)
+//       }
+//     }
+  
+
+//   getUserData();
+
+//   return () => {
+//     controller.abort();
+//   };
+// }, [userId,userToken]); // Ensure we fetch only when both are available
+
+
+
+// console.log(tempDta)
+
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8 pt-20">
       <div className="md:hidden fixed top-14 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 py-4 px-4 md:px-8 shadow-md">
@@ -122,6 +347,9 @@ export default function ProfileEditor() {
           </Card>
         
  
+      {/* -------------Form Data-------------------------------- */}
+        <form>
+
 
           <div className="space-y-6">
             <Card
@@ -236,7 +464,7 @@ export default function ProfileEditor() {
                       <Label htmlFor="governorate">Governorate (Optional)</Label>
                       <Select>
                         <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select governorate" />
+                          <SelectValue placeholder="Select governorate"  />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="cairo">Cairo</SelectItem>
@@ -261,7 +489,7 @@ export default function ProfileEditor() {
                     </div>
 
                     <div>
-                      <Label htmlFor="engineerType">Engineer Type</Label>
+                      <Label htmlFor="type">{tempDta?.user.userType.code.toLowerCase ()+' type'}</Label>
                       <Select>
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Select Engineer Type" />
@@ -356,6 +584,12 @@ export default function ProfileEditor() {
               </Button>
             </div>
           </div>
+
+
+        </form>
+
+
+
         </div>
       </div>
     </div>

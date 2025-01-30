@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -9,6 +9,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { UserContext } from '@/Contexts/UserContext';
 
 interface OTPVerificationFormProps {
   onSubmit: (otp: string) => Promise<void>;
@@ -27,6 +28,11 @@ export function OTPVerificationForm({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { setIsMakeOtp } = userContext;
 
   useEffect(() => {
     if (inputRef.current) {
@@ -39,6 +45,7 @@ export function OTPVerificationForm({
     setIsLoading(true);
     setError("");
     try {
+      setIsMakeOtp(true)
       await onSubmit(otp);
     } catch (err: any) {
       setError(err.message || "Failed to verify code");
