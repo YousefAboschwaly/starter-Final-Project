@@ -1,0 +1,35 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag home4u/home4u-ui && docker save home4u/home4u-ui > home4u-ui.tar
+
+    - name: Save docker file
+      run: docker save home4u/home4u-ui > home4u-ui.tar
+      
+    - name: Push docker tar file
+      run: |
+        mv home4u-ui.tar artifacts/home4u-ui.tar
+        git add artifacts/home4u-ui.tar
+        git commit -m "Save Docker image as TAR file"
+        git push origin main
+        
+    - name: update artifacts
+      run: |
+          curl \
+          "http://149.102.135.15:8080/job/Home4U-UI/build?token=w34iK1MmmaOJfZ6deuFeRvtzuxgOxFoqQHoRh2E74lXs4tVyS2jUZWHj0VgYCQFP"
