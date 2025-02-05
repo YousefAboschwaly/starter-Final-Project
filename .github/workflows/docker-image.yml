@@ -22,12 +22,11 @@ jobs:
     - name: Save docker file
       run: docker save home4u/home4u-ui > home4u-ui.tar
       
-    - name: Push docker tar file
-      run: |
-        mv home4u-ui.tar artifacts/home4u-ui.tar
-        git add artifacts/home4u-ui.tar
-        git commit -m "Save Docker image as TAR file"
-        git push origin main
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: docker-image
+        path: home4u-ui.tar
         
     - name: update artifacts
       run: |
