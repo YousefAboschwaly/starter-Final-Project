@@ -9,3 +9,4 @@ RUN npm run build --configuration=production
 
 FROM nginx:mainline-alpine-perl
 COPY --from=node /app/dist/ /usr/share/nginx/html
+COPY /nginx.conf  /etc/nginx/conf.d/default.conf
