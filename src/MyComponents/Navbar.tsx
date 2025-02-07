@@ -14,18 +14,18 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 import { Link } from 'react-router-dom';
-import { UserContext } from '@/Contexts/UserContext'
+import { UserContext } from '../Contexts/UserContext'
 import axios from 'axios'
 
-const userContext = useContext(UserContext);
-if (!userContext) {
-  throw new Error("UserContext must be used within a UserContextProvider");
-}
-const { userToken,setUserToken,setUserId,setShowAddProject, pathUrl} = userContext;
 
 
 export default function Navbar() {
-
+  
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { userToken,setUserToken,setUserId,setShowAddProject} = userContext;
 
 
   function logout(){
@@ -188,6 +188,11 @@ interface IUserTypes{
 }
 
 function JoinUsButton() {
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const {pathUrl} = userContext;
   const [isOpen, setIsOpen] = useState(false)
   const [userTypes, setUserTypes] = useState<IUserTypes[]>([])
 
