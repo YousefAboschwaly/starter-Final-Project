@@ -1,0 +1,19 @@
+# Query: https://dynamic-mouse-needlessly.ngrok-free.app
+
+6 results - 5 files
+
+src\MyComponents\AccessAccount.tsx:
+  63:         `http://149.102.135.15:5000/api/v1/auth/activate-the-account?email=${email}&otp=${otp}`,
+
+src\MyComponents\Navbar.tsx:
+  189:         "http://149.102.135.15:5000/api/v1/user-types",
+
+src\MyComponents\RegisterForm.tsx:
+  243:           "http://149.102.135.15:5000/api/v1/governorates",
+  265:             `http://149.102.135.15:5000/api/v1/cities/governorate/${values.governorate.id}`,
+
+src\MyComponents\SignUp.tsx:
+  31:         `http://149.102.135.15:5000/api/v1/auth/register`,
+
+src\Pages\ForgetPassword.tsx:
+  15: const BASE_URL = "http://149.102.135.15:5000";

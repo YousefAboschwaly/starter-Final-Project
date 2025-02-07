@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { OTPVerificationForm } from "./OTPVerificationForm";
 import Alert from "./Alert";
 import { motion, AnimatePresence } from 'framer-motion';
+import { UserContext } from "@/Contexts/UserContext";
 
 const images = [
   "https://images.unsplash.com/photo-1497215728101-856f4ea42174?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
@@ -53,6 +54,12 @@ const ImageSlider: React.FC = () => {
 
 export default function AccessAccount() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error'; show: boolean } | null>(null);
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const {  pathUrl} = userContext;
+
   let { email } = useParams();
   const navigate = useNavigate();
   
@@ -60,7 +67,7 @@ export default function AccessAccount() {
     console.log(email);
     try {
       let { data } = await axios.post(
-        `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/auth/activate-the-account?email=${email}&otp=${otp}`,
+        `${pathUrl}/api/v1/auth/activate-the-account?email=${email}&otp=${otp}`,
         {},  // Empty object for request body
         {
           headers: {

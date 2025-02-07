@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import * as Yup from "yup";
 import { Combobox } from "@/components/ui/combobox";
 
 import { ReactNode } from "react";
+import { UserContext } from "@/Contexts/UserContext";
 
 axios.defaults.headers.common["ngrok-skip-browser-warning"] = "any value";
 
@@ -191,6 +192,12 @@ export function RegisterForm({
   const [governorates, setGovernorates] = useState<ILocation[]>([]);
   const [cities, setCities] = useState<ILocation[]>([]);
 
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const {  pathUrl} = userContext;
+
   const formik = useFormik<ISignUpForm>({
     initialValues: {
       firstName: initialValues.firstName || "",
@@ -240,7 +247,7 @@ export function RegisterForm({
     async function getGovernates() {
       try {
         const { data } = await axios.get(
-          "https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/governorates",
+          `${pathUrl}/api/v1/governorates`,
           {
             headers: {
               "Accept-Language": "en",
@@ -262,7 +269,7 @@ export function RegisterForm({
       if (values.governorate?.id) {
         try {
           const { data } = await axios.get(
-            `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/cities/governorate/${values.governorate.id}`,
+            `${pathUrl}/api/v1/cities/governorate/${values.governorate.id}`,
             {
               headers: {
                 "Accept-Language": "en",

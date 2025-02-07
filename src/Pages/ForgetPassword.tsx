@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Check, Eye, EyeOff, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { useFormik } from "formik";
@@ -10,9 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { OTPVerificationForm } from "../MyComponents/OTPVerificationForm";
+import { UserContext } from "@/Contexts/UserContext";
 
+const userContext = useContext(UserContext);
+if (!userContext) {
+  throw new Error("UserContext must be used within a UserContextProvider");
+}
+const { pathUrl} = userContext;
 // API Configuration
-const BASE_URL = "https://dynamic-mouse-needlessly.ngrok-free.app";
+const BASE_URL =pathUrl ;
 
 // Validation Schemas
 const emailValidationSchema = Yup.object().shape({

@@ -10,10 +10,12 @@ import google from '../../public/Google.png'
 import facebook from '../../public/Facebook.png'
 
 export default function SignUp() {
+
   const userContext = useContext(UserContext);
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider");
   }
+  const {  pathUrl} = userContext;
   let navigate = useNavigate()
 
   const handleSignup = async (formValues: ISignUpForm) => {
@@ -28,7 +30,7 @@ export default function SignUp() {
       console.log("data will be send to API", dataToSend)
 
       const { data } = await axios.post(
-        `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/auth/register`,
+        `${pathUrl}/api/v1/auth/register`,
         dataToSend,
         {
           headers: {

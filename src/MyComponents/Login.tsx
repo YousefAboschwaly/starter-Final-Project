@@ -176,7 +176,7 @@ export default function Login() {
     console.log(formValues)
     try {
       let { data } = await axios.post(
-        `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/auth/login`,
+        `${pathUrl}/api/v1/auth/login`,
         formValues,{
           headers: {
             'Accept-Language':'en'
@@ -189,6 +189,7 @@ export default function Login() {
         localStorage.setItem('userToken' , data.data.token)
         localStorage.setItem('user-RefreshToken' , data.data.refreshToken)
         localStorage.setItem('user-id' , data.data.user.id)
+        localStorage.setItem('user-type' , data.data.user.userType.name)
       
         setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
         if(isMakeOtp){
@@ -224,7 +225,7 @@ export default function Login() {
 async function sendOtp() {
   try {
     let { data } = await axios.post(
-      `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/auth/send-otp?email=${values.emailOrPhone}`,
+      `${pathUrl}/api/v1/auth/send-otp?email=${values.emailOrPhone}`,
       {},{
         headers: {
           'Accept-Language':'en'

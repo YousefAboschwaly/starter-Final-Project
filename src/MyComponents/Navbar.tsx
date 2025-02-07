@@ -17,21 +17,25 @@ import { Link } from 'react-router-dom';
 import { UserContext } from '@/Contexts/UserContext'
 import axios from 'axios'
 
+const userContext = useContext(UserContext);
+if (!userContext) {
+  throw new Error("UserContext must be used within a UserContextProvider");
+}
+const { userToken,setUserToken,setUserId,setShowAddProject, pathUrl} = userContext;
+
 
 export default function Navbar() {
 
-  const userContext = useContext(UserContext);
-  if (!userContext) {
-    throw new Error("UserContext must be used within a UserContextProvider");
-  }
-  const { userToken,setUserToken,setUserId } = userContext;
+
 
   function logout(){
     setUserToken('')
-    setUserId('')
+    setUserId(null)
     localStorage.removeItem('userToken')
     localStorage.removeItem('user-id')
+    localStorage.removeItem('user-type')
   }
+  
 
   return (
     <header className={` sticky top-0 z-50 w-full border-b  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 `}>
@@ -120,6 +124,14 @@ export default function Navbar() {
 </Link>
           </div>}
 
+            {userToken &&<div className="hidden md:flex items-center gap-4">
+              <Link to="/profile">
+  <Button className='text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white primary-grad hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out' onClick={()=>setShowAddProject(true)}>
+    Add Project
+  </Button>
+</Link>
+          </div>}
+
         {   userToken &&       <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -186,7 +198,7 @@ useEffect(() => {
   async function getUserTypes() {
     try {
       const { data } = await axios.get(
-        "https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/user-types",
+        `${pathUrl}/api/v1/user-types`,
         {
           headers: { 'Accept-Language': 'en' }
         }

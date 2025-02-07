@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Upload } from "lucide-react"
 
 interface ImageUploadProps {
@@ -10,8 +10,13 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ defaultImage, onChange, className = "" }: ImageUploadProps) {
-  const [preview, setPreview] = useState<string | null>(defaultImage || null)
+  const [preview, setPreview] = useState<string | undefined>(defaultImage)
+  console.log("preview in ImageUpload", preview)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setPreview(defaultImage)
+  }, [defaultImage])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]

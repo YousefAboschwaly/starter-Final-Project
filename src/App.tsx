@@ -21,8 +21,8 @@ import Profile from "./Pages/profile";
 function App() {
   const routes = createBrowserRouter([
     { path: "", element: <Layout /> , children:[
-      {path:'edit_profile' , element:<ProfileEditor/>},
-      {path:'profile' , element:<Profile/>},
+      {path:'edit_profile' , element: <ProtectedRoute><ProfileEditor/></ProtectedRoute>},
+      {path:'profile' , element:<ProtectedRoute><Profile/></ProtectedRoute>},
       { index:true, element:<ProtectedRoute><Home /></ProtectedRoute>  },
       { path: "about", element:<ProtectedRoute><About /></ProtectedRoute> },
       { path: "products", element:<ProtectedRoute><Products /> </ProtectedRoute>},

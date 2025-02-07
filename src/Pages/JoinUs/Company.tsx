@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Briefcase } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { RegisterForm, ISignUpForm } from "../../MyComponents/RegisterForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
+import { UserContext } from "@/Contexts/UserContext";
 
 interface ITechnicalWorkerForm {
   technicalWorker: {
@@ -249,6 +250,12 @@ export default function Company() {
     type: "success" | "error";
   } | null>(null);
 
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { pathUrl } = userContext;
+
   const formik = useFormik<IEngineerForm & ITechnicalWorkerForm>({
     initialValues: {
       engineer: {
@@ -270,7 +277,7 @@ export default function Company() {
     async function getUserTypes() {
       try {
         const { data } = await axios.get(
-          "https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/user-types",
+          `${pathUrl}/api/v1/user-types`,
           {
             headers: { "Accept-Language": "en" },
           }
@@ -306,7 +313,7 @@ export default function Company() {
     async function getEngineerTypes() {
       try {
         const { data } = await axios.get(
-          "https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/engineer-types",
+          `${pathUrl}/api/v1/engineer-types`,
           {
             headers: {
               "Accept-Language": "en",
@@ -340,7 +347,7 @@ export default function Company() {
     async function getEngineerServices(engineerTypeId: number) {
       try {
         const { data } = await axios.get(
-          `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/engineer-services/service/${engineerTypeId}`,
+          `${pathUrl}/api/v1/engineer-services/service/${engineerTypeId}`,
           {
             headers: {
               "Accept-Language": "en",
@@ -372,7 +379,7 @@ export default function Company() {
   async function getTechnicalWorkerTypes() {
     try {
       const { data } = await axios.get(
-        "https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/technical-worker-types",
+        `${pathUrl}/api/v1/technical-worker-types`,
         {
           headers: {
             "Accept-Language": "en",
@@ -404,7 +411,7 @@ export default function Company() {
   async function getTechnicalWorkerServices(technicalWorkerTypeId: number) {
     try {
       const { data } = await axios.get(
-        `https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/technical-worker-services/service/${technicalWorkerTypeId}`,
+        `${pathUrl}/api/v1/technical-worker-services/service/${technicalWorkerTypeId}`,
         {
           headers: {
             "Accept-Language": "en",
@@ -480,7 +487,7 @@ export default function Company() {
       console.log("Data to send:", dataToSend);
 
       const { data } = await axios.post(
-        "https://dynamic-mouse-needlessly.ngrok-free.app/api/v1/auth/register",
+        `${pathUrl}/api/v1/auth/register`,
         dataToSend,
         {
           headers: {
