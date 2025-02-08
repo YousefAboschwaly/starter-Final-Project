@@ -1,7 +1,7 @@
 "use client"
 
 import { useContext, useEffect, useState } from 'react'
-import { Home, ChevronDown, Menu} from 'lucide-react'
+import {  ChevronDown, Menu} from 'lucide-react'
 import user from '/user.webp'
 
 import { Button } from "@/components/ui/button"
@@ -16,17 +16,18 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Link } from 'react-router-dom';
 import { UserContext } from '@/Contexts/UserContext'
 import axios from 'axios'
+import Logo from '/Logo.png'
 
-const userContext = useContext(UserContext);
-if (!userContext) {
-  throw new Error("UserContext must be used within a UserContextProvider");
-}
-const { userToken,setUserToken,setUserId,setShowAddProject, pathUrl} = userContext;
+
 
 
 export default function Navbar() {
 
-
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { userToken,setUserToken,setUserId,setShowAddProject} = userContext;
 
   function logout(){
     setUserToken('')
@@ -40,12 +41,13 @@ export default function Navbar() {
   return (
     <header className={` sticky top-0 z-50 w-full border-b  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 `}>
       <div className="container flex h-16 items-center justify-between px-4 md:px-8">
-        <Link
+      <Link
           to="/"
           className="flex items-center gap-2 text-xl font-bold text-[#2D2D4C] md:text-2xl group"
         >
-          <Home className="h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg]" />
-          <span className="transition-colors duration-300 group-hover:text-primary">Home4U</span>
+          <img src={Logo} alt="Logo" className=' h-14 w-30 '/>
+          {/* <Home className="h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg]" /> */}
+          
         </Link>
 
         {userToken && <nav className="hidden md:flex items-center space-x-6">
@@ -188,6 +190,11 @@ interface IUserTypes{
 }
 
 function JoinUsButton() {
+  const userContext = useContext(UserContext);
+if (!userContext) {
+  throw new Error("UserContext must be used within a UserContextProvider");
+}
+const {  pathUrl} = userContext;
   const [isOpen, setIsOpen] = useState(false)
   const [userTypes, setUserTypes] = useState<IUserTypes[]>([])
 

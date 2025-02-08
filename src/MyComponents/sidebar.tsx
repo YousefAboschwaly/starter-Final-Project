@@ -29,7 +29,7 @@ export function Sidebar() {
 
       {/* Profile Info */}
       <div className="flex flex-col items-center space-y-2 p-4 pt-0">
-        <h2 className="text-base font-medium">Mohamed Ahmed</h2>
+        <h2 className="text-base font-medium">Yousef Mohamed </h2>
         <p className="text-sm text-gray-500">Interior designer</p>
         <div className="flex">
           {"★★★★☆".split("").map((star, i) => (

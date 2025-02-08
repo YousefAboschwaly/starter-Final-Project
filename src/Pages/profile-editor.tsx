@@ -188,9 +188,12 @@ const ProfileEditor = () => {
 
   console.log("personalPhoto---->", personalPhoto)
   console.log("PreviewImage---->", previewImage)
-  let user_type = localStorage.getItem("user-type")
-  user_type = user_type ? user_type.replace(/_/g, "-") : user_type
+  let user_type = localStorage.getItem("user-type");
+  // Ensure user_type is a valid string before replacing spaces
+  user_type = user_type ? user_type.replace(/\s+/g, "-") : null;
 
+  console.log(user_type);
+  
   const basicRef = useRef<HTMLDivElement>(null)
   const bioRef = useRef<HTMLDivElement>(null)
   const linksRef = useRef<HTMLDivElement>(null)

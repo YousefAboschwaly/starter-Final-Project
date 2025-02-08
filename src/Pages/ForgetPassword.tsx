@@ -12,13 +12,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { OTPVerificationForm } from "../MyComponents/OTPVerificationForm";
 import { UserContext } from "@/Contexts/UserContext";
 
-const userContext = useContext(UserContext);
-if (!userContext) {
-  throw new Error("UserContext must be used within a UserContextProvider");
-}
-const { pathUrl} = userContext;
+
 // API Configuration
-const BASE_URL =pathUrl ;
 
 // Validation Schemas
 const emailValidationSchema = Yup.object().shape({
@@ -165,6 +160,13 @@ function EmailStep({
   onNext: (email: string) => void;
   setAlert: (alert: { show: boolean; message: string; type: "success" | "error" }) => void;
 }) {
+
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { pathUrl} = userContext;
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -178,7 +180,7 @@ function EmailStep({
       setError("");
       try {
         const { data } = await axios.post(
-          `${BASE_URL}/api/v1/auth/send-otp?email=${values.email}`,
+          `${pathUrl}/api/v1/auth/send-otp?email=${values.email}`,
           {},
           {
             headers: { "Accept-Language": "en" },
@@ -269,9 +271,15 @@ function EmailStep({
 
 // Verification Step Component
 function VerificationStep({ onNext, email, setAlert }: { onNext: (code: string) => void, email: string, setAlert: (alert: {show: boolean, message: string, type: 'success' | 'error'}) => void }) {
+
+  const userContext = useContext(UserContext);
+if (!userContext) {
+  throw new Error("UserContext must be used within a UserContextProvider");
+}
+const { pathUrl} = userContext;
   const handleVerifyCode = async (code: string) => {
     try {
-      const { data } = await axios.post(`${BASE_URL}/api/v1/auth/activate-the-account?email=${email}&otp=${code}`, {}, {
+      const { data } = await axios.post(`${pathUrl}/api/v1/auth/activate-the-account?email=${email}&otp=${code}`, {}, {
         headers: {
           'Accept-Language': 'en'
         }
@@ -308,6 +316,13 @@ function NewPasswordStep({
   onNext: (password: string) => void;
   setAlert: (alert: { show: boolean; message: string; type: "success" | "error" }) => void;
 }) {
+
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { pathUrl} = userContext;
+
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
     new: false,
@@ -325,7 +340,7 @@ function NewPasswordStep({
       setIsLoading(true);
       try {
         const { data } = await axios.put(
-          `${BASE_URL}/api/v1/auth/reset-password?email=${email}&newPassword=${formik.values.newPassword}`,
+          `${pathUrl}/api/v1/auth/reset-password?email=${email}&newPassword=${formik.values.newPassword}`,
           {},
           {
             headers: {
