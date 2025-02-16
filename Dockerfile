@@ -5,6 +5,7 @@ COPY . .
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 RUN npm install
 RUN npm run build --configuration=production
+
 #stage 2
 
 FROM nginx:mainline-alpine-perl
