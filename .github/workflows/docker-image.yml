@@ -31,4 +31,4 @@ jobs:
     - name: update artifacts
       run: |
           curl \
-          "http://149.102.135.15:8080/generic-webhook-trigger/invoke?token=w34iK1MmmaOJfZ6deuFeRvtzuxgOxFoqQHoRh2E74lXs4tVyS2jUZWHj0VgYCQFP"
+          "http://149.102.135.15:8080/generic-webhook-trigger/invoke?token=w34iK1MmmaOJfZ6deuFeRvtzuxgOxFoqQHoRh2E74lXs4tVyS2jUZWHj0VgYCQFPHOME4U-UI"
