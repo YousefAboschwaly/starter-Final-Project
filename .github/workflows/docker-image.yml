@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Delete all artifacts
+      uses: geekyeggo/delete-artifact@v2
+      with:
+        name: '*'
+        
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag home4u/home4u-ui && docker save home4u/home4u-ui > home4u-ui.tar
