@@ -33,6 +33,7 @@ export default function Navbar() {
     setUserToken('')
     setUserId(null)
     localStorage.removeItem('userToken')
+    localStorage.removeItem('isLoggedIn')
     localStorage.removeItem('user-id')
     localStorage.removeItem('user-type')
   }

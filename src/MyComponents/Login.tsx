@@ -199,16 +199,17 @@ export default function Login() {
            setUserToken( data.data.token)  // Small delay to show toaster before navigating
           setIsMakeOtp(false)
         }
-      
+        setIsLoading(false); 
+        setUserToken( data.data.token);
 
-        setTimeout(() => {navigate("/") ; setIsLoading(false); setUserToken( data.data.token)}  , 3000);  // Small delay to show toaster before navigating
+        navigate("/") ;  
       }
     
     
        
         else{
         setAlert({ message: data.message, type: 'error' });
-        setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 5000); }
+        setTimeout(() =>  {setAlert(null); setIsLoading(false)}, 3000); }
       
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
