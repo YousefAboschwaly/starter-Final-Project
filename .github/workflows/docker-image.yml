@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Delete all artifacts
+      uses: geekyeggo/delete-artifact@v2
+      with:
+        name: '*'
+        
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: docker build . --file Dockerfile --tag home4u/home4u-ui && docker save home4u/home4u-ui > home4u-ui.tar
@@ -31,4 +36,4 @@ jobs:
     - name: update artifacts
       run: |
           curl \
-          "http://149.102.135.15:8080/generic-webhook-trigger/invoke?token=w34iK1MmmaOJfZ6deuFeRvtzuxgOxFoqQHoRh2E74lXs4tVyS2jUZWHj0VgYCQFP"
+          "http://149.102.135.15:8080/generic-webhook-trigger/invoke?token=w34iK1MmmaOJfZ6deuFeRvtzuxgOxFoqQHoRh2E74lXs4tVyS2jUZWHj0VgYCQFPHOME4U-UI"
