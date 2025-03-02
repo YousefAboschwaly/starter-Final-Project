@@ -26,7 +26,7 @@
   --chart-3: 197 37% 24%;
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
-  --radius: 0.5rem
+  --radius: 0.5rem;
 }
 .dark {
   --background: 240 10% 3.9%;
@@ -52,32 +52,38 @@
   --chart-2: 160 60% 45%;
   --chart-3: 30 80% 55%;
   --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%
+  --chart-5: 340 75% 55%;
 }
 
 @layer base {
-* {
-  @apply border-border;
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "IBM Plex Sans Arabic", sans-serif;
+  }
 }
-body {
-  @apply bg-background text-foreground;
+.product {
+  @apply transition-all duration-500;
+}
+.product:hover {
+  box-shadow: 1px 1px 10px #4fa74f;
+}
+
+.btn {
   font-family: "IBM Plex Sans Arabic", sans-serif;
 }
+.primary-grad {
+  @apply bg-gradient-to-r from-[#545476] to-[#0D132C] text-white hover:opacity-90 transition-opacity duration-200;
 }
-.product{
-@apply   transition-all duration-500;
-
+.secondary-grad {
+  @apply bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] text-[#2D2D4C] hover:opacity-90 transition-opacity duration-200;
 }
-.product:hover{
-box-shadow: 1px 1px 10px #4fa74f;
-}
-
-.btn{
-  font-family: "IBM Plex Sans Arabic", sans-serif;
-}
-.primary-grad{
-  @apply bg-gradient-to-r from-[#545476] to-[#0D132C] text-white hover:opacity-90 transition-opacity duration-200
-}
-.secondary-grad{
-  @apply bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] text-[#2D2D4C] hover:opacity-90 transition-opacity duration-200
+.top-center-toast {
+  position: fixed !important;
+  top: 1.5rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
 }

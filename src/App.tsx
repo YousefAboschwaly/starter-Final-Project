@@ -1,4 +1,7 @@
-import { createBrowserRouter , RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
 import Home from "./MyComponents/Home";
 import About from "./MyComponents/About";
 import NotFound from "./MyComponents/NotFound";
@@ -14,43 +17,93 @@ import ForgetPassword from "./Pages/ForgetPassword";
 import ProtectedRoute from "./MyComponents/ProtectedRoute";
 import UserContextProvider from "./Contexts/UserContext";
 import AccessAccount from "./MyComponents/AccessAccount";
-import ProfileEditor from './Pages/profile-editor';
+import ProfileEditor from "./Pages/profile-editor";
 import Profile from "./Pages/profile";
+import Project from "./Pages/project";
 
+// Initialize QueryClient outside the component
+const queryClient = new QueryClient();
 
 function App() {
   const routes = createBrowserRouter([
-    { path: "", element: <Layout /> , children:[
-      {path:'edit_profile' , element: <ProtectedRoute><ProfileEditor/></ProtectedRoute>},
-      {path:'profile' , element:<ProtectedRoute><Profile/></ProtectedRoute>},
-      { index:true, element:<ProtectedRoute><Home /></ProtectedRoute>  },
-      { path: "about", element:<ProtectedRoute><About /></ProtectedRoute> },
-      { path: "products", element:<ProtectedRoute><Products /> </ProtectedRoute>},
-      { path: "client", element: <Client /> , children:[
-        {index:true ,  element: <Login/>},
-        { path: "signup", element: <SignUp /> },
-      ] },
-      {path:'forgot-password' , element:<ForgetPassword/>},
-      {path:'access-account/:email' , element:<AccessAccount/>},
-      {path:'join-as/:userType' , element:<Company/>},
-      {path:'engineer' , element:<Engineer/>},
-      {path:'consultative' , element:<Technical/>},
-
-
-
-      {path:'*' , element:<NotFound/>}
-    ]},
- 
+    {
+      path: "",
+      element: <Layout />,
+      children: [
+        {
+          path: "edit_profile",
+          element: (
+            <ProtectedRoute>
+              <ProfileEditor />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "profile",
+          element: (
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          index: true,
+          element: (
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "about",
+          element: (
+            <ProtectedRoute>
+              <About />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "products",
+          element: (
+            <ProtectedRoute>
+              <Products />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "project/:projectId",
+          element: (
+            <ProtectedRoute>
+              <Project />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "client",
+          element: <Client />,
+          children: [
+            { index: true, element: <Login /> },
+            { path: "signup", element: <SignUp /> },
+          ],
+        },
+        { path: "forgot-password", element: <ForgetPassword /> },
+        { path: "access-account/:email", element: <AccessAccount /> },
+        { path: "join-as/:userType", element: <Company /> },
+        { path: "engineer", element: <Engineer /> },
+        { path: "consultative", element: <Technical /> },
+        { path: "*", element: <NotFound /> }, // Wildcard route for 404
+      ],
+    },
   ]);
 
   return (
-    <>
-    
-    <UserContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <ReactQueryDevtools initialIsOpen={false} />
 
-        <RouterProvider router={routes}/> 
-    </UserContextProvider>
-    </>
+      <UserContextProvider>
+        <RouterProvider router={routes} />
+      </UserContextProvider>
+    </QueryClientProvider>
   );
 }
 

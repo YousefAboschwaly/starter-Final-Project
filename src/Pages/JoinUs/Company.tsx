@@ -1,13 +1,18 @@
+"use client";
+
 import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Briefcase } from 'lucide-react';
+import { Loader2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useFormik } from "formik";
+import { FormikErrors, FormikTouched, useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { RegisterForm, ISignUpForm } from "../../MyComponents/RegisterForm";
+import {
+  RegisterForm,
+  type ISignUpForm,
+} from "../../MyComponents/RegisterForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
@@ -34,6 +39,31 @@ interface ITechnicalWorkerService {
   name: string;
 }
 
+interface IBusinessFormValues {
+  tradName: string;
+  bioAr: string;
+  bioEn: string;
+  businessTypes: Array<{ id: number }>;
+}
+
+interface IStoreForm {
+  store: {
+    tradName: string;
+    bioAr: string;
+    bioEn: string;
+    businessTypes: Array<{ id: number }>;
+  };
+}
+
+interface IExhibitionForm {
+  exhibition: {
+    tradName: string;
+    bioAr: string;
+    bioEn: string;
+    businessTypes: Array<{ id: number }>;
+  };
+}
+
 const BackgroundSlider = () => {
   const images = [
     "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&auto=format&fit=crop&q=60",
@@ -49,7 +79,7 @@ const BackgroundSlider = () => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [images.length]); // Removed unnecessary dependency: images.length
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -90,7 +120,7 @@ const CompanyAnimation = () => {
               duration: 5,
               ease: "easeInOut",
               times: [0, 0.5, 1],
-              repeat: Infinity,
+              repeat: Number.POSITIVE_INFINITY,
             }}
           >
             <Briefcase className="w-16 h-16 text-primary" />
@@ -133,6 +163,11 @@ interface IEngineerForm {
     engineerServ: Array<{ id: number }>;
   };
 }
+
+type FormValues = IEngineerForm &
+  ITechnicalWorkerForm & { store: IBusinessFormValues } & {
+    exhibition: IBusinessFormValues;
+  };
 
 const validationSchema = Yup.object().shape({
   engineer: Yup.object().shape({
@@ -183,6 +218,34 @@ const validationSchema = Yup.object().shape({
     id: Yup.number().required("User type is required"),
     code: Yup.string().required("User type code is required"),
   }),
+  store: Yup.object().when("userType.code", {
+    is: "STORE",
+    then: () =>
+      Yup.object().shape({
+        tradName: Yup.string().required("Trade name is required"),
+        bioAr: Yup.string().required("Arabic bio is required"),
+        bioEn: Yup.string().required("English bio is required"),
+        businessTypes: Yup.array().min(
+          1,
+          "At least one business type is required"
+        ),
+      }),
+    otherwise: () => Yup.object().strip(),
+  }),
+  exhibition: Yup.object().when("userType.code", {
+    is: "EXHIBITION",
+    then: () =>
+      Yup.object().shape({
+        tradName: Yup.string().required("Trade name is required"),
+        bioAr: Yup.string().required("Arabic bio is required"),
+        bioEn: Yup.string().required("English bio is required"),
+        businessTypes: Yup.array().min(
+          1,
+          "At least one business type is required"
+        ),
+      }),
+    otherwise: () => Yup.object().strip(),
+  }),
 });
 
 const Alert = ({
@@ -206,6 +269,35 @@ const Alert = ({
   );
 };
 
+interface IDataToSend {
+  userType: { id: number; code: string };
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  password: string;
+  rePassword?: string;
+  engineer?: {
+    type: { id: number };
+    yearsOfExperience: number;
+    engineerServ: Array<{ id: number }>;
+  };
+  technicalWorker?: {
+    type: { id: number };
+    yearsOfExperience: number;
+    workerServs: Array<{ id: number }>;
+  };
+  business?: {
+    userType: { id: number };
+    tradName: string;
+    bioAr: string;
+    bioEn: string;
+    businessTypes: Array<{ id: number }>;
+  };
+  governorate?: { id: number };
+  city?: { id: number };
+}
+
 export default function Company() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -216,7 +308,11 @@ export default function Company() {
     code: "",
   });
   const [formData, setFormData] = useState<
-    ISignUpForm & IEngineerForm & ITechnicalWorkerForm
+    ISignUpForm &
+      IEngineerForm &
+      ITechnicalWorkerForm &
+      IStoreForm &
+      IExhibitionForm
   >({
     firstName: "",
     lastName: "",
@@ -235,6 +331,18 @@ export default function Company() {
       yearsOfExperience: "",
       workerServs: [],
     },
+    store: {
+      tradName: "",
+      bioAr: "",
+      bioEn: "",
+      businessTypes: [],
+    },
+    exhibition: {
+      tradName: "",
+      bioAr: "",
+      bioEn: "",
+      businessTypes: [],
+    },
   });
   const [userTypes, setUserTypes] = useState<IUserTypes[]>([]);
   const [engineerTypes, setEngineerTypes] = useState<ILocation[]>([]);
@@ -245,6 +353,7 @@ export default function Company() {
   const [technicalWorkerServices, setTechnicalWorkerServices] = useState<
     ITechnicalWorkerService[]
   >([]);
+  const [businessTypes, setBusinessTypes] = useState<ILocation[]>([]);
   const [alert, setAlert] = useState<{
     message: string;
     type: "success" | "error";
@@ -256,7 +365,7 @@ export default function Company() {
   }
   const { pathUrl } = userContext;
 
-  const formik = useFormik<IEngineerForm & ITechnicalWorkerForm>({
+  const formik = useFormik<FormValues>({
     initialValues: {
       engineer: {
         type: { id: 0 },
@@ -268,6 +377,18 @@ export default function Company() {
         yearsOfExperience: "",
         workerServs: [],
       },
+      store: {
+        tradName: "",
+        bioAr: "",
+        bioEn: "",
+        businessTypes: [],
+      },
+      exhibition: {
+        tradName: "",
+        bioAr: "",
+        bioEn: "",
+        businessTypes: [],
+      },
     },
     validationSchema,
     onSubmit: () => {}, // Empty function as we're handling submission manually
@@ -276,12 +397,9 @@ export default function Company() {
   useEffect(() => {
     async function getUserTypes() {
       try {
-        const { data } = await axios.get(
-          `${pathUrl}/api/v1/user-types`,
-          {
-            headers: { "Accept-Language": "en" },
-          }
-        );
+        const { data } = await axios.get(`${pathUrl}/api/v1/user-types`, {
+          headers: { "Accept-Language": "en" },
+        });
         setUserTypes(data.data);
       } catch (error) {
         console.error("Error fetching User Types:", error);
@@ -292,7 +410,7 @@ export default function Company() {
       }
     }
     getUserTypes();
-  }, []);
+  }, [pathUrl]);
 
   useEffect(() => {
     if (userTypes.length > 0 && userTypeParam) {
@@ -312,21 +430,20 @@ export default function Company() {
   useEffect(() => {
     async function getEngineerTypes() {
       try {
-        const { data } = await axios.get(
-          `${pathUrl}/api/v1/engineer-types`,
-          {
-            headers: {
-              "Accept-Language": "en",
-            },
-          }
-        );
+        const { data } = await axios.get(`${pathUrl}/api/v1/engineer-types`, {
+          headers: {
+            "Accept-Language": "en",
+          },
+        });
         if (data.success) {
           setEngineerTypes(
-            data.data.map((item: any) => ({
-              id: item.id,
-              code: item.code || "",
-              name: item.name,
-            }))
+            data.data.map(
+              (item: { id: number; code?: string; name: string }) => ({
+                id: item.id,
+                code: item.code || "",
+                name: item.name,
+              })
+            )
           );
         }
       } catch (error) {
@@ -341,7 +458,7 @@ export default function Company() {
       }
     }
     getEngineerTypes();
-  }, []);
+  }, [pathUrl]);
 
   useEffect(() => {
     async function getEngineerServices(engineerTypeId: number) {
@@ -356,11 +473,13 @@ export default function Company() {
         );
         if (data.success) {
           setEngineerServices(
-            data.data.map((item: any) => ({
-              id: item.id,
-              code: item.code || "",
-              name: item.name,
-            }))
+            data.data.map(
+              (item: { id: number; code?: string; name: string }) => ({
+                id: item.id,
+                code: item.code || "",
+                name: item.name,
+              })
+            )
           );
         }
       } catch (error) {
@@ -374,67 +493,96 @@ export default function Company() {
     if (formik.values.engineer.type.id) {
       getEngineerServices(formik.values.engineer.type.id);
     }
-  }, [formik.values.engineer.type.id]);
+  }, [formik.values.engineer.type.id, pathUrl]);
 
-  async function getTechnicalWorkerTypes() {
-    try {
-      const { data } = await axios.get(
-        `${pathUrl}/api/v1/technical-worker-types`,
-        {
-          headers: {
-            "Accept-Language": "en",
-          },
-        }
-      );
-      if (data.success) {
-        setTechnicalWorkerTypes(
-          data.data.map((item: any) => ({
-            id: item.id,
-            code: item.code || "",
-            name: item.name,
-          }))
+  useEffect(() => {
+    async function getTechnicalWorkerTypes() {
+      try {
+        const { data } = await axios.get(
+          `${pathUrl}/api/v1/technical-worker-types`,
+          {
+            headers: {
+              "Accept-Language": "en",
+            },
+          }
         );
-      }
-    } catch (error) {
-      console.error("Error fetching technical worker types:", error);
-      setAlert({
-        message: "Failed to fetch technical worker types. Please try again.",
-        type: "error",
-      });
-    }
-  }
-
-  useEffect(() => {
-    getTechnicalWorkerTypes();
-  }, []);
-
-  async function getTechnicalWorkerServices(technicalWorkerTypeId: number) {
-    try {
-      const { data } = await axios.get(
-        `${pathUrl}/api/v1/technical-worker-services/service/${technicalWorkerTypeId}`,
-        {
-          headers: {
-            "Accept-Language": "en",
-          },
+        if (data.success) {
+          setTechnicalWorkerTypes(
+            data.data.map(
+              (item: { id: number; code?: string; name: string }) => ({
+                id: item.id,
+                code: item.code || "",
+                name: item.name,
+              })
+            )
+          );
         }
-      );
-      if (data.success) {
-        setTechnicalWorkerServices(data.data);
+      } catch (error) {
+        console.error("Error fetching technical worker types:", error);
+        setAlert({
+          message: "Failed to fetch technical worker types. Please try again.",
+          type: "error",
+        });
       }
-    } catch (error) {
-      console.error("Error fetching technical worker services:", error);
-      setAlert({
-        message: "Failed to fetch technical worker services. Please try again.",
-        type: "error",
-      });
     }
-  }
+    getTechnicalWorkerTypes();
+  }, [pathUrl]);
 
   useEffect(() => {
+    async function getTechnicalWorkerServices(technicalWorkerTypeId: number) {
+      try {
+        const { data } = await axios.get(
+          `${pathUrl}/api/v1/technical-worker-services/service/${technicalWorkerTypeId}`,
+          {
+            headers: {
+              "Accept-Language": "en",
+            },
+          }
+        );
+        if (data.success) {
+          setTechnicalWorkerServices(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching technical worker services:", error);
+        setAlert({
+          message:
+            "Failed to fetch technical worker services. Please try again.",
+          type: "error",
+        });
+      }
+    }
     if (formik.values.technicalWorker.type.id) {
       getTechnicalWorkerServices(formik.values.technicalWorker.type.id);
     }
-  }, [formik.values.technicalWorker.type.id]);
+  }, [formik.values.technicalWorker.type.id, pathUrl]);
+
+  useEffect(() => {
+    async function getBusinessTypes() {
+      console.log("userTypeId-----=>  ",userType.id,userType.code)
+      try {
+        const { data } = await axios.get(
+          `${pathUrl}/api/v1/business-types/user-type/${userType.id}`,
+          {
+            headers: {
+              "Accept-Language": "en",
+            },
+          }
+        );
+        if (data.success) {
+          setBusinessTypes(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching business types:", error);
+        setAlert({
+          message: "Failed to fetch business types. Please try again.",
+          type: "error",
+        });
+      }
+    }
+    if (userType.code === "STORE" || userType.code === "EXHIBITION") {
+      getBusinessTypes();
+    }
+  }, [userType, pathUrl]); // Added pathUrl as a dependency
 
   const {
     handleSubmit,
@@ -446,13 +594,28 @@ export default function Company() {
     setFieldValue,
   } = formik;
 
-  async function handleSignUp(values: IEngineerForm & ITechnicalWorkerForm) {
+  const formKey = userType.code.toLowerCase() as keyof FormValues;
+  const formValues = values[formKey] as IBusinessFormValues;
+  const formErrors = errors[formKey] as FormikErrors<IBusinessFormValues>;
+  const formTouched = touched[formKey] as FormikTouched<IBusinessFormValues>;
+
+  async function handleSignUp(values: FormValues) {
     setIsLoading(true);
     setAlert(null);
     try {
-      const dataToSend: any = {
+      const baseData = {
         ...formData,
-        userType: userType,
+        userType,
+      };
+
+      const dataToSend: IDataToSend = {
+        firstName: baseData.firstName,
+        lastName: baseData.lastName,
+        email: baseData.email,
+        password: baseData.password,
+        userType: baseData.userType,
+        ...(baseData.phone && { phone: baseData.phone }),
+        ...(baseData.rePassword && { rePassword: baseData.rePassword }),
       };
 
       if (userType.code === "ENGINEER") {
@@ -467,21 +630,21 @@ export default function Company() {
           yearsOfExperience: Number(values.technicalWorker.yearsOfExperience),
           workerServs: values.technicalWorker.workerServs,
         };
-      }
-
-      // Remove unnecessary fields
-      if (userType.code !== "ENGINEER") {
-        delete dataToSend.engineer;
-      }
-      if (userType.code !== "TECHNICAL_WORKER") {
-        delete dataToSend.technicalWorker;
+      } else if (userType.code === "STORE" || userType.code === "EXHIBITION") {
+        const businessData =
+          userType.code === "STORE" ? values.store : values.exhibition;
+        dataToSend.business = {
+          userType: { id: userType.id },
+          tradName: businessData.tradName,
+          bioAr: businessData.bioAr,
+          bioEn: businessData.bioEn,
+          businessTypes: businessData.businessTypes,
+        };
       }
 
       if (!dataToSend.governorate?.id) delete dataToSend.governorate;
       if (!dataToSend.city?.id) delete dataToSend.city;
       if (!dataToSend.phone) delete dataToSend.phone;
-
-      // Remove the rePassword field from the data to be sent
       delete dataToSend.rePassword;
 
       console.log("Data to send:", dataToSend);
@@ -556,49 +719,52 @@ export default function Company() {
                 className="grid gap-4"
               >
                 <form onSubmit={handleSubmit} className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="yearsOfExperience">
-                      Years of Experience
-                    </Label>
-                    <Input
-                      id="yearsOfExperience"
-                      name={
-                        userType.code === "ENGINEER"
-                          ? "engineer.yearsOfExperience"
-                          : "technicalWorker.yearsOfExperience"
-                      }
-                      type="text"
-                      value={
-                        userType.code === "ENGINEER"
-                          ? values.engineer.yearsOfExperience
-                          : values.technicalWorker.yearsOfExperience
-                      }
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      className={
-                        (userType.code === "ENGINEER"
-                          ? errors.engineer?.yearsOfExperience
-                          : errors.technicalWorker?.yearsOfExperience) &&
+                  {(userType.code === "ENGINEER" ||
+                    userType.code === "TECHNICAL_WORKER") && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="yearsOfExperience">
+                        Years of Experience
+                      </Label>
+                      <Input
+                        id="yearsOfExperience"
+                        name={
+                          userType.code === "ENGINEER"
+                            ? "engineer.yearsOfExperience"
+                            : "technicalWorker.yearsOfExperience"
+                        }
+                        type="text"
+                        value={
+                          userType.code === "ENGINEER"
+                            ? values.engineer.yearsOfExperience
+                            : values.technicalWorker.yearsOfExperience
+                        }
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={
+                          (userType.code === "ENGINEER"
+                            ? errors.engineer?.yearsOfExperience
+                            : errors.technicalWorker?.yearsOfExperience) &&
+                          (userType.code === "ENGINEER"
+                            ? touched.engineer?.yearsOfExperience
+                            : touched.technicalWorker?.yearsOfExperience)
+                            ? "border-red-500"
+                            : ""
+                        }
+                      />
+                      {(userType.code === "ENGINEER"
+                        ? errors.engineer?.yearsOfExperience
+                        : errors.technicalWorker?.yearsOfExperience) &&
                         (userType.code === "ENGINEER"
                           ? touched.engineer?.yearsOfExperience
-                          : touched.technicalWorker?.yearsOfExperience)
-                          ? "border-red-500"
-                          : ""
-                      }
-                    />
-                    {(userType.code === "ENGINEER"
-                      ? errors.engineer?.yearsOfExperience
-                      : errors.technicalWorker?.yearsOfExperience) &&
-                      (userType.code === "ENGINEER"
-                        ? touched.engineer?.yearsOfExperience
-                        : touched.technicalWorker?.yearsOfExperience) && (
-                      <p className="text-red-500 text-sm">
-                        {userType.code === "ENGINEER"
-                          ? errors.engineer?.yearsOfExperience
-                          : errors.technicalWorker?.yearsOfExperience}
-                      </p>
-                    )}
-                  </div>
+                          : touched.technicalWorker?.yearsOfExperience) && (
+                          <p className="text-red-500 text-sm">
+                            {userType.code === "ENGINEER"
+                              ? errors.engineer?.yearsOfExperience
+                              : errors.technicalWorker?.yearsOfExperience}
+                          </p>
+                        )}
+                    </div>
+                  )}
 
                   {userType.code === "ENGINEER" ? (
                     <>
@@ -676,78 +842,202 @@ export default function Company() {
                     </>
                   ) : (
                     <>
-                      <div className="grid gap-2">
-                        <Label htmlFor="technicalWorkerType">
-                          Technical Worker Type
-                        </Label>
-                        <Combobox
-                          items={technicalWorkerTypes}
-                          value={values.technicalWorker.type.id}
-                          onChange={(value) => {
-                            setFieldValue("technicalWorker.type.id", value);
-                            setFieldValue("technicalWorker.workerServs", []);
-                          }}
-                          placeholder="Select Technical Worker Type"
-                          error={errors.technicalWorker?.type?.id as string}
-                          touched={touched.technicalWorker?.type?.id}
-                        />
-                        {errors.technicalWorker?.type?.id &&
-                          touched.technicalWorker?.type?.id && (
-                            <p className="text-red-500 text-sm">
-                              {errors.technicalWorker.type.id}
-                            </p>
-                          )}
-                      </div>
-
-                      {values.technicalWorker.type.id !== 0 && (
-                        <div className="grid gap-2">
-                          <Label htmlFor="technicalWorkerServices">
-                            Technical Worker Services
-                          </Label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {technicalWorkerServices.map((service) => (
-                              <Card
-                                key={service.id}
-                                className="p-2 flex justify-between items-center"
-                              >
-                                <label
-                                  htmlFor={`service-${service.id}`}
-                                  className="flex items-center"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    id={`service-${service.id}`}
-                                    checked={values.technicalWorker.workerServs.some(
-                                      (s) => s.id === service.id
-                                    )}
-                                    onChange={(e) => {
-                                      const updatedServices = e.target.checked
-                                        ? [
-                                            ...values.technicalWorker.workerServs,
-                                            { id: service.id },
-                                          ]
-                                        : values.technicalWorker.workerServs.filter(
-                                            (s) => s.id !== service.id
-                                          );
-                                      setFieldValue(
-                                        "technicalWorker.workerServs",
-                                        updatedServices
-                                      );
-                                    }}
-                                    className="mr-2"
-                                  />
-                                  {service.name}
-                                </label>
-                              </Card>
-                            ))}
+                      {userType.code === "TECHNICAL_WORKER" && (
+                        <>
+                          <div className="grid gap-2">
+                            <Label htmlFor="technicalWorkerType">
+                              Technical Worker Type
+                            </Label>
+                            <Combobox
+                              items={technicalWorkerTypes}
+                              value={values.technicalWorker.type.id}
+                              onChange={(value) => {
+                                setFieldValue("technicalWorker.type.id", value);
+                                setFieldValue(
+                                  "technicalWorker.workerServs",
+                                  []
+                                );
+                              }}
+                              placeholder="Select Technical Worker Type"
+                              error={errors.technicalWorker?.type?.id as string}
+                              touched={touched.technicalWorker?.type?.id}
+                            />
+                            {errors.technicalWorker?.type?.id &&
+                              touched.technicalWorker?.type?.id && (
+                                <p className="text-red-500 text-sm">
+                                  {errors.technicalWorker.type.id}
+                                </p>
+                              )}
                           </div>
-                          {errors.technicalWorker?.workerServs &&
-                            touched.technicalWorker?.workerServs && (
+
+                          {values.technicalWorker.type.id !== 0 && (
+                            <div className="grid gap-2">
+                              <Label htmlFor="technicalWorkerServices">
+                                Technical Worker Services
+                              </Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {technicalWorkerServices.map((service) => (
+                                  <Card
+                                    key={service.id}
+                                    className="p-2 flex justify-between items-center"
+                                  >
+                                    <label
+                                      htmlFor={`service-${service.id}`}
+                                      className="flex items-center"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        id={`service-${service.id}`}
+                                        checked={values.technicalWorker.workerServs.some(
+                                          (s) => s.id === service.id
+                                        )}
+                                        onChange={(e) => {
+                                          const updatedServices = e.target
+                                            .checked
+                                            ? [
+                                                ...values.technicalWorker
+                                                  .workerServs,
+                                                { id: service.id },
+                                              ]
+                                            : values.technicalWorker.workerServs.filter(
+                                                (s) => s.id !== service.id
+                                              );
+                                          setFieldValue(
+                                            "technicalWorker.workerServs",
+                                            updatedServices
+                                          );
+                                        }}
+                                        className="mr-2"
+                                      />
+                                      {service.name}
+                                    </label>
+                                  </Card>
+                                ))}
+                              </div>
+                              {errors.technicalWorker?.workerServs &&
+                                touched.technicalWorker?.workerServs && (
+                                  <p className="text-red-500 text-sm">
+                                    At least one technical worker service is
+                                    required
+                                  </p>
+                                )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {(userType.code === "STORE" ||
+                        userType.code === "EXHIBITION") && (
+                        <>
+                          <div className="grid gap-2">
+                            <Label htmlFor="tradName">Trade Name</Label>
+                            <Input
+                              id="tradName"
+                              name={`${formKey}.tradName`}
+                              value={formValues.tradName}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              className={
+                                formErrors?.tradName && formTouched?.tradName
+                                  ? "border-red-500"
+                                  : ""
+                              }
+                            />
+                            {formErrors?.tradName && formTouched?.tradName && (
                               <p className="text-red-500 text-sm">
-                                At least one technical worker service is required
+                                {formErrors.tradName}
                               </p>
                             )}
-                        </div>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="bioAr">Arabic Bio</Label>
+                            <Input
+                              id="bioAr"
+                              name={`${formKey}.bioAr`}
+                              value={formValues.bioAr}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              className={
+                                formErrors?.bioAr && formTouched?.bioAr
+                                  ? "border-red-500"
+                                  : ""
+                              }
+                            />
+                            {formErrors?.bioAr && formTouched?.bioAr && (
+                              <p className="text-red-500 text-sm">
+                                {formErrors.bioAr}
+                              </p>
+                            )}
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="bioEn">English Bio</Label>
+                            <Input
+                              id="bioEn"
+                              name={`${formKey}.bioEn`}
+                              value={formValues.bioEn}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              className={
+                                formErrors?.bioEn && formTouched?.bioEn
+                                  ? "border-red-500"
+                                  : ""
+                              }
+                            />
+                            {formErrors?.bioEn && formTouched?.bioEn && (
+                              <p className="text-red-500 text-sm">
+                                {formErrors.bioEn}
+                              </p>
+                            )}
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="businessTypes">
+                              Business Types
+                            </Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {businessTypes.map((type) => (
+                                <Card
+                                  key={type.id}
+                                  className="p-2 flex justify-between items-center"
+                                >
+                                  <label
+                                    htmlFor={`businessType-${type.id}`}
+                                    className="flex items-center"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      id={`businessType-${type.id}`}
+                                      checked={formValues.businessTypes.some(
+                                        (t: { id: number }) => t.id === type.id
+                                      )}
+                                      onChange={(e) => {
+                                        const updatedTypes = e.target.checked
+                                          ? [
+                                              ...formValues.businessTypes,
+                                              { id: type.id },
+                                            ]
+                                          : formValues.businessTypes.filter(
+                                              (t: { id: number }) =>
+                                                t.id !== type.id
+                                            );
+                                        setFieldValue(
+                                          `${formKey}.businessTypes`,
+                                          updatedTypes
+                                        );
+                                      }}
+                                      className="mr-2"
+                                    />
+                                    {type.name}
+                                  </label>
+                                </Card>
+                              ))}
+                            </div>
+                            {formErrors?.businessTypes &&
+                              formTouched?.businessTypes && (
+                                <p className="text-red-500 text-sm">
+                                  At least one business type is required
+                                </p>
+                              )}
+                          </div>
+                        </>
                       )}
                     </>
                   )}
@@ -773,7 +1063,7 @@ export default function Company() {
                       className="w-full relative btn primary-grad"
                       onClick={() => {
                         handleSubmit();
-                        handleSignUp(values as IEngineerForm & ITechnicalWorkerForm);
+                        handleSignUp(values as FormValues);
                       }}
                     >
                       {isLoading ? (
@@ -795,4 +1085,3 @@ export default function Company() {
     </div>
   );
 }
-

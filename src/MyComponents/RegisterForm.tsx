@@ -262,7 +262,7 @@ export function RegisterForm({
       }
     }
     getGovernates();
-  }, []);
+  }, [pathUrl]);
 
   useEffect(() => {
     async function getCities() {
@@ -287,7 +287,7 @@ export function RegisterForm({
       }
     }
     getCities();
-  }, [values.governorate]);
+  }, [values.governorate,pathUrl]);
 
   return (
     <>

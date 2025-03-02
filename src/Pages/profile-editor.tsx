@@ -1,77 +1,35 @@
-import type React from "react"
-import { useState, useRef, useContext, useEffect, type FormEvent } from "react"
-import { ChevronLeft, Briefcase, User, Link2, Mail, Phone, Menu } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Toaster } from "react-hot-toast"
-import toast from "react-hot-toast"
-import { Link, useNavigate } from "react-router-dom"
-import axios from "axios"
-import MultiSelectOption from "../MyComponents/MultiChoice"
-import { UserContext } from "@/Contexts/UserContext"
-import { ImageUpload } from "@/MyComponents/image-upload"
-
-interface IUser {
-  id: number | null
-  user: {
-    id: number | null
-    firstName: string
-    lastName: string
-    email: string
-    phone: string | null
-    personalPhoto: string | null
-    password: string
-    userType: {
-      id: number | null
-      code: string
-      name: string | null
-    }
-    governorate?: {
-      id: number | null
-      code: string
-      name: string | null
-    }
-    city?: {
-      id: number | null
-      code: string
-      name: string | null
-    }
-    engineer: null
-    engineeringOffice: null | string
-    technicalWorker: null
-    enabled: boolean
-  }
-  type: {
-    id: number | null
-    code: string
-    name: string
-    nameAr: string
-    nameEn: string
-  }
-  yearsOfExperience?: number | null
-  engineerServ?: {
-    id: number
-    code: string
-    name: string
-    nameAr: string
-    nameEn: string
-  }[]
-  workerServs?: {
-    id: number
-    code: string
-    name: string
-    nameAr: string
-    nameEn: string
-  }[]
-  bio?: string | null
-  linkedin?: string | null
-  behance?: string | null
-}
+import type React from "react";
+import { useState, useRef, useContext, useEffect, type FormEvent } from "react";
+import {
+  ChevronLeft,
+  Briefcase,
+  User,
+  Link2,
+  Mail,
+  Phone,
+  Menu,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import MultiSelectOption from "../MyComponents/MultiChoice";
+import { UserContext } from "@/Contexts/UserContext";
+import { ImageUpload } from "@/MyComponents/image-upload";
+import { IUser } from "@/interfaces";
 
 const defaultObj: IUser = {
   id: null,
@@ -115,56 +73,66 @@ const defaultObj: IUser = {
   bio: null,
   linkedin: null,
   behance: null,
-}
+};
 
 interface IUserType {
-  id: number
-  code: string
-  name: string
-  nameAr: string
-  nameEn: string
+  id: number;
+  code: string;
+  name: string;
+  nameAr: string;
+  nameEn: string;
 }
 
 const ProfileEditor = () => {
-  const navigate = useNavigate()
-  const userContext = useContext(UserContext)
+  const navigate = useNavigate();
+  const userContext = useContext(UserContext);
   if (!userContext) {
-    throw new Error("UserContext must be used within a UserContextProvider")
+    throw new Error("UserContext must be used within a UserContextProvider");
   }
-  const { userId, userToken, pathUrl } = userContext
+  const { userId, userToken, pathUrl } = userContext;
 
-  const [activeTab, setActiveTab] = useState("basic")
-  const [isOpen, setIsOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false) // Added loading state
+  const [activeTab, setActiveTab] = useState("basic");
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added loading state
 
   // Form Data
-  const [tempDta, setTempDta] = useState<IUser>(defaultObj)
+  const [tempDta, setTempDta] = useState<IUser>(defaultObj);
 
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [phone, setPhone] = useState("")
-  const [email, setEmail] = useState("")
-  const [yearsOfExperience, setYearsOfExperience] = useState<number | null>(null)
-  const [governates, setGovernates] = useState<{ id: number; name: string }[]>([])
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [yearsOfExperience, setYearsOfExperience] = useState<number | null>(
+    null
+  );
+  const [governates, setGovernates] = useState<{ id: number; name: string }[]>(
+    []
+  );
   const [selectedGovernorate, setSelectedGovernorate] = useState<{
-    id: number | null
-    name: string
-  } | null>(null)
-  const [cities, setCities] = useState<{ id: number; name: string }[]>([])
+    id: number | null;
+    name: string;
+  } | null>(null);
+  const [cities, setCities] = useState<{ id: number; name: string }[]>([]);
   const [selectedCity, setSelectedCity] = useState<{
-    id: number | null
-    name: string
-  } | null>(null)
+    id: number | null;
+    name: string;
+  } | null>(null);
 
-  const [userTypes, setUserTypes] = useState<IUserType[]>([])
-  const [selectedUserType, setSelectedUserType] = useState<IUserType | null>(null)
-  const [userServices, setUserServices] = useState<IUserType[]>([])
-  const [selectedUserServices, setSelectedUserServices] = useState<IUserType[]>([])
-  const [bio, setBio] = useState("")
-  const [linkedin, setLinkedin] = useState("")
-  const [behance, setBehance] = useState("")
-  const [personalPhoto, setPersonalPhoto] = useState<File | null>(null)
-  const [previewImage, setPreviewImage] = useState<string | undefined>(undefined)
+  const [userTypes, setUserTypes] = useState<IUserType[]>([]);
+  const [selectedUserType, setSelectedUserType] = useState<IUserType | null>(
+    null
+  );
+  const [userServices, setUserServices] = useState<IUserType[]>([]);
+  const [selectedUserServices, setSelectedUserServices] = useState<IUserType[]>(
+    []
+  );
+  const [bio, setBio] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [behance, setBehance] = useState("");
+  const [personalPhoto, setPersonalPhoto] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | undefined>(
+    undefined
+  );
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
@@ -176,47 +144,41 @@ const ProfileEditor = () => {
     linkedin: "",
     behance: "",
     personalPhoto: "",
-  })
+  });
 
-  console.log("DAta From API", tempDta)
-  console.log("FirstName--->", firstName)
-  console.log("LastName--->", lastName)
-  console.log("selectedGovernorate---->", selectedGovernorate)
-  console.log("selectedCity---->", selectedCity)
-  console.log("selectedUserType---->", selectedUserType)
-  console.log("selectedUserServices---->", selectedUserServices)
+  console.log("DAta From API", tempDta);
 
-  console.log("personalPhoto---->", personalPhoto)
-  console.log("PreviewImage---->", previewImage)
   let user_type = localStorage.getItem("user-type");
   // Ensure user_type is a valid string before replacing spaces
   user_type = user_type ? user_type.replace(/\s+/g, "-") : null;
 
-  console.log(user_type);
-  
-  const basicRef = useRef<HTMLDivElement>(null)
-  const bioRef = useRef<HTMLDivElement>(null)
-  const linksRef = useRef<HTMLDivElement>(null)
+
+  const basicRef = useRef<HTMLDivElement>(null);
+  const bioRef = useRef<HTMLDivElement>(null);
+  const linksRef = useRef<HTMLDivElement>(null);
 
   const scrollToSection = (id: string) => {
-    setActiveTab(id)
-    const targetElement = document.getElementById(id)
+    setActiveTab(id);
+    const targetElement = document.getElementById(id);
     if (targetElement) {
-      const yOffset = -80
-      const y = targetElement.getBoundingClientRect().top + window.pageYOffset + yOffset
-      window.scrollTo({ top: y, behavior: "smooth" })
-      setIsOpen(false)
+      const yOffset = -80;
+      const y =
+        targetElement.getBoundingClientRect().top +
+        window.pageYOffset +
+        yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
+      setIsOpen(false);
     }
-  }
+  };
 
   const NavButton = ({
     id,
     label,
     icon: Icon,
   }: {
-    id: string
-    label: string
-    icon: React.ComponentType<{ className?: string }>
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
   }) => (
     <Button
       variant={activeTab === id ? "secondary" : "ghost"}
@@ -226,7 +188,7 @@ const ProfileEditor = () => {
       <Icon className="w-4 h-4 mr-2" />
       {label}
     </Button>
-  )
+  );
 
   const SidebarContent = () => (
     <nav className="space-y-1 p-2">
@@ -234,107 +196,107 @@ const ProfileEditor = () => {
       <NavButton id="bio" label="Bio" icon={Briefcase} />
       <NavButton id="links" label="Links" icon={Link2} />
     </nav>
-  )
+  );
 
   const validateEmail = (email: string) => {
-    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
-    return re.test(email)
-  }
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(email);
+  };
 
   const validatePhone = (phone: string) => {
-    const re = /^01[0125][0-9]{8}/
-    return re.test(phone)
-  }
+    const re = /^01[0125][0-9]{8}/;
+    return re.test(phone);
+  };
 
   const validateUrl = (url: string) => {
-    const re = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/
-    return re.test(url)
-  }
+    const re = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+    return re.test(url);
+  };
 
   const validateForm = () => {
-    let isValid = true
-    const newErrors = { ...errors }
+    let isValid = true;
+    const newErrors = { ...errors };
 
     if (!firstName.trim()) {
-      newErrors.firstName = "First name is required"
-      isValid = false
+      newErrors.firstName = "First name is required";
+      isValid = false;
     } else {
-      newErrors.firstName = ""
+      newErrors.firstName = "";
     }
 
     if (!lastName.trim()) {
-      newErrors.lastName = "Last name is required"
-      isValid = false
+      newErrors.lastName = "Last name is required";
+      isValid = false;
     } else {
-      newErrors.lastName = ""
+      newErrors.lastName = "";
     }
 
     if (!email.trim()) {
-      newErrors.email = "Email is required"
-      isValid = false
+      newErrors.email = "Email is required";
+      isValid = false;
     } else if (!validateEmail(email)) {
-      newErrors.email = "Invalid email format"
-      isValid = false
+      newErrors.email = "Invalid email format";
+      isValid = false;
     } else {
-      newErrors.email = ""
+      newErrors.email = "";
     }
 
     if (phone && !validatePhone(phone)) {
-      newErrors.phone = "Invalid phone number format"
-      isValid = false
+      newErrors.phone = "Invalid phone number format";
+      isValid = false;
     } else {
-      newErrors.phone = ""
+      newErrors.phone = "";
     }
 
     if (!yearsOfExperience) {
-      newErrors.yearsOfExperience = "Years of experience is required"
-      isValid = false
+      newErrors.yearsOfExperience = "Years of experience is required";
+      isValid = false;
     } else if (yearsOfExperience < 0) {
-      newErrors.yearsOfExperience = "Years of experience cannot be negative"
-      isValid = false
+      newErrors.yearsOfExperience = "Years of experience cannot be negative";
+      isValid = false;
     } else {
-      newErrors.yearsOfExperience = ""
+      newErrors.yearsOfExperience = "";
     }
 
     if (selectedGovernorate?.id && !selectedCity?.id) {
-      newErrors.city = "City is required when governorate is selected"
-      isValid = false
+      newErrors.city = "City is required when governorate is selected";
+      isValid = false;
     } else {
-      newErrors.city = ""
+      newErrors.city = "";
     }
 
     if (selectedUserServices.length === 0) {
-      newErrors.userServices = "At least one service is required"
-      isValid = false
+      newErrors.userServices = "At least one service is required";
+      isValid = false;
     } else {
-      newErrors.userServices = ""
+      newErrors.userServices = "";
     }
 
     if (linkedin && !validateUrl(linkedin)) {
-      newErrors.linkedin = "Invalid LinkedIn URL"
-      isValid = false
+      newErrors.linkedin = "Invalid LinkedIn URL";
+      isValid = false;
     } else {
-      newErrors.linkedin = ""
+      newErrors.linkedin = "";
     }
 
     if (behance && !validateUrl(behance)) {
-      newErrors.behance = "Invalid Behance URL"
-      isValid = false
+      newErrors.behance = "Invalid Behance URL";
+      isValid = false;
     } else {
-      newErrors.behance = ""
+      newErrors.behance = "";
     }
 
-    setErrors(newErrors)
-    return isValid
-  }
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleConfirmEdit = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     const dataToSend: IUser = {
       id: tempDta.id,
@@ -371,24 +333,26 @@ const ProfileEditor = () => {
       bio: bio ? bio.trim() : null,
       linkedin: linkedin ? linkedin.trim() : null,
       behance: behance ? behance.trim() : null,
-    }
+    };
 
     if (tempDta.user.userType.code.toLowerCase() === "engineer") {
-      dataToSend.engineerServ = selectedUserServices
-    } else if (tempDta.user.userType.code.toLowerCase() === "technical_worker") {
-      dataToSend.workerServs = selectedUserServices
+      dataToSend.engineerServ = selectedUserServices;
+    } else if (
+      tempDta.user.userType.code.toLowerCase() === "technical_worker"
+    ) {
+      dataToSend.workerServs = selectedUserServices;
     }
 
-    const cleanDataToSend = JSON.parse(JSON.stringify(dataToSend))
+    const cleanDataToSend = JSON.parse(JSON.stringify(dataToSend));
 
-    console.log("Data to send to API ---->", cleanDataToSend)
+    console.log("Data to send to API ---->", cleanDataToSend);
 
     try {
       // Update profile
       const apiUrl =
         tempDta.user.userType.code === "ENGINEER"
           ? `${pathUrl}/api/v1/engineers`
-          : `${pathUrl}/api/v1/technical-workers`
+          : `${pathUrl}/api/v1/technical-workers`;
 
       const response = await axios.put(`${apiUrl}`, cleanDataToSend, {
         headers: {
@@ -396,13 +360,13 @@ const ProfileEditor = () => {
           Authorization: `Bearer ${userToken}`,
           "Content-Type": "application/json",
         },
-      })
+      });
 
       if (response.data.success) {
         // Upload personal photo
         if (personalPhoto) {
-          const formData = new FormData()
-          formData.append("image", personalPhoto)
+          const formData = new FormData();
+          formData.append("image", personalPhoto);
 
           const photoUploadResponse = await axios.post(
             `${pathUrl}/api/v1/users/personal_photo`,
@@ -413,116 +377,144 @@ const ProfileEditor = () => {
                 Authorization: `Bearer ${userToken}`,
                 "Content-Type": "multipart/form-data",
               },
-            },
-          )
+            }
+          );
 
           if (photoUploadResponse.data.success) {
             toast.success("Profile updated successfully!", {
               duration: 2000,
               position: "top-center",
-            })
+            });
 
             setTimeout(() => {
-              navigate("/profile")
-              window.scrollTo({ top: 0, behavior: "smooth" })
-            }, 2000)
+              navigate("/profile");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }, 2000);
           } else {
-            toast.error("Failed to upload personal photo. Please try again.")
+            toast.error("Failed to upload personal photo. Please try again.");
           }
         } else {
           toast.success("Profile updated successfully!", {
             duration: 2000,
             position: "top-center",
-          })
+          });
 
           setTimeout(() => {
-            navigate("/profile")
-            window.scrollTo({ top: 0, behavior: "smooth" })
-          }, 2000)
+            navigate("/profile");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }, 2000);
         }
       }
-
-      
     } catch (error) {
-      console.error("Error updating profile:", error)
+      console.error("Error updating profile:", error);
       if (axios.isAxiosError(error) && error.response) {
-        console.error("API Error Response:", error.response.data)
-        toast.error(`Failed to update profile: ${error.response.data.message || "Please try again."}`)
+        console.error("API Error Response:", error.response.data);
+        toast.error(
+          `Failed to update profile: ${
+            error.response.data.message || "Please try again."
+          }`
+        );
       } else {
-        toast.error("Failed to update profile. Please try again.")
+        toast.error("Failed to update profile. Please try again.");
       }
-    } 
-  }
+    }
+  };
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     async function getUserData() {
       try {
         const { data } = await axios.get(
-          `${pathUrl}/api/v1/${user_type}s/user?userId=${userId || localStorage.getItem("user-id")}`,
+          `${pathUrl}/api/v1/${user_type}s/user?userId=${
+            userId || localStorage.getItem("user-id")
+          }`,
           {
             headers: {
               "Accept-Language": "en",
               Authorization: `Bearer ${userToken}`,
             },
-          },
-        )
-        setTempDta(data.data)
-        setFirstName(data.data.user.firstName)
-        setLastName(data.data.user.lastName)
-        setPhone(data.data.user.phone === "null" ? "" : data.data.user.phone)
-        setEmail(data.data.user.email)
+            signal,
+          }
+        );
+
+        // Batch state updates
+        setTempDta((prev) => ({ ...prev, ...data.data }));
+        setFirstName(data.data.user.firstName);
+        setLastName(data.data.user.lastName);
+        setPhone(data.data.user.phone === "null" ? "" : data.data.user.phone);
+        setEmail(data.data.user.email);
         setSelectedGovernorate({
           id: data.data.user.governorate?.id,
           name: data.data.user.governorate?.code.toLowerCase(),
-        })
+        });
         setSelectedCity(
           tempDta.user.city
             ? {
                 id: tempDta.user.city.id ?? null,
-                name: tempDta.user.city.code ? tempDta.user.city.code.toLowerCase() : "",
+                name: tempDta.user.city.code
+                  ? tempDta.user.city.code.toLowerCase()
+                  : "",
               }
-            : null,
-        )
+            : null
+        );
 
-        setYearsOfExperience(data.data.yearsOfExperience)
-        setSelectedUserType(data.data.type || null)
-        setSelectedUserServices(data.data.engineerServ ?? data.data.workerServs ?? [])
-        setBio(data.data.bio || "")
-        setLinkedin(data.data.linkedin || "")
-        setBehance(data.data.behance || "")
+        setYearsOfExperience(data.data.yearsOfExperience);
+        setSelectedUserType(data.data.type || null);
+        setSelectedUserServices(
+          data.data.engineerServ ?? data.data.workerServs ?? []
+        );
+        setBio(data.data.bio || "");
+        setLinkedin(data.data.linkedin || "");
+        setBehance(data.data.behance || "");
 
+        // Set city only once from initial data
+        setSelectedCity(
+          data.data.user.city
+            ? {
+                id: data.data.user.city.id ?? null,
+                name: data.data.user.city.code
+                  ? data.data.user.city.code.toLowerCase()
+                  : "",
+              }
+            : null
+        );
+
+        // Set preview image if exists
         if (data.data.user.personalPhoto) {
           // Construct the image URL directly
-          const imageUrl = `${pathUrl}/api/v1/file/download?fileName=${data.data.user.personalPhoto}`
-          setPreviewImage(imageUrl)
+          const imageUrl = `${pathUrl}/api/v1/file/download?fileName=${data.data.user.personalPhoto}`;
+          setPreviewImage(imageUrl);
         } else {
-          setPreviewImage(undefined)
+          setPreviewImage(undefined);
         }
-      } catch (error: any) {
-        console.log(error)
+      } catch (error) {
+        console.log(error);
       }
     }
 
-    getUserData()
-  }, [userId, userToken, user_type]) // Added tempDta.user.city to dependencies
+    getUserData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, userToken, user_type, pathUrl]); // Added tempDta.user.city to dependencies
 
   useEffect(() => {
     if (tempDta?.user.governorate) {
       setSelectedGovernorate({
         id: tempDta?.user.governorate.id,
         name: tempDta?.user.governorate.code.toLowerCase() ?? "",
-      })
+      });
 
       setGovernates([
         {
           id: tempDta?.user.governorate.id ?? 0,
           name: tempDta?.user.governorate.name ?? "",
         },
-      ])
+      ]);
     }
 
-    const controller = new AbortController()
-    const signal = controller.signal
+    const controller = new AbortController();
+    const signal = controller.signal;
 
     async function getGovernates() {
       try {
@@ -531,36 +523,38 @@ const ProfileEditor = () => {
             "Accept-Language": "en",
           },
           signal,
-        })
-        setGovernates(data.data)
-      } catch (error: any) {
-        console.log(error)
+        });
+        setGovernates(data.data);
+      } catch (error) {
+        console.log(error);
       }
     }
 
-    getGovernates()
+    getGovernates();
 
     return () => {
-      controller.abort()
-    }
-  }, [tempDta?.user.governorate])
+      controller.abort();
+    };
+  }, [pathUrl, tempDta?.user.governorate]);
 
   useEffect(() => {
-    const controller = new AbortController()
-    const signal = controller.signal
+    const controller = new AbortController();
+    const signal = controller.signal;
 
     // Set city from API data first
     if (selectedGovernorate?.id !== tempDta.user.governorate?.id) {
-      setSelectedCity(null)
+      setSelectedCity(null);
     } else {
       setSelectedCity(
         tempDta.user.city
           ? {
               id: tempDta.user.city.id ?? null,
-              name: tempDta.user.city.code ? tempDta.user.city.code.toLowerCase() : "",
+              name: tempDta.user.city.code
+                ? tempDta.user.city.code.toLowerCase()
+                : "",
             }
-          : null,
-      )
+          : null
+      );
     }
 
     async function getCity() {
@@ -572,28 +566,34 @@ const ProfileEditor = () => {
               "Accept-Language": "en",
             },
             signal,
-          },
-        )
-        setCities(data.data)
-      } catch (error: any) {
-        console.log(error)
+          }
+        );
+        setCities(data.data);
+      } catch (error) {
+        console.log(error);
       }
     }
 
     if (selectedGovernorate?.id) {
-      getCity()
+      getCity();
     }
 
     return () => {
-      controller.abort()
-    }
-  }, [selectedGovernorate?.id, tempDta.user.city]) // Added tempDta.user.city to dependencies
+      controller.abort();
+    };
+  }, [
+    pathUrl,
+    selectedGovernorate?.id,
+    tempDta.user.city,
+    tempDta.user.governorate?.id,
+  ]); // Added tempDta.user.city to dependencies
 
   useEffect(() => {
-    const controller = new AbortController()
-    const signal = controller.signal
+    const controller = new AbortController();
+    const signal = controller.signal;
 
-    const type = tempDta?.user.userType.code.toLowerCase().replace(/_/g, "-") + "-types"
+    const type =
+      tempDta?.user.userType.code.toLowerCase().replace(/_/g, "-") + "-types";
     async function getUserType() {
       try {
         const { data } = await axios.get(`${pathUrl}/api/v1/${type}`, {
@@ -601,33 +601,33 @@ const ProfileEditor = () => {
             "Accept-Language": "en",
           },
           signal,
-        })
-        setUserTypes(data.data)
-      } catch (error: any) {
-        console.log(error)
+        });
+        setUserTypes(data.data);
+      } catch (error) {
+        console.log(error);
       }
     }
 
-    getUserType()
+    getUserType();
 
     return () => {
-      controller.abort()
-    }
-  }, [tempDta?.user.userType.code])
+      controller.abort();
+    };
+  }, [pathUrl, tempDta?.user.userType.code]);
 
   useEffect(() => {
-    const controller = new AbortController()
-    const signal = controller.signal
+    const controller = new AbortController();
+    const signal = controller.signal;
     if (selectedUserType?.id !== tempDta.type?.id) {
-      setSelectedUserServices([])
+      setSelectedUserServices([]);
     } else {
       setSelectedUserServices(
         tempDta.user.userType.code.toLowerCase() === "engineer"
-          ? (tempDta.engineerServ ?? [])
-          : (tempDta.workerServs ?? []),
-      )
+          ? tempDta.engineerServ ?? []
+          : tempDta.workerServs ?? []
+      );
     }
-    const type = tempDta?.user.userType.code.toLowerCase().replace(/_/g, "-")
+    const type = tempDta?.user.userType.code.toLowerCase().replace(/_/g, "-");
     async function getUserServices() {
       try {
         const { data } = await axios.get(
@@ -638,22 +638,22 @@ const ProfileEditor = () => {
               Authorization: `Bearer ${userToken}`,
             },
             signal,
-          },
-        )
-        setUserServices(data.data)
-      } catch (error: any) {
-        console.log(error)
+          }
+        );
+        setUserServices(data.data);
+      } catch (error) {
+        console.log(error);
       }
     }
 
     if (selectedUserType?.id) {
-      getUserServices()
+      getUserServices();
     }
 
     return () => {
-      controller.abort()
-    }
-  }, [selectedUserType?.id, tempDta]) // Added tempDta to dependencies
+      controller.abort();
+    };
+  }, [pathUrl, selectedUserType?.id, tempDta, userToken]); // Added tempDta to dependencies
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8 pt-20">
@@ -685,7 +685,10 @@ const ProfileEditor = () => {
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-[240px,1fr] gap-6">
           <Card className="h-fit backdrop-blur-sm bg-white/50 dark:bg-gray-800/50 border-0 sticky top-28 shadow-lg hidden md:block">
-            <Link to={"/profile"} className="secondary-grad rounded-md hidden md:block">
+            <Link
+              to={"/profile"}
+              className="secondary-grad rounded-md hidden md:block"
+            >
               <Button
                 variant="ghost"
                 className="hover:bg-transparent backdrop-blur-sm w-full justify-start"
@@ -713,23 +716,29 @@ const ProfileEditor = () => {
                           defaultImage={previewImage}
                           onChange={(file) => {
                             if (file) {
-                              setPersonalPhoto(file)
-                              const imageUrl = URL.createObjectURL(file)
-                              setPreviewImage(imageUrl)
+                              setPersonalPhoto(file);
+                              const imageUrl = URL.createObjectURL(file);
+                              setPreviewImage(imageUrl);
                             } else {
-                              setPersonalPhoto(null)
-                              setPreviewImage(undefined)
+                              setPersonalPhoto(null);
+                              setPreviewImage(undefined);
                             }
                             setErrors((prev) => ({
                               ...prev,
                               personalPhoto: "",
-                            }))
+                            }));
                           }}
                           className="w-32 h-32 md:w-40 md:h-40"
                         />
-                        <span className="text-sm text-muted-foreground">Click to change profile picture</span>
+                        <span className="text-sm text-muted-foreground">
+                          Click to change profile picture
+                        </span>
                       </div>
-                      {errors.personalPhoto && <p className="text-red-500 text-sm">{errors.personalPhoto}</p>}
+                      {errors.personalPhoto && (
+                        <p className="text-red-500 text-sm">
+                          {errors.personalPhoto}
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-6">
@@ -739,14 +748,20 @@ const ProfileEditor = () => {
                           <Input
                             id="firstName"
                             placeholder="Enter first name"
-                            className={`mt-1 ${errors.firstName ? "border-red-500" : ""}`}
+                            className={`mt-1 ${
+                              errors.firstName ? "border-red-500" : ""
+                            }`}
                             value={firstName}
                             onChange={(e) => {
-                              setFirstName(e.target.value)
-                              setErrors((prev) => ({ ...prev, firstName: "" }))
+                              setFirstName(e.target.value);
+                              setErrors((prev) => ({ ...prev, firstName: "" }));
                             }}
                           />
-                          {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
+                          {errors.firstName && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.firstName}
+                            </p>
+                          )}
                         </div>
 
                         <div>
@@ -754,14 +769,20 @@ const ProfileEditor = () => {
                           <Input
                             id="lastName"
                             placeholder="Enter last name"
-                            className={`mt-1 ${errors.lastName ? "border-red-500" : ""}`}
+                            className={`mt-1 ${
+                              errors.lastName ? "border-red-500" : ""
+                            }`}
                             value={lastName}
                             onChange={(e) => {
-                              setLastName(e.target.value)
-                              setErrors((prev) => ({ ...prev, lastName: "" }))
+                              setLastName(e.target.value);
+                              setErrors((prev) => ({ ...prev, lastName: "" }));
                             }}
                           />
-                          {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
+                          {errors.lastName && (
+                            <p className="text-red-500 text-sm mt-1">
+                              {errors.lastName}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -773,15 +794,21 @@ const ProfileEditor = () => {
                             id="email"
                             type="email"
                             placeholder="Enter your email"
-                            className={`pl-10 mt-1 ${errors.email ? "border-red-500" : ""}`}
+                            className={`pl-10 mt-1 ${
+                              errors.email ? "border-red-500" : ""
+                            }`}
                             value={email}
                             onChange={(e) => {
-                              setEmail(e.target.value)
-                              setErrors((prev) => ({ ...prev, email: "" }))
+                              setEmail(e.target.value);
+                              setErrors((prev) => ({ ...prev, email: "" }));
                             }}
                           />
                         </div>
-                        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                        {errors.email && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.email}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -792,15 +819,21 @@ const ProfileEditor = () => {
                             id="phone"
                             type="tel"
                             placeholder="Enter phone number"
-                            className={`pl-10 mt-1 ${errors.phone ? "border-red-500" : ""}`}
+                            className={`pl-10 mt-1 ${
+                              errors.phone ? "border-red-500" : ""
+                            }`}
                             value={phone ?? ""} // Update 2: Handle null phone values
                             onChange={(e) => {
-                              setPhone(e.target.value)
-                              setErrors((prev) => ({ ...prev, phone: "" }))
+                              setPhone(e.target.value);
+                              setErrors((prev) => ({ ...prev, phone: "" }));
                             }}
                           />
                         </div>
-                        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                        {errors.phone && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.phone}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -808,18 +841,25 @@ const ProfileEditor = () => {
                         <Select
                           value={selectedGovernorate?.id?.toString() ?? ""}
                           onValueChange={(id) => {
-                            const selected = governates.find((gov) => gov.id.toString() === id)
+                            const selected = governates.find(
+                              (gov) => gov.id.toString() === id
+                            );
 
                             // Ensure selectedGovernorate is not null before comparing IDs
-                            if (selected && selectedGovernorate?.id !== selected.id) {
-                              setSelectedCity(null)
+                            if (
+                              selected &&
+                              selectedGovernorate?.id !== selected.id
+                            ) {
+                              setSelectedCity(null);
                             }
 
                             setSelectedGovernorate((prev) =>
-                              selected ? { id: selected.id, name: selected.name } : prev,
-                            )
+                              selected
+                                ? { id: selected.id, name: selected.name }
+                                : prev
+                            );
 
-                            setErrors((prev) => ({ ...prev, city: "" }))
+                            setErrors((prev) => ({ ...prev, city: "" }));
                           }}
                         >
                           <SelectTrigger className="mt-1">
@@ -827,7 +867,10 @@ const ProfileEditor = () => {
                           </SelectTrigger>
                           <SelectContent>
                             {governates.map((gover) => (
-                              <SelectItem key={gover.id} value={gover.id.toString()}>
+                              <SelectItem
+                                key={gover.id}
+                                value={gover.id.toString()}
+                              >
                                 {gover.name}
                               </SelectItem>
                             ))}
@@ -838,11 +881,20 @@ const ProfileEditor = () => {
                       <div>
                         <Label htmlFor="city">City</Label>
                         <Select
-                          value={selectedCity?.id?.toString() || tempDta.user.city?.id?.toString()}
+                          value={
+                            selectedCity?.id?.toString() ||
+                            tempDta.user.city?.id?.toString()
+                          }
                           onValueChange={(id) => {
-                            const selected = cities.find((city) => city.id.toString() === id)
-                            setSelectedCity((prev) => (selected ? { id: selected.id, name: selected.name } : prev))
-                            setErrors((prev) => ({ ...prev, city: "" }))
+                            const selected = cities.find(
+                              (city) => city.id.toString() === id
+                            );
+                            setSelectedCity((prev) =>
+                              selected
+                                ? { id: selected.id, name: selected.name }
+                                : prev
+                            );
+                            setErrors((prev) => ({ ...prev, city: "" }));
                           }}
                         >
                           <SelectTrigger className="mt-1">
@@ -850,13 +902,20 @@ const ProfileEditor = () => {
                           </SelectTrigger>
                           <SelectContent>
                             {cities.map((city) => (
-                              <SelectItem key={city.id} value={city.id.toString()}>
+                              <SelectItem
+                                key={city.id}
+                                value={city.id.toString()}
+                              >
                                 {city.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
+                        {errors.city && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.city}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -865,33 +924,52 @@ const ProfileEditor = () => {
                           id="experience"
                           type="text"
                           placeholder="Enter years of experience"
-                          className={`mt-1 ${errors.yearsOfExperience ? "border-red-500" : ""}`}
+                          className={`mt-1 ${
+                            errors.yearsOfExperience ? "border-red-500" : ""
+                          }`}
                           value={yearsOfExperience?.toString() ?? ""}
                           onChange={(e) => {
-                            const value = e.target.value ? Number.parseInt(e.target.value) : null
-                            setYearsOfExperience(value)
+                            const value = e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : null;
+                            setYearsOfExperience(value);
                             setErrors((prev) => ({
                               ...prev,
                               yearsOfExperience: "",
-                            }))
+                            }));
                           }}
                         />
                         {errors.yearsOfExperience && (
-                          <p className="text-red-500 text-sm mt-1">{errors.yearsOfExperience}</p>
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.yearsOfExperience}
+                          </p>
                         )}
                       </div>
 
                       <div>
-                        <Label htmlFor="type">{tempDta?.user.userType.code.toLowerCase() + " type"}</Label>
+                        <Label htmlFor="type">
+                          {tempDta?.user.userType.code.toLowerCase() + " type"}
+                        </Label>
                         <Select
-                          value={selectedUserType?.id?.toString() ?? tempDta?.type?.id?.toString() ?? ""}
+                          value={
+                            selectedUserType?.id?.toString() ??
+                            tempDta?.type?.id?.toString() ??
+                            ""
+                          }
                           onValueChange={(id) => {
-                            const selected = userTypes.find((userType) => userType.id.toString() === id)
-                            if (selected && selectedUserType?.id !== selected.id) {
-                              setSelectedUserServices([])
+                            const selected = userTypes.find(
+                              (userType) => userType.id.toString() === id
+                            );
+                            if (
+                              selected &&
+                              selectedUserType?.id !== selected.id
+                            ) {
+                              setSelectedUserServices([]);
                             }
 
-                            setSelectedUserType((prev) => (selected ? selected : prev))
+                            setSelectedUserType((prev) =>
+                              selected ? selected : prev
+                            );
                           }}
                         >
                           <SelectTrigger className="mt-1">
@@ -899,7 +977,10 @@ const ProfileEditor = () => {
                           </SelectTrigger>
                           <SelectContent>
                             {userTypes.map((userType) => (
-                              <SelectItem key={userType.id} value={userType.id.toString()}>
+                              <SelectItem
+                                key={userType.id}
+                                value={userType.id.toString()}
+                              >
                                 {userType.nameEn}
                               </SelectItem>
                             ))}
@@ -912,14 +993,18 @@ const ProfileEditor = () => {
                           userServices={userServices}
                           selectedServices={selectedUserServices}
                           setSelectedServices={(services) => {
-                            setSelectedUserServices(services)
+                            setSelectedUserServices(services);
                             setErrors((prev) => ({
                               ...prev,
                               userServices: "",
-                            }))
+                            }));
                           }}
                         />
-                        {errors.userServices && <p className="text-red-500 text-sm mt-1">{errors.userServices}</p>}
+                        {errors.userServices && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {errors.userServices}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -960,14 +1045,20 @@ const ProfileEditor = () => {
                         id="linkedin"
                         type="url"
                         placeholder="https://linkedin.com/in/username"
-                        className={`mt-1 ${errors.linkedin ? "border-red-500" : ""}`}
+                        className={`mt-1 ${
+                          errors.linkedin ? "border-red-500" : ""
+                        }`}
                         value={linkedin}
                         onChange={(e) => {
-                          setLinkedin(e.target.value)
-                          setErrors((prev) => ({ ...prev, linkedin: "" }))
+                          setLinkedin(e.target.value);
+                          setErrors((prev) => ({ ...prev, linkedin: "" }));
                         }}
                       />
-                      {errors.linkedin && <p className="text-red-500 text-sm mt-1">{errors.linkedin}</p>}
+                      {errors.linkedin && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.linkedin}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="behance">Behance Profile</Label>
@@ -975,14 +1066,20 @@ const ProfileEditor = () => {
                         id="behance"
                         type="url"
                         placeholder="https://behance.net/username"
-                        className={`mt-1 ${errors.behance ? "border-red-500" : ""}`}
+                        className={`mt-1 ${
+                          errors.behance ? "border-red-500" : ""
+                        }`}
                         value={behance}
                         onChange={(e) => {
-                          setBehance(e.target.value)
-                          setErrors((prev) => ({ ...prev, behance: "" }))
+                          setBehance(e.target.value);
+                          setErrors((prev) => ({ ...prev, behance: "" }));
                         }}
                       />
-                      {errors.behance && <p className="text-red-500 text-sm mt-1">{errors.behance}</p>}
+                      {errors.behance && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.behance}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -992,7 +1089,10 @@ const ProfileEditor = () => {
                 <Button
                   type="submit"
                   className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 text-lg font-semibold shadow-lg transition-all duration-200 ease-in-out hover:scale-105"
-                  disabled={Object.values(errors).some((error) => error !== "") || isSubmitting}
+                  disabled={
+                    Object.values(errors).some((error) => error !== "") ||
+                    isSubmitting
+                  }
                 >
                   {isSubmitting ? (
                     <>
@@ -1009,8 +1109,7 @@ const ProfileEditor = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProfileEditor
-
+export default ProfileEditor;

@@ -1,16 +1,10 @@
 import { Star, Eye } from "lucide-react"
-// import pic1 from '/pic1.jpg'
-// import pic2 from '/pic2.jpg'
-// import pic3 from '/pic3.jpg'
-// import pic4 from '/pic4.jpg'
-// import pic5 from '/pic5.jpg'
-// import pic6 from '/pic6.jpg'
-// import pic7 from '/pic7.jpg'
-// import pic8 from '/pic8.jpg'
-// import pic9 from '/pic9.jpg'
-import { useContext, useEffect, useState } from "react"
+
+import { useContext } from "react"
 import { UserContext } from "@/Contexts/UserContext"
 import axios from "axios"
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 interface IProject {
   id: number;
@@ -28,54 +22,38 @@ export function PortfolioGrid() {
   }
   const { pathUrl,userToken} = userContext;
 
-  // const images =[pic1,pic2,pic3,pic4,pic5,pic6,pic7,pic8,pic9]
-  // const items = images
-  //   .map((pic, i) => ({
-  //     id: i,
-  //     image: pic,
-  //     views: "9k",
-  //     likes: "9k",
-  //   }))
+    function getProjects(){
+      return axios.get(
+        `${pathUrl}/api/v1/project/user-projects`,
+        {
+          headers: {
+            "Accept-Language": "en",
+            Authorization: `Bearer ${userToken}`,
+          },
+    })
+  }
 
-    const [projects, setProjects] = useState<IProject[]>([])
-
-    useEffect(()=>{
-      const controller = new AbortController()
-      const signal = controller.signal
-      async function getData(){
-        try {
-          const { data } = await axios.get(
-            `${pathUrl}/api/v1/project/user-projects`,
-            {
-              headers: {
-                "Accept-Language": "en",
-                Authorization: `Bearer ${userToken}`,
-              },
-              signal,
-            },
-          )
-          setProjects(data.data)
-        } catch (error: any) {
-          console.log(error)
-        }
-       
-      }
-      getData()
-      return () => {
-        controller.abort()
-      }
-    },[])
-
+const {data:projects,isLoading,isError,error}= useQuery<{data:{data:IProject[]}},Error,IProject[]>({
+  queryKey:['projects'],
+  queryFn:getProjects,
+  select:(data)=>data.data.data
+})
+if(isLoading){
+  return
+}
+if(isError){
+  console.log("error Message",error)
+}
     console.log('projects',projects)
 
   return (
     <div className="grid grid-cols-1  gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {projects?.map((item) => (
-        <div key={item.id} className="group relative aspect-square overflow-hidden rounded-2xl bg-gray-100 cursor-pointer">
+      {projects?.map((item: IProject) => (
+    <Link to={`/project/${item.id}`} key={item.id}>
+          <div  className="group relative aspect-square overflow-hidden rounded-2xl bg-gray-100 cursor-pointer">
           <img
-            src={`${pathUrl}/api/v1/file/download?fileName=${item.coverPath}` || "/placeholder.svg"}
+            src={item.coverPath ? `${pathUrl}/api/v1/file/download?fileName=${item.coverPath}` : "/placeholder.svg"}
             alt={`Portfolio item ${item.id}`}
-            
             className="object-cover transition-transform duration-700 w-full h-full  ease-out group-hover:scale-125"
           />
           {/* Stats container - bottom right corner */}
@@ -90,6 +68,7 @@ export function PortfolioGrid() {
             </div>
           </div>
         </div>
+    </Link>
       ))}
     </div>
   )

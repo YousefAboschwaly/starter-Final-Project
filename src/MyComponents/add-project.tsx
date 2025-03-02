@@ -1,52 +1,58 @@
-"use client"
-import { useContext, useState } from "react"
-import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
-import ConfirmDialog from "../MyComponents/dialog"
-import ProjectForm, { type IFormData } from "./project-form"
-import axios from "axios"
-import { UserContext } from "@/Contexts/UserContext"
+"use client";
+import { useContext, useState } from "react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+import ConfirmDialog from "./confirm-dialog";
+import axios from "axios";
+import { UserContext } from "@/Contexts/UserContext";
+import { IFormData } from "@/interfaces";
+import ProjectForm from "./project-form";
+import { Toaster } from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AddProjectProps {
-  onClose: () => void
+  onClose: () => void;
 }
 
 export default function AddProject({ onClose }: AddProjectProps) {
+  const queryClient = useQueryClient();
 
-    const userContext = useContext(UserContext);
-    if (!userContext) {
-      throw new Error("UserContext must be used within a UserContextProvider");
-    }
-    const { pathUrl } = userContext;
-  const [isLoading, setIsLoading] = useState(false)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [pendingData, setPendingData] = useState<IFormData | null>(null)
-  const { toast } = useToast()
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { pathUrl } = userContext;
+  const [isLoading, setIsLoading] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingData, setPendingData] = useState<IFormData | null>(null);
 
   const handleSubmit = async (formData: IFormData) => {
-    setPendingData(formData)
-    setShowConfirmDialog(true)
-  }
+    setPendingData(formData);
+    setShowConfirmDialog(true);
+  };
 
   const handleConfirmedSubmit = async () => {
-    if (!pendingData) return
-    setIsLoading(true)
+    if (!pendingData) return;
+    setIsLoading(true);
 
     try {
-      const formData = new FormData()
+      const formData = new FormData();
 
-      const projectDataBlob = new Blob([JSON.stringify(pendingData.projectData)], {
-        type: "application/json",
-      })
-      formData.append("projectData", projectDataBlob, "projectData.json")
+      const projectDataBlob = new Blob(
+        [JSON.stringify(pendingData.projectData)],
+        {
+          type: "application/json",
+        }
+      );
+      formData.append("projectData", projectDataBlob, "projectData.json");
 
       pendingData.images.forEach((image) => {
-        formData.append("images", image)
-      })
+        formData.append("images", image);
+      });
 
       if (pendingData.cover) {
-        formData.append("cover", pendingData.cover)
+        formData.append("cover", pendingData.cover);
       }
 
       const { data } = await axios.post(`${pathUrl}/api/v1/project`, formData, {
@@ -55,31 +61,53 @@ export default function AddProject({ onClose }: AddProjectProps) {
           Authorization: `Bearer ${localStorage.getItem("userToken")}`,
           "Content-Type": "multipart/form-data",
         },
-      })
+      });
 
-      console.log("Response data:", data)
+      console.log("Response data:", data);
 
-      if (!data.success) {
-        throw new Error(data.message || "Failed to create project")
+      if (data.success) {
+                // Invalidate queries to refetch project data
+                await queryClient.invalidateQueries(["project", data.data.id]);
+                await queryClient.invalidateQueries(["projects"])
+        setShowConfirmDialog(false);
+        onClose();
+        toast.success("🚀 Project created successfully!", {
+          duration: 2000,
+          position: "top-center",
+          style: {
+            minWidth: "400px",
+            padding: "20px 24px",
+            fontSize: "16px",
+            fontWeight: "500",
+            borderRadius: "12px",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+            background: "#16a34a",
+            color: "#fff",
+          },
+        });
+      } else {
+        throw new Error(data.message || "Failed to create project");
       }
-
-      setShowConfirmDialog(false)
-      onClose()
-      toast({
-        title: "Success",
-        description: "Project created successfully",
-      })
     } catch (error) {
-      console.error("Error creating project:", error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create project",
-      })
+      console.error("Error creating project:", error);
+      toast.error("💥 Failed to create project", {
+        duration: 2000,
+        position: "top-center",
+        style: {
+          minWidth: "400px",
+          padding: "20px 24px",
+          fontSize: "16px",
+          fontWeight: "500",
+          borderRadius: "12px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+          background: "#dc2626",
+          color: "#fff",
+        },
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -91,7 +119,11 @@ export default function AddProject({ onClose }: AddProjectProps) {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <ProjectForm onSubmit={handleSubmit} />
+          <ProjectForm
+            onSubmit={handleSubmit}
+            isLoading={isLoading || showConfirmDialog}
+            setIsLoading={setIsLoading}
+          />
         </div>
       </div>
 
@@ -105,7 +137,21 @@ export default function AddProject({ onClose }: AddProjectProps) {
         cancelText="Cancel"
         isLoading={isLoading}
       />
-    </>
-  )
-}
 
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 2000,
+          style: {
+            minWidth: "400px",
+            padding: "20px 24px",
+            fontSize: "16px",
+            fontWeight: "500",
+            borderRadius: "12px",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+          },
+        }}
+      />
+    </>
+  );
+}

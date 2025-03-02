@@ -11,7 +11,7 @@ import { useFormik } from "formik"
 import axios from "axios"
 import * as Yup from "yup"
 import { UserContext } from "@/Contexts/UserContext"
-import google from '/Google.png'
+import google from '/Google.png?url'
 import facebook from '/Facebook.png'
 
 
@@ -140,7 +140,7 @@ export default function Login() {
 
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  let navigate = useNavigate()
+  const navigate = useNavigate()
 
 
   // Use context and check for null
@@ -154,7 +154,7 @@ export default function Login() {
 
 
 
-  let validationSchema = Yup.object().shape({
+  const validationSchema = Yup.object().shape({
     emailOrPhone: Yup.string().test(
       "email-or-phone", // Test name
       "Must be a valid email or phone number", // Validation error message
@@ -175,7 +175,7 @@ export default function Login() {
     setIsLoading(true);
     console.log(formValues)
     try {
-      let { data } = await axios.post(
+      const { data } = await axios.post(
         `${pathUrl}/api/v1/auth/login`,
         formValues,{
           headers: {
@@ -186,16 +186,20 @@ export default function Login() {
       console.log(data)
       console.log(data.data.user.id)
       if (data.success ) {
+        localStorage.setItem('isLoggedIn' , data.success)
         localStorage.setItem('userToken' , data.data.token)
         localStorage.setItem('user-RefreshToken' , data.data.refreshToken)
         localStorage.setItem('user-id' , data.data.user.id)
         localStorage.setItem('user-type' , data.data.user.userType.name)
       
-        setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
         if(isMakeOtp){
-          setTimeout(() => {navigate("/edit_profile") ; setIsLoading(false); setUserToken( data.data.token)}  , 3000);  // Small delay to show toaster before navigating
+
+          navigate("/edit_profile") ; 
+          setIsLoading(false);
+           setUserToken( data.data.token)  // Small delay to show toaster before navigating
           setIsMakeOtp(false)
         }
+      
 
         setTimeout(() => {navigate("/") ; setIsLoading(false); setUserToken( data.data.token)}  , 3000);  // Small delay to show toaster before navigating
       }
@@ -224,7 +228,7 @@ export default function Login() {
   
 async function sendOtp() {
   try {
-    let { data } = await axios.post(
+    const { data } = await axios.post(
       `${pathUrl}/api/v1/auth/send-otp?email=${values.emailOrPhone}`,
       {},{
         headers: {
@@ -255,7 +259,7 @@ async function sendOtp() {
 }
 
 
-  let { values, handleBlur, handleChange, handleSubmit, errors, touched } =
+  const { values, handleBlur, handleChange, handleSubmit, errors, touched } =
     useFormik({
       initialValues: {
         emailOrPhone: "",

@@ -219,7 +219,7 @@ useEffect(() => {
     }
   }
   getUserTypes();
-}, []);
+}, [pathUrl]);
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>

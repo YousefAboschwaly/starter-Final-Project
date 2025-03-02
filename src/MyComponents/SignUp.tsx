@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import  { useContext } from "react"
 import { Card } from "@/components/ui/card"
 import { RegisterForm } from "./RegisterForm"
@@ -6,8 +7,8 @@ import { UserContext } from '../Contexts/UserContext'
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { Button } from "@/components/ui/button"
-import google from '../../public/Google.png'
-import facebook from '../../public/Facebook.png'
+import google from '/Google.png?url'
+import facebook from '/Facebook.png?url'
 
 export default function SignUp() {
 
@@ -16,33 +17,29 @@ export default function SignUp() {
     throw new Error("UserContext must be used within a UserContextProvider");
   }
   const {  pathUrl} = userContext;
-  let navigate = useNavigate()
+  const navigate = useNavigate()
 
   const handleSignup = async (formValues: ISignUpForm) => {
     console.log("Form values", formValues)
-    try {
-      const { rePassword, ...dataToSend } = formValues;
+    const { rePassword, ...dataToSend } = formValues;
 
-      // Only include governorate and city if they have values
-      if (!dataToSend.governorate?.id) delete dataToSend.governorate;
-      if (!dataToSend.city?.id) delete dataToSend.city;
-      if (!dataToSend.phone) delete dataToSend.phone;
-      console.log("data will be send to API", dataToSend)
+    // Only include governorate and city if they have values
+    if (!dataToSend.governorate?.id) delete dataToSend.governorate;
+    if (!dataToSend.city?.id) delete dataToSend.city;
+    if (!dataToSend.phone) delete dataToSend.phone;
+    console.log("data will be send to API", dataToSend)
 
-      const { data } = await axios.post(
-        `${pathUrl}/api/v1/auth/register`,
-        dataToSend,
-        {
-          headers: {
-            "Accept-Language": "en",
-          },
-        }
-      )
-      if (data.success) {
-        navigate(`/access-account/${formValues.email}`)
+    const { data } = await axios.post(
+      `${pathUrl}/api/v1/auth/register`,
+      dataToSend,
+      {
+        headers: {
+          "Accept-Language": "en",
+        },
       }
-    } catch (error) {
-      throw error;
+    )
+    if (data.success) {
+      navigate(`/access-account/${formValues.email}`)
     }
   }
 
