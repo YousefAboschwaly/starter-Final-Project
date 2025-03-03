@@ -169,7 +169,7 @@ export default function ProjectCard({
               <div className="relative h-[600px] rounded-3xl overflow-hidden group">
                 <motion.div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <img
-                  src={`${pathUrl}/api/v1/file/download?fileName=${project?.images[0].path}`}
+                  src={`${pathUrl}/${project?.images[0].path}`}
                   alt="Main project image"
                   className="w-full h-full object-cover"
                 />
@@ -189,7 +189,7 @@ export default function ProjectCard({
                         className="relative md:w-24 md:h-24 w-[5.5rem] h-[5.5rem] rounded-xl overflow-hidden cursor-pointer ring-2 ring-white/30 hover:ring-white transition-all duration-300"
                       >
                         <img
-                          src={`${pathUrl}/api/v1/file/download?fileName=${image.path}`}
+                          src={`${pathUrl}/${image.path}`}
                           alt={`Thumbnail ${index + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -328,7 +328,7 @@ export default function ProjectCard({
               className="relative max-w-7xl w-full rounded-3xl overflow-hidden"
             >
               <img
-                src={`${pathUrl}/api/v1/file/download?fileName=${project?.images[selectedImage].path}`}
+                src={`${pathUrl}/${project?.images[selectedImage].path}`}
                 alt="Preview"
                 className="w-full h-full object-contain"
               />

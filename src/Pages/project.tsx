@@ -8,7 +8,7 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { IFormData, IProjectData } from "@/interfaces";
-import ProjectCard from "@/MyComponents/Project-Card.tsx";
+import ProjectCard from "@/MyComponents/Project-Card";
 
 export default function Project() {
   const { projectId } = useParams();

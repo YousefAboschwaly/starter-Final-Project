@@ -11,13 +11,13 @@ import ProjectForm from "./project-form";
 import { Toaster } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
+
 interface AddProjectProps {
   onClose: () => void;
 }
 
 export default function AddProject({ onClose }: AddProjectProps) {
   const queryClient = useQueryClient();
-
   const userContext = useContext(UserContext);
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider");
@@ -66,28 +66,28 @@ export default function AddProject({ onClose }: AddProjectProps) {
       console.log("Response data:", data);
 
       if (data.success) {
-                // Invalidate queries to refetch project data
-                await queryClient.invalidateQueries(["project", data.data.id]);
-                await queryClient.invalidateQueries(["projects"])
+        await queryClient.invalidateQueries(["project", data.data.id]);
+        await queryClient.invalidateQueries(["projects"])
         setShowConfirmDialog(false);
-        onClose();
-        toast.success("🚀 Project created successfully!", {
-          duration: 2000,
-          position: "top-center",
-          style: {
-            minWidth: "400px",
-            padding: "20px 24px",
-            fontSize: "16px",
-            fontWeight: "500",
-            borderRadius: "12px",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
-            background: "#16a34a",
-            color: "#fff",
-          },
-        });
-      } else {
-        throw new Error(data.message || "Failed to create project");
+      onClose();
+      toast.success("🚀 Project created successfully!", {
+        duration: 2000,
+        position: "top-center",
+        style: {
+          minWidth: "400px",
+          padding: "20px 24px",
+          fontSize: "16px",
+          fontWeight: "500",
+          borderRadius: "12px",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+          background: "#16a34a",
+          color: "#fff",
+        },
+      });
       }
+      throw new Error(data.message || "Failed to create project");
+
+      
     } catch (error) {
       console.error("Error creating project:", error);
       toast.error("💥 Failed to create project", {
@@ -119,11 +119,7 @@ export default function AddProject({ onClose }: AddProjectProps) {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <ProjectForm
-            onSubmit={handleSubmit}
-            isLoading={isLoading || showConfirmDialog}
-            setIsLoading={setIsLoading}
-          />
+          <ProjectForm onSubmit={handleSubmit} />
         </div>
       </div>
 

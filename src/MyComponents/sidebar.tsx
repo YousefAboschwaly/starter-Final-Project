@@ -38,7 +38,6 @@ export function Sidebar() {
   } | null>(null);
   const [isDeleteServDialogOpen, setIsDeleteServDialogOpen] = useState(false);
 
-  const [, setIsLoadingUserData] = useState(true); // Loading state
 
   const handleAddService = () => {
     query.refetch();
@@ -113,7 +112,6 @@ export function Sidebar() {
   };
 
   const getUserData = async () => {
-    setIsLoadingUserData(true); // Set loading to true before fetching data
     const response = await axios.get(
       `${pathUrl}/api/v1/${user_type}s/user?userId=${userId || localStorage.getItem("user-id")}`,
       {
@@ -123,7 +121,6 @@ export function Sidebar() {
         },
       }
     );
-    setIsLoadingUserData(false); // Set loading to false after data is fetched
     return response;
   };
 
@@ -200,7 +197,7 @@ export function Sidebar() {
   const services = engineerServ ? engineerServ : workerServs ? workerServs : [];
 
   if (isLoading ) {
-    return <div>Loading...</div>; // Show a loading state
+    return 
   }
 
   return (
@@ -208,19 +205,15 @@ export function Sidebar() {
       {/* Use the propUserId as a key to force remount when it changes */}
       <div className="absolute -top-20 left-1/2 h-40 w-40 -translate-x-1/2 transform">
         <div className="h-full w-full overflow-hidden rounded-full border-4 border-white">
-          {personalPhoto ? (
+         
             <img
-              src={`${pathUrl}/api/v1/file/download?fileName=${personalPhoto}&t=${new Date().getTime()}`}
+              src={personalPhoto?`${pathUrl}/${personalPhoto}`:"/placeholder.svg"}
               alt="Profile"
               width={180}
               height={180}
               className="h-full w-full object-cover"
             />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center bg-gray-200">
-              Loading...
-            </div>
-          )}
+   
         </div>
       </div>
 

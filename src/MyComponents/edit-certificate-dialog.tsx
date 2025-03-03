@@ -43,7 +43,7 @@ export function EditCertificateDialog({ open, onOpenChange, selectedCert, onEdit
   }
 
   const { userToken, pathUrl } = userContext;
-  const photoBase_URL = `${pathUrl}/api/v1/file/download?fileName=`;
+  const photoBase_URL = `${pathUrl}/`;
 
   useEffect(() => {
     if (selectedCert) {
@@ -167,7 +167,8 @@ export function EditCertificateDialog({ open, onOpenChange, selectedCert, onEdit
     hasNewImage,
     originalPreviewUrl,
     onEdit,
-    onOpenChange
+    onOpenChange,
+    pathUrl
   ]);
 
   return (

@@ -440,7 +440,7 @@ export default function ProjectForm({
                     <X className="h-4 w-4" />
                   </Button>
                   <img
-                    src={`${pathUrl}/api/v1/file/download?fileName=${image.path}`}
+                    src={`${pathUrl}/${image.path}`}
                     alt={`Existing project image ${index + 1}`}
                     className="w-full h-full object-cover"
                   />

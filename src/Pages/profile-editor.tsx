@@ -484,7 +484,7 @@ const ProfileEditor = () => {
         // Set preview image if exists
         if (data.data.user.personalPhoto) {
           // Construct the image URL directly
-          const imageUrl = `${pathUrl}/api/v1/file/download?fileName=${data.data.user.personalPhoto}`;
+          const imageUrl = `${pathUrl}/${data.data.user.personalPhoto}`;
           setPreviewImage(imageUrl);
         } else {
           setPreviewImage(undefined);

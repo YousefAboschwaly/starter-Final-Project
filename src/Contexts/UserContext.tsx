@@ -27,7 +27,7 @@ export default function UserContextProvider({ children }: { children: ReactNode 
   );
   const [isMakeOtp, setIsMakeOtp] = useState<boolean>(false);
   const [showAddProject, setShowAddProject] = useState(false)
-  const [pathUrl, setPathUrl] = useState(`http://home4u.gosoftcloud.com`)
+  const [pathUrl, setPathUrl] = useState(`https://home4u.gosoftcloud.com`)
 
   useEffect(() => {
     console.log("Updating localStorage user-id:", userId);

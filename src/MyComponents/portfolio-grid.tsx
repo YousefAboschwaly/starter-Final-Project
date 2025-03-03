@@ -52,7 +52,7 @@ if(isError){
     <Link to={`/project/${item.id}`} key={item.id}>
           <div  className="group relative aspect-square overflow-hidden rounded-2xl bg-gray-100 cursor-pointer">
           <img
-            src={item.coverPath ? `${pathUrl}/api/v1/file/download?fileName=${item.coverPath}` : "/placeholder.svg"}
+            src={item.coverPath ? `${pathUrl}/${item.coverPath}` : "/placeholder.svg"}
             alt={`Portfolio item ${item.id}`}
             className="object-cover transition-transform duration-700 w-full h-full  ease-out group-hover:scale-125"
           />
