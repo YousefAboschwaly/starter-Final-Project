@@ -40,13 +40,12 @@ const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 
 export default function Home() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   useEffect(()=>{
-    return()=>{
       if(localStorage.getItem('isLoggedIn')){
         setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
         setTimeout(() =>  {setAlert(null);localStorage.removeItem('isLoggedIn')} ,3000); 
   
       }
-    }
+    
   },[])
   return (
     <>
