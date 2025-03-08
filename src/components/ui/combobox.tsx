@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +18,7 @@ import {
 } from "@/components/ui/command";
 
 interface ComboboxProps {
-  items?: { id: number; code: string; name: string }[];
+  items?: { id: number; code?: string; name: string }[];
   value?: number;
   onChange: (value: number | undefined) => void;
   placeholder: string;
@@ -44,15 +46,18 @@ export function Combobox({
       if (!item?.name) return false;
       return (
         item.name.toLowerCase().includes(query) ||
-        item.code.toLowerCase().includes(query)
+        (item.code && item.code.toLowerCase().includes(query))
       );
     });
   }, [items, searchQuery]);
 
   const handleSelect = React.useCallback(
     (currentValue: string) => {
-      const selectedId = parseInt(currentValue);
-      onChange(selectedId === value ? undefined : selectedId);
+      const selectedId = Number.parseInt(currentValue, 10);
+      // Only update if the value is actually changing
+      if (selectedId !== value) {
+        onChange(selectedId);
+      }
       setSearchQuery("");
       setOpen(false);
     },
@@ -67,7 +72,6 @@ export function Combobox({
     () => items.find((item) => item.id === value),
     [items, value]
   );
- 
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -101,7 +105,7 @@ export function Combobox({
                   <CommandItem
                     key={item.id}
                     value={item.id.toString()}
-                    onSelect={handleSelect}
+                    onSelect={(value) => handleSelect(value)}
                   >
                     <Check
                       className={`

@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+"use client";
+
+import type * as React from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,8 +12,7 @@ import axios from "axios";
 import * as Yup from "yup";
 import { Combobox } from "@/components/ui/combobox";
 
-import { ReactNode } from "react";
-import { UserContext } from "@/Contexts/UserContext";
+import type { ReactNode } from "react";
 
 axios.defaults.headers.common["ngrok-skip-browser-warning"] = "any value";
 
@@ -46,7 +48,7 @@ interface PasswordInputProps {
 
 interface ILocation {
   id: number;
-  code: string;
+  code?: string;
   name: string;
 }
 
@@ -167,6 +169,13 @@ const validationSchema = Yup.object().shape({
 
 interface SignUpFormProps {
   onSubmit: (values: ISignUpForm) => Promise<void>;
+  children?: ReactNode;
+  userType: { id: number; code: string };
+  btnText: string;
+  initialValues?: Partial<ISignUpForm>;
+  onChange?: (values: Partial<ISignUpForm>) => void;
+  governorates?: ILocation[];
+  cities?: ILocation[];
 }
 
 export function RegisterForm({
@@ -176,27 +185,15 @@ export function RegisterForm({
   btnText,
   initialValues = {},
   onChange = () => {},
-}: {
-  onSubmit: SignUpFormProps["onSubmit"];
-  children?: ReactNode;
-  userType: { id: number; code: string };
-  btnText: string;
-  initialValues?: Partial<ISignUpForm>;
-  onChange?: (values: Partial<ISignUpForm>) => void;
-}) {
+  governorates = [],
+  cities = [],
+}: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
-  const [governorates, setGovernorates] = useState<ILocation[]>([]);
-  const [cities, setCities] = useState<ILocation[]>([]);
-
-  const userContext = useContext(UserContext);
-  if (!userContext) {
-    throw new Error("UserContext must be used within a UserContextProvider");
-  }
-  const {  pathUrl} = userContext;
+  const [cityError, setCityError] = useState<string | null>(null);
 
   const formik = useFormik<ISignUpForm>({
     initialValues: {
@@ -212,6 +209,12 @@ export function RegisterForm({
     },
     validationSchema,
     onSubmit: async (values) => {
+      // Check if governorate is selected but city is not
+      if (values.governorate?.id && !values.city?.id) {
+        setCityError("City is required ");
+        return;
+      }
+
       setIsLoading(true);
       try {
         await onSubmit(values);
@@ -239,55 +242,18 @@ export function RegisterForm({
     handleChange,
   } = formik;
 
+  // Check if governorate is selected but city is not
+  useEffect(() => {
+    if (values.governorate?.id && !values.city?.id) {
+      setCityError("City is required");
+    } else {
+      setCityError(null);
+    }
+  }, [values.governorate?.id, values.city?.id]);
+
   useEffect(() => {
     onChange(formik.values);
   }, [formik.values, onChange]);
-
-  useEffect(() => {
-    async function getGovernates() {
-      try {
-        const { data } = await axios.get(
-          `${pathUrl}/api/v1/governorates`,
-          {
-            headers: {
-              "Accept-Language": "en",
-            },
-          }
-        );
-        if (data.success) {
-          setGovernorates(data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching governates:", error);
-      }
-    }
-    getGovernates();
-  }, [pathUrl]);
-
-  useEffect(() => {
-    async function getCities() {
-      if (values.governorate?.id) {
-        try {
-          const { data } = await axios.get(
-            `${pathUrl}/api/v1/cities/governorate/${values.governorate.id}`,
-            {
-              headers: {
-                "Accept-Language": "en",
-              },
-            }
-          );
-          if (data.success) {
-            setCities(data.data);
-          }
-        } catch (error) {
-          console.error("Error fetching cities:", error);
-        }
-      } else {
-        setCities([]);
-      }
-    }
-    getCities();
-  }, [values.governorate,pathUrl]);
 
   return (
     <>
@@ -440,16 +406,19 @@ export function RegisterForm({
 
           <InputAnimation>
             <div className="grid gap-2">
-              <Label htmlFor="governorate">Governorate (Optional)</Label>
+              <Label htmlFor="governorate">Governorate </Label>
               <Combobox
                 items={governorates}
                 value={values.governorate?.id}
                 onChange={(value) => {
-                  setFieldValue(
-                    "governorate",
-                    value ? { id: value } : undefined
-                  );
-                  setFieldValue("city", undefined);
+                  // Prevent unnecessary re-renders by checking if the value is actually changing
+                  if (value !== values.governorate?.id) {
+                    setFieldValue(
+                      "governorate",
+                      value ? { id: value } : undefined
+                    );
+                    setFieldValue("city", undefined);
+                  }
                 }}
                 placeholder="Select governorate..."
                 error={errors.governorate as string}
@@ -460,18 +429,26 @@ export function RegisterForm({
 
           <InputAnimation>
             <div className="grid gap-2">
-              <Label htmlFor="city">City (Optional)</Label>
+              <Label htmlFor="city">
+                {values.governorate?.id ? "City (Required)" : "City "}
+              </Label>
               <Combobox
                 items={cities}
                 value={values.city?.id}
-                onChange={(value) =>
-                  setFieldValue("city", value ? { id: value } : undefined)
-                }
+                onChange={(value) => {
+                  // Prevent unnecessary re-renders by checking if the value is actually changing
+                  if (value !== values.city?.id) {
+                    setFieldValue("city", value ? { id: value } : undefined);
+                  }
+                }}
                 placeholder="Select city..."
                 disabled={!values.governorate}
-                error={errors.city as string}
-                touched={touched.city}
+                error={cityError || (errors.city as string)}
+                touched={touched.city || !!cityError}
               />
+              <AnimatePresence>
+                {cityError && <ErrorMessage message={cityError} />}
+              </AnimatePresence>
             </div>
           </InputAnimation>
 

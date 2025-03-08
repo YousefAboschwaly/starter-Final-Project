@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FormikErrors, FormikTouched, useFormik } from "formik";
+import { type FormikErrors, type FormikTouched, useFormik } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { UserContext } from "@/Contexts/UserContext";
 
+// Interface definitions
 interface ITechnicalWorkerForm {
   technicalWorker: {
     type: {
@@ -44,6 +45,7 @@ interface IBusinessFormValues {
   bioAr: string;
   bioEn: string;
   businessTypes: Array<{ id: number }>;
+  [key: string]: string | Array<{ id: number }> | undefined;
 }
 
 interface IStoreForm {
@@ -64,6 +66,86 @@ interface IExhibitionForm {
   };
 }
 
+interface IUserTypes {
+  id: number;
+  code: string;
+  name: string;
+}
+
+interface ILocation {
+  id: number;
+  code: string;
+  name: string;
+}
+
+interface IEngineerForm {
+  engineer: {
+    type: {
+      id: number;
+    };
+    yearsOfExperience: string;
+    engineerServ: Array<{ id: number }>;
+  };
+}
+
+interface IDataToSend {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  userType: { id: number; code: string };
+  phone?: string;
+  rePassword?: string;
+  governorate?: { id: number };
+  city?: { id: number };
+  engineer?: {
+    type: { id: number };
+    yearsOfExperience: number;
+    engineerServ: Array<{ id: number }>;
+  };
+  technicalWorker?: {
+    type: { id: number };
+    yearsOfExperience: number;
+    workerServs: Array<{ id: number }>;
+  };
+  business?: {
+    userType: { id: number };
+    tradName: string;
+    bioAr: string;
+    bioEn: string;
+    businessTypes: Array<{ id: number }>;
+  };
+}
+
+type FormValues = IEngineerForm &
+  ITechnicalWorkerForm & { store: IBusinessFormValues } & {
+    exhibition: IBusinessFormValues;
+  };
+
+interface IGovernorate {
+  id: number;
+  code?: string;
+  name: string;
+}
+
+interface ICity {
+  id: number;
+  code?: string;
+  name: string;
+}
+
+interface NestedObject {
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | NestedObject
+    | Array<NestedObject | string | number | boolean | null>
+    | null
+    | undefined;
+}
+
+// Background slider component
 const BackgroundSlider = () => {
   const images = [
     "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&auto=format&fit=crop&q=60",
@@ -79,7 +161,7 @@ const BackgroundSlider = () => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [images.length]); // Removed unnecessary dependency: images.length
+  }, [images.length]);
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -100,6 +182,7 @@ const BackgroundSlider = () => {
   );
 };
 
+// Company animation component
 const CompanyAnimation = () => {
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -142,37 +225,42 @@ const CompanyAnimation = () => {
   );
 };
 
-interface IUserTypes {
-  id: number;
-  code: string;
-  name: string;
-}
+// Alert component with auto-hide functionality
+const Alert = ({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
-interface ILocation {
-  id: number;
-  code: string;
-  name: string;
-}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      className={`p-4 rounded-md shadow-md ${
+        type === "success" ? "bg-green-500" : "bg-red-500"
+      } text-white mb-4`}
+    >
+      {message}
+    </motion.div>
+  );
+};
 
-interface IEngineerForm {
-  engineer: {
-    type: {
-      id: number;
-    };
-    yearsOfExperience: string;
-    engineerServ: Array<{ id: number }>;
-  };
-}
-
-type FormValues = IEngineerForm &
-  ITechnicalWorkerForm & { store: IBusinessFormValues } & {
-    exhibition: IBusinessFormValues;
-  };
-
-const validationSchema = Yup.object().shape({
+// Validation schemas
+const engineerValidationSchema = Yup.object().shape({
   engineer: Yup.object().shape({
     type: Yup.object().shape({
-      id: Yup.number().required("Engineer type is required"),
+      id: Yup.number().min(1, "Engineer type is required"),
     }),
     yearsOfExperience: Yup.string()
       .required("Years of experience is required")
@@ -189,115 +277,49 @@ const validationSchema = Yup.object().shape({
       )
       .min(1, "At least one engineer service is required"),
   }),
+});
 
-  technicalWorker: Yup.object().when("userType.code", {
-    is: "TECHNICAL_WORKER",
-    then: () =>
-      Yup.object().shape({
-        type: Yup.object().shape({
-          id: Yup.number().required("Technical worker type is required"),
-        }),
-        yearsOfExperience: Yup.string()
-          .required("Years of experience is required")
-          .test(
-            "is-number",
-            "Must be a valid number",
-            (value) => !isNaN(Number(value))
-          ),
-        workerServs: Yup.array()
-          .of(
-            Yup.object().shape({
-              id: Yup.number().required(),
-            })
-          )
-          .min(1, "At least one technical worker service is required"),
-      }),
-    otherwise: () => Yup.object().strip(),
-  }),
-  userType: Yup.object().shape({
-    id: Yup.number().required("User type is required"),
-    code: Yup.string().required("User type code is required"),
-  }),
-  store: Yup.object().when("userType.code", {
-    is: "STORE",
-    then: () =>
-      Yup.object().shape({
-        tradName: Yup.string().required("Trade name is required"),
-        bioAr: Yup.string().required("Arabic bio is required"),
-        bioEn: Yup.string().required("English bio is required"),
-        businessTypes: Yup.array().min(
-          1,
-          "At least one business type is required"
-        ),
-      }),
-    otherwise: () => Yup.object().strip(),
-  }),
-  exhibition: Yup.object().when("userType.code", {
-    is: "EXHIBITION",
-    then: () =>
-      Yup.object().shape({
-        tradName: Yup.string().required("Trade name is required"),
-        bioAr: Yup.string().required("Arabic bio is required"),
-        bioEn: Yup.string().required("English bio is required"),
-        businessTypes: Yup.array().min(
-          1,
-          "At least one business type is required"
-        ),
-      }),
-    otherwise: () => Yup.object().strip(),
+const technicalWorkerValidationSchema = Yup.object().shape({
+  technicalWorker: Yup.object().shape({
+    type: Yup.object().shape({
+      id: Yup.number().min(1, "Technical worker type is required"),
+    }),
+    yearsOfExperience: Yup.string()
+      .required("Years of experience is required")
+      .test(
+        "is-number",
+        "Must be a valid number",
+        (value) => !isNaN(Number(value))
+      ),
+    workerServs: Yup.array()
+      .of(
+        Yup.object().shape({
+          id: Yup.number().required(),
+        })
+      )
+      .min(1, "At least one technical worker service is required"),
   }),
 });
 
-const Alert = ({
-  message,
-  type,
-}: {
-  message: string;
-  type: "success" | "error";
-}) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -50 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -50 }}
-      className={`p-4 rounded-md shadow-md ${
-        type === "success" ? "bg-green-500" : "bg-red-500"
-      } text-white mb-4`}
-    >
-      {message}
-    </motion.div>
-  );
-};
+const storeValidationSchema = Yup.object().shape({
+  store: Yup.object().shape({
+    tradName: Yup.string().required("Trade name is required"),
+    bioAr: Yup.string().required("Arabic bio is required"),
+    bioEn: Yup.string().required("English bio is required"),
+    businessTypes: Yup.array().min(1, "At least one business type is required"),
+  }),
+});
 
-interface IDataToSend {
-  userType: { id: number; code: string };
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  password: string;
-  rePassword?: string;
-  engineer?: {
-    type: { id: number };
-    yearsOfExperience: number;
-    engineerServ: Array<{ id: number }>;
-  };
-  technicalWorker?: {
-    type: { id: number };
-    yearsOfExperience: number;
-    workerServs: Array<{ id: number }>;
-  };
-  business?: {
-    userType: { id: number };
-    tradName: string;
-    bioAr: string;
-    bioEn: string;
-    businessTypes: Array<{ id: number }>;
-  };
-  governorate?: { id: number };
-  city?: { id: number };
-}
+const exhibitionValidationSchema = Yup.object().shape({
+  exhibition: Yup.object().shape({
+    tradName: Yup.string().required("Trade name is required"),
+    bioAr: Yup.string().required("Arabic bio is required"),
+    bioEn: Yup.string().required("English bio is required"),
+    businessTypes: Yup.array().min(1, "At least one business type is required"),
+  }),
+});
 
+// Main Company component
 export default function Company() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -358,6 +380,11 @@ export default function Company() {
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const [governorates, setGovernorates] = useState<IGovernorate[]>([]);
+  const [cities, setCities] = useState<ICity[]>([]);
+  const [selectedGovernorate, setSelectedGovernorate] = useState<number | null>(
+    null
+  );
 
   const userContext = useContext(UserContext);
   if (!userContext) {
@@ -365,6 +392,23 @@ export default function Company() {
   }
   const { pathUrl } = userContext;
 
+  // Get validation schema based on user type
+  const getValidationSchema = () => {
+    switch (userType.code) {
+      case "ENGINEER":
+        return engineerValidationSchema;
+      case "TECHNICAL_WORKER":
+        return technicalWorkerValidationSchema;
+      case "STORE":
+        return storeValidationSchema;
+      case "EXHIBITION":
+        return exhibitionValidationSchema;
+      default:
+        return Yup.object();
+    }
+  };
+
+  // Initialize Formik
   const formik = useFormik<FormValues>({
     initialValues: {
       engineer: {
@@ -390,10 +434,23 @@ export default function Company() {
         businessTypes: [],
       },
     },
-    validationSchema,
-    onSubmit: () => {}, // Empty function as we're handling submission manually
+    validationSchema: getValidationSchema(),
+    validateOnChange: true,
+    validateOnBlur: true,
+    validateOnMount: false,
+    onSubmit: (values) => {
+      handleSignUp(values);
+    },
   });
 
+  // Update validation schema when user type changes
+  useEffect(() => {
+    // We need to recreate the formik instance with the new validation schema
+    // This is handled by providing the validationSchema in the useFormik call
+    // The formik instance will update when userType changes because getValidationSchema() depends on userType
+  }, []); // Only depend on userType
+
+  // Fetch user types
   useEffect(() => {
     async function getUserTypes() {
       try {
@@ -412,6 +469,7 @@ export default function Company() {
     getUserTypes();
   }, [pathUrl]);
 
+  // Set user type from URL parameter
   useEffect(() => {
     if (userTypes.length > 0 && userTypeParam) {
       const matchedUserType = userTypes.find(
@@ -427,6 +485,7 @@ export default function Company() {
     }
   }, [userTypes, userTypeParam]);
 
+  // Fetch engineer types
   useEffect(() => {
     async function getEngineerTypes() {
       try {
@@ -457,9 +516,12 @@ export default function Company() {
         }
       }
     }
-    getEngineerTypes();
-  }, [pathUrl]);
+    if (userType.code === "ENGINEER") {
+      getEngineerTypes();
+    }
+  }, [pathUrl, userType.code]);
 
+  // Fetch engineer services
   useEffect(() => {
     async function getEngineerServices(engineerTypeId: number) {
       try {
@@ -495,6 +557,7 @@ export default function Company() {
     }
   }, [formik.values.engineer.type.id, pathUrl]);
 
+  // Fetch technical worker types
   useEffect(() => {
     async function getTechnicalWorkerTypes() {
       try {
@@ -525,9 +588,12 @@ export default function Company() {
         });
       }
     }
-    getTechnicalWorkerTypes();
-  }, [pathUrl]);
+    if (userType.code === "TECHNICAL_WORKER") {
+      getTechnicalWorkerTypes();
+    }
+  }, [pathUrl, userType.code]);
 
+  // Fetch technical worker services
   useEffect(() => {
     async function getTechnicalWorkerServices(technicalWorkerTypeId: number) {
       try {
@@ -556,9 +622,9 @@ export default function Company() {
     }
   }, [formik.values.technicalWorker.type.id, pathUrl]);
 
+  // Fetch business types
   useEffect(() => {
     async function getBusinessTypes() {
-      console.log("userTypeId-----=>  ",userType.id,userType.code)
       try {
         const { data } = await axios.get(
           `${pathUrl}/api/v1/business-types/user-type/${userType.id}`,
@@ -579,10 +645,83 @@ export default function Company() {
         });
       }
     }
-    if (userType.code === "STORE" || userType.code === "EXHIBITION") {
+    if (
+      (userType.code === "STORE" || userType.code === "EXHIBITION") &&
+      userType.id > 0
+    ) {
       getBusinessTypes();
     }
-  }, [userType, pathUrl]); // Added pathUrl as a dependency
+  }, [userType, pathUrl]);
+
+  // Fetch governorates
+  useEffect(() => {
+    async function getGovernorates() {
+      try {
+        const { data } = await axios.get(`${pathUrl}/api/v1/governorates`, {
+          headers: {
+            "Accept-Language": "en",
+          },
+        });
+        if (data.success) {
+          setGovernorates(
+            data.data.map(
+              (item: { id: number; code?: string; name: string }) => ({
+                id: item.id,
+                code: item.code || "",
+                name: item.name,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching governorates:", error);
+        setAlert({
+          message: "Failed to fetch governorates. Please try again.",
+          type: "error",
+        });
+      }
+    }
+    getGovernorates();
+  }, [pathUrl]);
+
+  // Fetch cities based on selected governorate
+  useEffect(() => {
+    async function getCities(governorateId: number) {
+      try {
+        const { data } = await axios.get(
+          `${pathUrl}/api/v1/cities/governorate/${governorateId}`,
+          {
+            headers: {
+              "Accept-Language": "en",
+            },
+          }
+        );
+        if (data.success) {
+          setCities(
+            data.data.map(
+              (item: { id: number; code?: string; name: string }) => ({
+                id: item.id,
+                code: item.code || "",
+                name: item.name,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching cities:", error);
+        setAlert({
+          message: "Failed to fetch cities. Please try again.",
+          type: "error",
+        });
+      }
+    }
+
+    if (selectedGovernorate) {
+      getCities(selectedGovernorate);
+    } else {
+      setCities([]);
+    }
+  }, [selectedGovernorate, pathUrl]);
 
   const {
     handleSubmit,
@@ -592,6 +731,8 @@ export default function Company() {
     errors,
     touched,
     setFieldValue,
+    setFieldTouched,
+    validateForm,
   } = formik;
 
   const formKey = userType.code.toLowerCase() as keyof FormValues;
@@ -599,9 +740,74 @@ export default function Company() {
   const formErrors = errors[formKey] as FormikErrors<IBusinessFormValues>;
   const formTouched = touched[formKey] as FormikTouched<IBusinessFormValues>;
 
+  // Handle first step form submission
+  const handleRegisterFormSubmit = async (values: ISignUpForm) => {
+    return new Promise<void>((resolve, reject) => {
+      // Check if governorate is selected but city is not
+      if (values.governorate?.id && (!values.city || !values.city.id)) {
+        reject(new Error("Please select a city for the chosen governorate"));
+        return;
+      }
+
+      setFormData((prevData) => ({ ...prevData, ...values }));
+      setCurrentStep(2);
+      resolve();
+    }).catch((error) => {
+      setAlert({
+        message: error.message,
+        type: "error",
+      });
+      throw error; // Re-throw to prevent form submission
+    });
+  };
+
+  // Touch all fields in a nested object
+  const touchAllFields = (obj: NestedObject, prefix = "") => {
+    if (!obj) return;
+
+    Object.keys(obj).forEach((key) => {
+      const path = prefix ? `${prefix}.${key}` : key;
+
+      if (
+        typeof obj[key] === "object" &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
+        touchAllFields(obj[key] as NestedObject, path);
+      } else {
+        setFieldTouched(path, true, false);
+      }
+    });
+  };
+
+  // Handle signup form submission
   async function handleSignUp(values: FormValues) {
+    // Validate form
+    const validationErrors = await validateForm();
+
+    // If there are validation errors, touch all fields to show error messages
+    if (Object.keys(validationErrors).length > 0) {
+      // Touch all fields based on user type
+      if (userType.code === "ENGINEER") {
+        touchAllFields(values.engineer, "engineer");
+      } else if (userType.code === "TECHNICAL_WORKER") {
+        touchAllFields(values.technicalWorker, "technicalWorker");
+      } else if (userType.code === "STORE") {
+        touchAllFields(values.store, "store");
+      } else if (userType.code === "EXHIBITION") {
+        touchAllFields(values.exhibition, "exhibition");
+      }
+
+      setAlert({
+        message: "Please fill in all required fields",
+        type: "error",
+      });
+      return;
+    }
+
     setIsLoading(true);
     setAlert(null);
+
     try {
       const baseData = {
         ...formData,
@@ -616,6 +822,10 @@ export default function Company() {
         userType: baseData.userType,
         ...(baseData.phone && { phone: baseData.phone }),
         ...(baseData.rePassword && { rePassword: baseData.rePassword }),
+        ...(formData.governorate && {
+          governorate: { id: formData.governorate.id },
+        }),
+        ...(formData.city && { city: { id: formData.city.id } }),
       };
 
       if (userType.code === "ENGINEER") {
@@ -658,6 +868,7 @@ export default function Company() {
           },
         }
       );
+
       console.log("API Response:", data.data);
       navigate(`/access-account/${dataToSend.email}`);
     } catch (error) {
@@ -674,14 +885,6 @@ export default function Company() {
     }
   }
 
-  const handleRegisterFormSubmit = async (values: ISignUpForm) => {
-    return new Promise<void>((resolve) => {
-      setFormData((prevData) => ({ ...prevData, ...values }));
-      setCurrentStep(2);
-      resolve();
-    });
-  };
-
   return (
     <div className="flex min-h-screen">
       <div className="hidden md:block w-1/2 relative overflow-hidden">
@@ -690,7 +893,13 @@ export default function Company() {
       <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-md p-6">
           <AnimatePresence>
-            {alert && <Alert message={alert.message} type={alert.type} />}
+            {alert && (
+              <Alert
+                message={alert.message}
+                type={alert.type}
+                onClose={() => setAlert(null)}
+              />
+            )}
           </AnimatePresence>
           <AnimatePresence mode="wait">
             {currentStep === 1 ? (
@@ -705,9 +914,27 @@ export default function Company() {
                   userType={userType}
                   btnText="Next"
                   initialValues={formData}
-                  onChange={(values) =>
-                    setFormData((prevData) => ({ ...prevData, ...values }))
-                  }
+                  onChange={(values) => {
+                    // Prevent unnecessary re-renders by using a functional update
+                    setFormData((prevData) => {
+                      // Only update if there are actual changes
+                      if (
+                        JSON.stringify(prevData) ===
+                        JSON.stringify({ ...prevData, ...values })
+                      ) {
+                        return prevData;
+                      }
+
+                      // Update selectedGovernorate when governorate changes
+                      if (values.governorate?.id !== selectedGovernorate) {
+                        setSelectedGovernorate(values.governorate?.id || null);
+                      }
+
+                      return { ...prevData, ...values };
+                    });
+                  }}
+                  governorates={governorates}
+                  cities={cities}
                 />
               </motion.div>
             ) : (
@@ -719,6 +946,7 @@ export default function Company() {
                 className="grid gap-4"
               >
                 <form onSubmit={handleSubmit} className="grid gap-4">
+                  {/* Engineer or Technical Worker Form */}
                   {(userType.code === "ENGINEER" ||
                     userType.code === "TECHNICAL_WORKER") && (
                     <div className="grid gap-2">
@@ -766,6 +994,7 @@ export default function Company() {
                     </div>
                   )}
 
+                  {/* Engineer Specific Form */}
                   {userType.code === "ENGINEER" ? (
                     <>
                       <div className="grid gap-2">
@@ -842,6 +1071,7 @@ export default function Company() {
                     </>
                   ) : (
                     <>
+                      {/* Technical Worker Specific Form */}
                       {userType.code === "TECHNICAL_WORKER" && (
                         <>
                           <div className="grid gap-2">
@@ -852,11 +1082,17 @@ export default function Company() {
                               items={technicalWorkerTypes}
                               value={values.technicalWorker.type.id}
                               onChange={(value) => {
-                                setFieldValue("technicalWorker.type.id", value);
-                                setFieldValue(
-                                  "technicalWorker.workerServs",
-                                  []
-                                );
+                                // Only update if the value is actually changing
+                                if (value !== values.technicalWorker.type.id) {
+                                  setFieldValue(
+                                    "technicalWorker.type.id",
+                                    value
+                                  );
+                                  setFieldValue(
+                                    "technicalWorker.workerServs",
+                                    []
+                                  );
+                                }
                               }}
                               placeholder="Select Technical Worker Type"
                               error={errors.technicalWorker?.type?.id as string}
@@ -925,6 +1161,8 @@ export default function Company() {
                           )}
                         </>
                       )}
+
+                      {/* Store or Exhibition Form */}
                       {(userType.code === "STORE" ||
                         userType.code === "EXHIBITION") && (
                         <>
@@ -1042,6 +1280,7 @@ export default function Company() {
                     </>
                   )}
 
+                  {/* Form Buttons */}
                   <div className="flex flex-col gap-4">
                     <Button
                       type="button"
@@ -1058,13 +1297,9 @@ export default function Company() {
                       Back
                     </Button>
                     <Button
-                      type="button"
+                      type="submit"
                       disabled={isLoading}
                       className="w-full relative btn primary-grad"
-                      onClick={() => {
-                        handleSubmit();
-                        handleSignUp(values as FormValues);
-                      }}
                     >
                       {isLoading ? (
                         <div className="flex items-center justify-center">
