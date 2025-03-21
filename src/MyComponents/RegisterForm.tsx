@@ -1,7 +1,5 @@
-"use client";
-
 import type * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,8 +9,8 @@ import { useFormik } from "formik";
 import axios from "axios";
 import * as Yup from "yup";
 import { Combobox } from "@/components/ui/combobox";
-
 import type { ReactNode } from "react";
+import { UserContext } from "@/Contexts/UserContext";
 
 axios.defaults.headers.common["ngrok-skip-browser-warning"] = "any value";
 
@@ -174,8 +172,6 @@ interface SignUpFormProps {
   btnText: string;
   initialValues?: Partial<ISignUpForm>;
   onChange?: (values: Partial<ISignUpForm>) => void;
-  governorates?: ILocation[];
-  cities?: ILocation[];
 }
 
 export function RegisterForm({
@@ -185,9 +181,89 @@ export function RegisterForm({
   btnText,
   initialValues = {},
   onChange = () => {},
-  governorates = [],
-  cities = [],
 }: SignUpFormProps) {
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider");
+  }
+  const { pathUrl } = userContext;
+
+  const [governorates, setGovernorates] = useState<ILocation[]>([]);
+  const [cities, setCities] = useState<ILocation[]>([]);
+  const [selectedGovernorate, setSelectedGovernorate] = useState<number | null>(
+    null
+  );
+
+  // Fetch governorates
+  useEffect(() => {
+    async function getGovernorates() {
+      try {
+        const { data } = await axios.get(`${pathUrl}/api/v1/governorates`, {
+          headers: {
+            "Accept-Language": "en",
+          },
+        });
+        if (data.success) {
+          setGovernorates(
+            data.data.map(
+              (item: { id: number; code?: string; name: string }) => ({
+                id: item.id,
+                code: item.code || "",
+                name: item.name,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching governorates:", error);
+        setAlert({
+          message: "Failed to fetch governorates. Please try again.",
+          type: "error",
+        });
+      }
+    }
+    getGovernorates();
+  }, [pathUrl]);
+
+  // Fetch cities based on selected governorate
+  useEffect(() => {
+    async function getCities(governorateId: number) {
+      try {
+        const { data } = await axios.get(
+          `${pathUrl}/api/v1/cities/governorate/${governorateId}`,
+          {
+            headers: {
+              "Accept-Language": "en",
+            },
+          }
+        );
+        if (data.success) {
+          setCities(
+            data.data.map(
+              (item: { id: number; code?: string; name: string }) => ({
+                id: item.id,
+                code: item.code || "",
+                name: item.name,
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching cities:", error);
+        setAlert({
+          message: "Failed to fetch cities. Please try again.",
+          type: "error",
+        });
+      }
+    }
+
+    if (selectedGovernorate) {
+      getCities(selectedGovernorate);
+    } else {
+      setCities([]);
+    }
+  }, [selectedGovernorate, pathUrl]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{
     message: string;
@@ -250,6 +326,13 @@ export function RegisterForm({
       setCityError(null);
     }
   }, [values.governorate?.id, values.city?.id]);
+
+  // Update selectedGovernorate when governorate changes
+  useEffect(() => {
+    if (values.governorate?.id !== selectedGovernorate) {
+      setSelectedGovernorate(values.governorate?.id || null);
+    }
+  }, [values.governorate?.id, selectedGovernorate]);
 
   useEffect(() => {
     onChange(formik.values);

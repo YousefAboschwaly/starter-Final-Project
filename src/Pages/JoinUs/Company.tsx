@@ -122,17 +122,9 @@ type FormValues = IEngineerForm &
     exhibition: IBusinessFormValues;
   };
 
-interface IGovernorate {
-  id: number;
-  code?: string;
-  name: string;
-}
 
-interface ICity {
-  id: number;
-  code?: string;
-  name: string;
-}
+
+
 
 interface NestedObject {
   [key: string]:
@@ -380,8 +372,7 @@ export default function Company() {
     message: string;
     type: "success" | "error";
   } | null>(null);
-  const [governorates, setGovernorates] = useState<IGovernorate[]>([]);
-  const [cities, setCities] = useState<ICity[]>([]);
+
   const [selectedGovernorate, setSelectedGovernorate] = useState<number | null>(
     null
   );
@@ -653,75 +644,7 @@ export default function Company() {
     }
   }, [userType, pathUrl]);
 
-  // Fetch governorates
-  useEffect(() => {
-    async function getGovernorates() {
-      try {
-        const { data } = await axios.get(`${pathUrl}/api/v1/governorates`, {
-          headers: {
-            "Accept-Language": "en",
-          },
-        });
-        if (data.success) {
-          setGovernorates(
-            data.data.map(
-              (item: { id: number; code?: string; name: string }) => ({
-                id: item.id,
-                code: item.code || "",
-                name: item.name,
-              })
-            )
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching governorates:", error);
-        setAlert({
-          message: "Failed to fetch governorates. Please try again.",
-          type: "error",
-        });
-      }
-    }
-    getGovernorates();
-  }, [pathUrl]);
 
-  // Fetch cities based on selected governorate
-  useEffect(() => {
-    async function getCities(governorateId: number) {
-      try {
-        const { data } = await axios.get(
-          `${pathUrl}/api/v1/cities/governorate/${governorateId}`,
-          {
-            headers: {
-              "Accept-Language": "en",
-            },
-          }
-        );
-        if (data.success) {
-          setCities(
-            data.data.map(
-              (item: { id: number; code?: string; name: string }) => ({
-                id: item.id,
-                code: item.code || "",
-                name: item.name,
-              })
-            )
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching cities:", error);
-        setAlert({
-          message: "Failed to fetch cities. Please try again.",
-          type: "error",
-        });
-      }
-    }
-
-    if (selectedGovernorate) {
-      getCities(selectedGovernorate);
-    } else {
-      setCities([]);
-    }
-  }, [selectedGovernorate, pathUrl]);
 
   const {
     handleSubmit,
@@ -933,8 +856,7 @@ export default function Company() {
                       return { ...prevData, ...values };
                     });
                   }}
-                  governorates={governorates}
-                  cities={cities}
+
                 />
               </motion.div>
             ) : (

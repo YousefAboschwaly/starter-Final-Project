@@ -75,7 +75,7 @@
   font-family: "IBM Plex Sans Arabic", sans-serif;
 }
 .primary-grad {
-  @apply bg-gradient-to-r from-[#545476] to-[#0D132C] text-white hover:opacity-90 transition-opacity duration-200;
+  @apply bg-gradient-to-r from-[#7F7FB3] to-[#0D132C] text-white hover:opacity-90 transition-opacity duration-200;
 }
 .secondary-grad {
   @apply bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] text-[#2D2D4C] hover:opacity-90 transition-opacity duration-200;
@@ -87,3 +87,85 @@
   transform: translateX(-50%) !important;
   z-index: 9999 !important;
 }
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ********************************************** */
+/* Animation for color circles */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+  }
+}
+
+.color-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.color-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  transform: scale(1.1);
+  background-color: white;
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.product-card:hover .image-overlay {
+  opacity: 1;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.product-image {
+  transition: transform 0.3s ease;
+}
+
+
+
+/* *************************Filter pannel */
+
+
+/* ******************************************************** */

@@ -6,7 +6,6 @@ import Home from "./MyComponents/Home";
 import About from "./MyComponents/About";
 import NotFound from "./MyComponents/NotFound";
 import Layout from "./MyComponents/Layout";
-import Products from "./MyComponents/Products";
 import Login from "./MyComponents/Login";
 import SignUp from "./MyComponents/SignUp";
 import Client from "./Pages/Client";
@@ -20,6 +19,9 @@ import AccessAccount from "./MyComponents/AccessAccount";
 import ProfileEditor from "./Pages/profile-editor";
 import Profile from "./Pages/profile";
 import Project from "./Pages/project";
+import AddProduct from "./Pages/AddProduct";
+import ProductList from "./Pages/ProductList";
+import EditProduct from "./Pages/JoinUs/EditProduct";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -63,18 +65,34 @@ function App() {
           ),
         },
         {
-          path: "products",
-          element: (
-            <ProtectedRoute>
-              <Products />
-            </ProtectedRoute>
-          ),
-        },
-        {
           path: "project/:projectId",
           element: (
             <ProtectedRoute>
               <Project />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "addproduct",
+          element: (
+            <ProtectedRoute>
+              <AddProduct />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "editproduct/:productId",
+          element: (
+            <ProtectedRoute>
+              <EditProduct />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "productlist",
+          element: (
+            <ProtectedRoute>
+              <ProductList />
             </ProtectedRoute>
           ),
         },

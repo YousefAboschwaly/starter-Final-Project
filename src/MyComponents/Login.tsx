@@ -191,6 +191,10 @@ export default function Login() {
         localStorage.setItem('user-RefreshToken' , data.data.refreshToken)
         localStorage.setItem('user-id' , data.data.user.id)
         localStorage.setItem('user-type' , data.data.user.userType.name)
+        if(data.data.user.business){
+          localStorage.setItem('user-business-id' , data.data.user.business.businessId
+          )
+        }
       
         if(isMakeOtp){
 
