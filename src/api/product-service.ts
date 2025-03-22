@@ -14,9 +14,8 @@ export interface FilterCriteria {
 }
 
 // The actual colors data from the provided JSON
-export function useBusinessTypes(){
-
-  const {businessTypes} = useProductData()
+export function useBusinessTypes() {
+  const { businessTypes } = useProductData()
   return businessTypes
 }
 
@@ -39,7 +38,7 @@ export async function fetchProducts(
         businessTypeIds: filterCriteria.businessTypeIds,
         name: searchQuery, // Add the search query as the name parameter
       },
-    };
+    }
 
     console.log("Sending request to API:", JSON.stringify(payload, null, 2))
 
@@ -65,6 +64,7 @@ export async function fetchProducts(
   } catch (error) {
     console.error("Error fetching products:", error)
 
+    // Return a properly structured error response with all required properties
     return {
       data: {
         content: [],
@@ -73,7 +73,21 @@ export async function fetchProducts(
         pageable: {
           pageNumber: pageNumber,
           pageSize: pageSize,
+          sort: { empty: true, sorted: false, unsorted: true },
+          offset: 0,
+          paged: true,
+          unpaged: false,
         },
+        last: true,
+        size: pageSize,
+        number: pageNumber,
+        sort: {
+          empty: true,
+          sorted: false,
+          unsorted: true,
+        },
+        numberOfElements: 0,
+        first: true,
         empty: true,
       },
     }

@@ -10,7 +10,7 @@ import { useFormik } from "formik"
 import * as Yup from "yup"
 import { useState } from "react"
 import { useProductData } from "@/lib/product-data"
-import type { IProductFormData, IProductById } from "@/interfaces"
+import type { IProductFormData, IProductById, IintialValues } from "@/interfaces"
 import axios from "axios"
 
 import FormHeader from "./form/form-header"
@@ -89,7 +89,7 @@ interface ProductFormValues {
 interface ProductFormProps {
   isEditMode?: boolean
   productId?: number
-  initialValues?: any
+  initialValues?: IintialValues
   productData?: IProductById
 }
 
@@ -151,6 +151,23 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
       return !value || !isNaN(Number(value))
     }),
   })
+  const formik = useFormik<ProductFormValues>({
+    initialValues: {
+      businessType: "",
+      productNameEn: "",
+      productNameAr: "",
+      price: "",
+      baseUnit: "",
+      descriptionEn: "",
+      descriptionAr: "",
+      length: "",
+      width: "",
+      height: "",
+    },
+    validationSchema,
+    onSubmit: handleSubmit,
+    enableReinitialize: true,
+  })
 
   // Initialize form with initial values if provided
   // Update the useEffect that sets initial values to include stock IDs
@@ -195,6 +212,7 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
         height: initialValues.height || "",
       })
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialValues, productData, data?.colors])
 
   // Set existing image paths if in edit mode
@@ -216,23 +234,7 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   }, [isEditMode, productData])
 
   // Formik setup
-  const formik = useFormik<ProductFormValues>({
-    initialValues: {
-      businessType: "",
-      productNameEn: "",
-      productNameAr: "",
-      price: "",
-      baseUnit: "",
-      descriptionEn: "",
-      descriptionAr: "",
-      length: "",
-      width: "",
-      height: "",
-    },
-    validationSchema,
-    onSubmit: handleSubmit,
-    enableReinitialize: true,
-  })
+
 
   const { values, errors, touched, handleChange, handleBlur, setFieldValue } = formik
 

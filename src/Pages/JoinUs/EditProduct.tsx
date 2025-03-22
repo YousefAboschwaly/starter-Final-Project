@@ -5,7 +5,7 @@ import axios from "axios"
 import { Loader2 } from "lucide-react"
 
 import { useContext, useEffect, useState } from "react"
-import type { IProductById } from "@/interfaces"
+import type { IintialValues, IProductById } from "@/interfaces"
 import { useNavigate, useParams } from "react-router-dom"
 import { UserContext } from "@/Contexts/UserContext"
 import ProductForm from "@/MyComponents/product-form"
@@ -13,7 +13,7 @@ import ProductForm from "@/MyComponents/product-form"
 export default function EditProduct() {
   const navigate = useNavigate()
   const {productId} = useParams()
-  const [initialValues, setInitialValues] = useState<any>(null)
+  const [initialValues, setInitialValues] = useState<IintialValues|null>(null)
 
   const userContext = useContext(UserContext)
   if (!userContext) {
@@ -74,6 +74,7 @@ export default function EditProduct() {
       }
 
       setInitialValues(formattedValues)
+      console.log("formattedValues",formattedValues);
     }
   }, [product, pathUrl])
 

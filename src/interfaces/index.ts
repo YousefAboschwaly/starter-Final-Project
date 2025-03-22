@@ -150,7 +150,7 @@ export interface IProductFormData {
       id: number
     }
   }[]
-  imagePaths: string[]
+  imagePaths: string[] | {id:number,productId: number, imagePath: string|null}[]
 }
 export interface IProduct {
   id: number
@@ -204,7 +204,24 @@ export interface IProductById {
   stocks: IStock[];
   imagePaths: IImagePath[];
 }
-
+export interface IintialValues {
+  businessType: string;
+  productNameEn: string;
+  productNameAr: string;
+  price: string;
+  baseUnit: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  length: string;
+  width: string;
+  height: string;
+  materials: string[];
+  colorRows: {
+    color: string;
+    stock: string;
+  }[];
+  imageFiles: string[];
+}
 
 
 
