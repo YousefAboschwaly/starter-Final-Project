@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-import Home from "./MyComponents/Home";
+import Home from "./Pages/Home/Home";
 import About from "./MyComponents/About";
 import NotFound from "./MyComponents/NotFound";
 import Layout from "./MyComponents/Layout";
@@ -22,6 +22,7 @@ import Project from "./Pages/project";
 import AddProduct from "./Pages/AddProduct";
 import ProductList from "./Pages/ProductList";
 import EditProduct from "./Pages/JoinUs/EditProduct";
+import Ask from "./Pages/Ask/Ask";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -96,6 +97,15 @@ function App() {
             </ProtectedRoute>
           ),
         },
+        {
+          path: "Ask",
+          element: (
+            <ProtectedRoute>
+              <Ask />
+            </ProtectedRoute>
+          ),
+        },
+
         {
           path: "client",
           element: <Client />,

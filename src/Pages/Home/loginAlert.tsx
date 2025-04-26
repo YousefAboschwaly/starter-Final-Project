@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion"
-import {  CheckCircle2, XCircle } from 'lucide-react'
-const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
+import { useEffect } from "react";
+import { motion } from 'framer-motion';
+import { CheckCircle2, XCircle } from "lucide-react";
+
+ const LoginAlert = ({ message, type, onClose }: { message: string; type: 'success' | 'error'; onClose: () => void }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 10000);
     return () => clearTimeout(timer);
@@ -37,30 +38,5 @@ const Alert = ({ message, type, onClose }: { message: string; type: 'success' | 
     </motion.div>
   );
 };
-export default function Home() {
-  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  useEffect(()=>{
-      if(localStorage.getItem('isLoggedIn')){
-        setAlert({ message: "Login Successful. Welcome back to Home4U!", type: 'success' });
-        setTimeout(() =>  {setAlert(null);localStorage.removeItem('isLoggedIn')} ,3000); 
-  
-      }
-    
-  },[])
-  return (
-    <>
 
-    
-<AnimatePresence>
-        {alert && (
-          <Alert
-            message={alert.message}
-            type={alert.type}
-            onClose={() => setAlert(null)}
-          />
-        )}
-      </AnimatePresence>
-    <div className="text-center text-4xl">Home</div>
-    </>
-  )
-}
+export default LoginAlert;

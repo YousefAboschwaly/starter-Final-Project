@@ -1,3 +1,5 @@
+"use client";
+
 import type React from "react";
 import { useState, useRef, useContext, useEffect, type FormEvent } from "react";
 import {
@@ -29,7 +31,8 @@ import axios from "axios";
 import MultiSelectOption from "../MyComponents/MultiChoice";
 import { UserContext } from "@/Contexts/UserContext";
 import { ImageUpload } from "@/MyComponents/image-upload";
-import { IUser } from "@/interfaces";
+import type { IUser } from "@/interfaces";
+import EngineeringOfficeEditor from "@/MyComponents/engineering-office-editor";
 
 const defaultObj: IUser = {
   id: null,
@@ -94,6 +97,7 @@ const ProfileEditor = () => {
   const [activeTab, setActiveTab] = useState("basic");
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false); // Added loading state
+  const [userType, setUserType] = useState<string | null>(null);
 
   // Form Data
   const [tempDta, setTempDta] = useState<IUser>(defaultObj);
@@ -152,10 +156,17 @@ const ProfileEditor = () => {
   // Ensure user_type is a valid string before replacing spaces
   user_type = user_type ? user_type.replace(/\s+/g, "-") : null;
 
+  useEffect(() => {
+    setUserType(user_type);
+  }, [user_type]);
 
   const basicRef = useRef<HTMLDivElement>(null);
   const bioRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
+
+  // If user type is engineering office, render the EngineeringOfficeEditor component
+  // Move all hooks before any conditional returns
+  // ...
 
   const scrollToSection = (id: string) => {
     setActiveTab(id);
@@ -417,6 +428,8 @@ const ProfileEditor = () => {
       } else {
         toast.error("Failed to update profile. Please try again.");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -495,7 +508,7 @@ const ProfileEditor = () => {
     }
 
     getUserData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, userToken, user_type, pathUrl]); // Added tempDta.user.city to dependencies
 
   useEffect(() => {
@@ -655,8 +668,12 @@ const ProfileEditor = () => {
     };
   }, [pathUrl, selectedUserType?.id, tempDta, userToken]); // Added tempDta to dependencies
 
-  return (
+  // At the end of the component where the return statement is:
+  return userType === "engineering-office" ? (
+    <EngineeringOfficeEditor />
+  ) : (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8 pt-20">
+      {/* Rest of the original JSX */}
       <div className="md:hidden fixed top-14 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-10 py-4 px-4 md:px-8 shadow-md">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <Link to={"/profile"}>

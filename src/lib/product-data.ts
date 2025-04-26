@@ -41,7 +41,6 @@ export function useProductData() {
     select:(data)=>data.data.data
   })
 
-  console.log(businessTypes)
   
 
   // Helper function to get material display name with Arabic

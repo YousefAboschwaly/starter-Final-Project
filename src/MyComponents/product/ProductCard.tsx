@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useContext } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Edit, Trash2, Share2, AlertCircle, Armchair, PoundSterling, PackageOpen } from "lucide-react"
+import { Edit, Trash2, AlertCircle, Armchair, PoundSterling, PackageOpen } from "lucide-react"
 import { UserContext } from "@/Contexts/UserContext"
 import { useNavigate } from "react-router-dom"
 import type { IProduct } from "@/interfaces"
@@ -34,11 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onDelete }) => {
     navigate(`/editproduct/${product.id}`)
   }
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    // Share functionality would go here
-    alert(`Sharing product: ${product.name}`)
-  }
+
 
   const userContext = useContext(UserContext)
   if (!userContext) {
@@ -136,20 +132,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onDelete }) => {
                   </motion.button>
                 </motion.div>
 
-                <motion.div
-                  initial={{ scale: 0, y: 20 }}
-                  animate={{ scale: 1, y: 0 }}
-                  transition={{ delay: 0.3, type: "spring" }}
-                >
-                  <motion.button
-                    whileHover={{ scale: 1.1, backgroundColor: "#FFF" }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleShare}
-                    className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg"
-                  >
-                    <Share2 className="w-5 h-5 text-purple-600" />
-                  </motion.button>
-                </motion.div>
+
               </motion.div>
             )}
           </AnimatePresence>

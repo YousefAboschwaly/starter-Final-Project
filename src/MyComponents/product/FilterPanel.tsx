@@ -151,60 +151,44 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, setFilters, colors, 
           </div>
         </div>
 
-        {/* Active filters display */}
-        <AnimatePresence>
-          {filters.colorsIds?.length || filters.businessTypeIds?.length ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-6 overflow-hidden"
-            >
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Active Filters</h3>
-              <div className="flex flex-wrap gap-2">
-                {filters.colorsIds?.map((colorId) => {
-                  const color = getColorById(colorId)
-                  return color ? (
-                    <motion.button
-                      key={`active-color-${colorId}`}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleColorToggle(colorId)}
-                      className="px-3 py-1.5 rounded-full text-sm flex items-center gap-2 bg-purple-50 text-purple-800 border border-purple-100 shadow-sm"
-                    >
-                      <span className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: color.hexColor }} />
-                      {color.name}
-                      <X className="w-3.5 h-3.5 ml-1" />
-                    </motion.button>
-                  ) : null
-                })}
-
-                {filters.businessTypeIds?.map((typeId) => {
-                  const type = businessTypes.find((t) => t.id === typeId)
-                  return type ? (
-                    <motion.button
-                      key={`active-type-${typeId}`}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.8, opacity: 0 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleBusinessTypeToggle(typeId)}
-                      className="px-3 py-1.5 rounded-full text-sm flex items-center gap-2 bg-blue-50 text-blue-800 border border-blue-100 shadow-sm"
-                    >
-                      <CategoryIcon type={type.name} selected={true} />
-                      {type.name}
-                      <X className="w-3.5 h-3.5 ml-1" />
-                    </motion.button>
-                  ) : null
-                })}
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+        {/* Active Filters section */}
+        {(filters.minPrice || filters.maxPrice || filters.colorsIds?.length || filters.businessTypeIds?.length) && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Active Filters:</h3>
+            <div className="flex flex-wrap gap-2">
+              {filters.minPrice && (
+                <div className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">
+                  Min Price: ${filters.minPrice}
+                </div>
+              )}
+              {filters.maxPrice && (
+                <div className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">
+                  Max Price: ${filters.maxPrice}
+                </div>
+              )}
+              {filters.colorsIds?.map((colorId) => {
+                const color = getColorById(colorId)
+                return color ? (
+                  <div
+                    key={`active-${colorId}`}
+                    className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700 flex items-center gap-1"
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color.hexColor }} />
+                    {color.name}
+                  </div>
+                ) : null
+              })}
+              {filters.businessTypeIds?.map((typeId) => {
+                const type = businessTypes.find((t) => t.id === typeId)
+                return type ? (
+                  <div key={`active-${typeId}`} className="bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-700">
+                    {type.name}
+                  </div>
+                ) : null
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Price Range */}
@@ -276,32 +260,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, setFilters, colors, 
                   )}
                 </span>
                 <motion.div animate={{ rotate: colorsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                  <ChevronDown className="w-4  text-gray-500" />
                 </motion.div>
               </h3>
 
-              {/* Selected colors preview */}
-              <div className="flex flex-wrap gap-2">
-                {filters.colorsIds?.slice(0, 5).map((colorId) => {
-                  const color = getColorById(colorId)
-                  return color ? (
-                    <motion.div
-                      key={`preview-${colorId}`}
-                      initial={{ scale: 0.8 }}
-                      animate={{ scale: 1 }}
-                      className="w-6 h-6 rounded-full shadow-sm"
-                      style={{ backgroundColor: color.hexColor }}
-                      title={color.name}
-                    />
-                  ) : null
-                })}
-                {(filters.colorsIds?.length || 0) > 5 && (
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
-                    +{(filters.colorsIds?.length || 0) - 5}
-                  </div>
-                )}
-                {!filters.colorsIds?.length && <div className="text-sm text-gray-500">Select colors...</div>}
-              </div>
             </div>
 
             {/* Colors dropdown content */}
@@ -403,30 +365,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, setFilters, colors, 
                   <ChevronDown className="w-4 h-4 text-gray-500" />
                 </motion.div>
               </h3>
-
-              {/* Selected categories preview */}
-              <div className="flex flex-wrap gap-2">
-                {filters.businessTypeIds?.slice(0, 2).map((typeId) => {
-                  const type = businessTypes.find((t) => t.id === typeId)
-                  return type ? (
-                    <motion.div
-                      key={`preview-${typeId}`}
-                      initial={{ scale: 0.8 }}
-                      animate={{ scale: 1 }}
-                      className="px-2 py-1 bg-blue-200 bg-opacity-50 rounded-lg text-xs text-blue-800 flex items-center gap-1.5"
-                    >
-                      <CategoryIcon type={type.name} selected={true} />
-                      {type.name}
-                    </motion.div>
-                  ) : null
-                })}
-                {(filters.businessTypeIds?.length || 0) > 2 && (
-                  <div className="px-2 py-1 bg-gray-200 rounded-lg text-xs text-gray-700">
-                    +{(filters.businessTypeIds?.length || 0) - 2} more
-                  </div>
-                )}
-                {!filters.businessTypeIds?.length && <div className="text-sm text-gray-500">Select categories...</div>}
-              </div>
             </div>
 
             {/* Categories dropdown content */}
@@ -512,8 +450,6 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ filters, setFilters, colors, 
     </motion.div>
   )
 }
-
-
 
 // Component to display category icons
 function CategoryIcon({ type, selected }: { type: string; selected: boolean }) {

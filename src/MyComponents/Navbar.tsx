@@ -28,6 +28,8 @@ export default function Navbar() {
     localStorage.removeItem("isLoggedIn")
     localStorage.removeItem("user-id")
     localStorage.removeItem("user-type")
+    localStorage.removeItem("user-business")
+    localStorage.removeItem("user-business-id")
   }
 
   return (

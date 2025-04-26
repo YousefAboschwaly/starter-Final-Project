@@ -5,8 +5,6 @@ import { useContext, useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   X,
-  Heart,
-  Share2,
   Edit,
   Star,
   Package,
@@ -342,20 +340,7 @@ const {product,isLoading,isError} = useProductById(productId)
                     )}
                   </h2>
                   <div className="flex gap-2">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-2 hover:bg-gray-100 rounded-full"
-                    >
-                      <Heart className="w-5 h-5 text-gray-600" />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="p-2 hover:bg-gray-100 rounded-full"
-                    >
-                      <Share2 className="w-5 h-5 text-gray-600" />
-                    </motion.button>
+
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
