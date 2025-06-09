@@ -58,10 +58,10 @@ export default function Navbar() {
               Home
             </Link>
             <Link
-              to="/products"
+              to="/landing"
               className="text-base font-normal  leading-[23.52px] transition-colors hover:text-primary"
             >
-              Products
+              Landing
             </Link>
             <Link
               to="/categories"
@@ -110,8 +110,8 @@ export default function Navbar() {
                     <Link to="/" className="text-lg font-semibold">
                       Home
                     </Link>
-                    <Link to="/products" className="text-lg font-semibold">
-                      Products
+                    <Link to="/landing" className="text-lg font-semibold">
+                      Landing
                     </Link>
                     <Link to="/categories" className="text-lg font-semibold">
                       Categories
@@ -136,20 +136,20 @@ export default function Navbar() {
                     ) : userToken &&
                       (localStorage.getItem("user-type") === "store" ||
                         localStorage.getItem("user-type") === "exhibition") ? (
-                          <div className="flex items-center gap-4">
-                          <Link to="/productlist">
-                            <Button className="text-[#2D2D4C]  font-bold bg-white primary-grad hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
-                              <List className="w-5 h-5" />
-                              Product List
-                            </Button>
-                          </Link>
-                          <Link to="/addproduct">
-                            <Button className="text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
-                              <img src={vector} alt="Logo" className="w-5 h-5" /> 
-                              Add Product
-                            </Button>
-                          </Link>
-                        </div>
+                      <div className="flex items-center gap-4">
+                        <Link to="/productlist">
+                          <Button className="text-[#2D2D4C]  font-bold bg-white primary-grad hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
+                            <List className="w-5 h-5" />
+                            Product List
+                          </Button>
+                        </Link>
+                        <Link to="/addproduct">
+                          <Button className="text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
+                            <img src={vector} alt="Logo" className="w-5 h-5" />
+                            Add Product
+                          </Button>
+                        </Link>
+                      </div>
                     ) : null}
                   </nav>
                 )}
@@ -183,7 +183,7 @@ export default function Navbar() {
               </Link>
               <Link to="/addproduct">
                 <Button className="text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
-                  <img src={vector} alt="Logo" className="w-5 h-5" /> 
+                  <img src={vector} alt="Logo" className="w-5 h-5" />
                   Add Product
                 </Button>
               </Link>
