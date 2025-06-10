@@ -24,6 +24,7 @@ import ProductList from "./Pages/ProductList";
 import EditProduct from "./Pages/JoinUs/EditProduct";
 import Ask from "./Pages/Ask/Ask";
 import LandingPage from "./Pages/LandingPage/LandingPage.tsx";
+import Viewdetails from "./Pages/Viewdetails.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -111,6 +112,14 @@ function App() {
           element: (
             <ProtectedRoute>
               <LandingPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "product-details",
+          element: (
+            <ProtectedRoute>
+              <Viewdetails />
             </ProtectedRoute>
           ),
         },
