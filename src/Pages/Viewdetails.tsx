@@ -1,4 +1,3 @@
-import CustomersViewed from '@/MyComponents/ViewDetails/CustomersViewed';
 import ProductDetails from '@/MyComponents/ViewDetails/ProductDetails';
 import ProductFeatures from '@/MyComponents/ViewDetails/ProductFeatures';
 import ProductGallery from '@/MyComponents/ViewDetails/ProductGallery';
@@ -69,7 +68,6 @@ const Viewdetails = () => {
             <ProductReviews />
           </div>
           <div className='mt-6 mb-[50px]'>
-            <CustomersViewed />
           </div>
         </div>
  
