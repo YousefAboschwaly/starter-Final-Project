@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Formik, Form } from "formik";
+import { useEffect, useState, useCallback } from "react";
+import { Formik, Form, FormikHelpers, FormikProps } from "formik";
 import * as Yup from "yup";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,12 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 type RequestDesignProps = {
-  formType: "request-design";
   userToken: string | null;
   pathUrl: string;
-  onStepChange: (step: number) => void;
 };
 
 interface IRequestDesign {
@@ -71,6 +70,16 @@ interface Governorate {
   name: string;
 }
 
+interface FormValues {
+  phoneNumber: string;
+  unitTypeId: number;
+  governorateId: number;
+  unitArea: string;
+  budget: string;
+  requiredDuration: string;
+  notes: string;
+}
+
 const ErrorMessage = ({ message }: { message: string }) => (
   <motion.div
     initial={{ opacity: 0, y: -10 }}
@@ -85,11 +94,10 @@ const ErrorMessage = ({ message }: { message: string }) => (
 );
 
 const RequestDesign: React.FC<RequestDesignProps> = ({
-  formType,
   pathUrl,
   userToken,
-  onStepChange,
 }) => {
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{
     message: string;
@@ -124,7 +132,7 @@ const RequestDesign: React.FC<RequestDesignProps> = ({
     notes: Yup.string().optional(),
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axios.get<IRequestDesign>(
@@ -153,15 +161,15 @@ const RequestDesign: React.FC<RequestDesignProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pathUrl, userToken]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSubmit = async (
-    values: any,
-    { resetForm }: { resetForm: () => void }
+    values: FormValues,
+    { resetForm }: FormikHelpers<FormValues>
   ) => {
     setIsLoading(true);
     try {
@@ -176,7 +184,7 @@ const RequestDesign: React.FC<RequestDesignProps> = ({
         notes: values.notes,
       };
 
-      const response = await axios.post(
+      await axios.post(
         `${pathUrl}/api/v1/request-design`,
         payload,
         {
@@ -191,6 +199,8 @@ const RequestDesign: React.FC<RequestDesignProps> = ({
       setAlert({ message: "Design requested successfully!", type: "success" });
       setTimeout(() => {
         setAlert(null);
+        navigate('/')
+
       }, 3000);
 
       resetForm();
@@ -204,6 +214,8 @@ const RequestDesign: React.FC<RequestDesignProps> = ({
         });
         setTimeout(() => {
           setAlert(null);
+          navigate('/')
+
         }, 3000);
       } else {
         setAlert({
@@ -212,6 +224,8 @@ const RequestDesign: React.FC<RequestDesignProps> = ({
         });
         setTimeout(() => {
           setAlert(null);
+          navigate('/')
+
         }, 3000);
       }
     } finally {
@@ -246,7 +260,7 @@ const RequestDesign: React.FC<RequestDesignProps> = ({
     exit: { opacity: 0, y: -20 },
   };
 
-  const handleSubmitForm = (formik: any) => {
+  const handleSubmitForm = (formik: FormikProps<FormValues>) => {
     const firstStepFields = [
       "unitTypeId",
       "phoneNumber",

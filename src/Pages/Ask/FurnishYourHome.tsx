@@ -532,7 +532,7 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
                   </motion.div>
                   <Button
                     type="button"
-                    className="w-full h-12 text-base font-medium btn primary-grad "
+                    className="w-full h-12 text-base font-medium btn primary-grad  "
                     onClick={() => handleNextStep(formik)}
                   >
                     Next
