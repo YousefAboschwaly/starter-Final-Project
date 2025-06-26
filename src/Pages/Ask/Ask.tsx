@@ -139,16 +139,13 @@ export default function Ask() {
 
             {formType === "request-design" && (
               <RequestDesign
-                formType={formType}
                 userToken={userToken}
                 pathUrl={pathUrl}
-                onStepChange={handleStepChange}
               />
             )}
 
             {formType === "home-renovate" && (
               <HomeRenovate
-                formType={formType}
                 userToken={userToken}
                 pathUrl={pathUrl}
                 onStepChange={handleStepChange}
@@ -157,7 +154,6 @@ export default function Ask() {
 
               {formType === "furnish-house" && (
               <FurnishYourHome
-                formType={formType}
                 userToken={userToken}
                 pathUrl={pathUrl}
                 onStepChange={handleStepChange}
