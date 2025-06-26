@@ -10,11 +10,12 @@ import { ErrorMessage } from "../product-form"
 import type { FormikErrors, FormikTouched } from "formik"
 import { Label } from "@/components/ui/label"
 import { useProductData } from "@/lib/product-data"
-import { IBusinessType } from "@/interfaces"
+import type { IBusinessType } from "@/interfaces"
 
 interface ProductBasicInfoProps {
   values: {
     businessType: string
+    businessTypeCategory: string
     productNameEn: string
     productNameAr: string
     price: string
@@ -37,15 +38,35 @@ export default function ProductBasicInfo({
   handleBlur,
   setFieldValue,
 }: ProductBasicInfoProps) {
-  const { data,businessTypes } = useProductData()
+  const { data, businessTypes } = useProductData()
+
+  // Filter categories based on selected business type
+  const getFilteredCategories = () => {
+    if (!values.businessType || !data?.businessTypeCategories) {
+      return []
+    }
+
+    return data.businessTypeCategories.filter((category) => category.businessType?.code === values.businessType)
+  }
+
+  // Handle business type change - reset category when business type changes
+  const handleBusinessTypeChange = (value: string) => {
+    setFieldValue("businessType", value)
+    setFieldValue("businessTypeCategory", "") // Always reset category when business type changes
+  }
+
+  // Debug logging
+  console.log("Current values:", values)
+  console.log("Available categories:", data?.businessTypeCategories)
+  console.log("Filtered categories:", getFilteredCategories())
 
   return (
     <>
-      {/* Category Select */}
+      {/* Business Type Select */}
       <div className="space-y-2">
         <Label htmlFor="businessType">Business Type</Label>
         <div className="relative">
-          <Select value={values.businessType} onValueChange={(value) => setFieldValue("businessType", value)}>
+          <Select value={values.businessType} onValueChange={handleBusinessTypeChange}>
             <SelectTrigger
               id="businessType"
               name="businessType"
@@ -54,7 +75,7 @@ export default function ProductBasicInfo({
               <SelectValue placeholder="Select business type" />
             </SelectTrigger>
             <SelectContent>
-              {businessTypes?.map((type:IBusinessType) => (
+              {businessTypes?.map((type: IBusinessType) => (
                 <SelectItem key={type.id} value={type.code}>
                   {type.name}
                 </SelectItem>
@@ -66,6 +87,48 @@ export default function ProductBasicInfo({
           </div>
         </div>
         {errors.businessType && touched.businessType && <ErrorMessage message={errors.businessType} />}
+      </div>
+
+      {/* Business Type Category Select */}
+      <div className="space-y-2">
+        <Label htmlFor="businessTypeCategory">Business Type Category</Label>
+        <div className="relative">
+          <Select
+            value={values.businessTypeCategory}
+            onValueChange={(value) => setFieldValue("businessTypeCategory", value)}
+            disabled={!values.businessType}
+            key={`${values.businessType}-${values.businessTypeCategory}`} // Force re-render when values change
+          >
+            <SelectTrigger
+              id="businessTypeCategory"
+              name="businessTypeCategory"
+              className={`w-full border-[#e5e7eb] ${errors.businessTypeCategory && touched.businessTypeCategory ? "border-red-500" : ""} ${!values.businessType ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <SelectValue placeholder={values.businessType ? "Select category" : "Select business type first"} />
+            </SelectTrigger>
+            <SelectContent>
+              {getFilteredCategories().map((category) => (
+                <SelectItem key={category.id} value={category.code}>
+                  {category.name || category.code}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </div>
+        </div>
+        {errors.businessTypeCategory && touched.businessTypeCategory && (
+          <ErrorMessage message={errors.businessTypeCategory} />
+        )}
+
+        {/* Debug info */}
+        {values.businessType && (
+          <div className="text-xs text-gray-500">
+            Business Type: {values.businessType}, Category: {values.businessTypeCategory}, Available Categories:{" "}
+            {getFilteredCategories().length}
+          </div>
+        )}
       </div>
 
       {/* Product Name Fields */}
@@ -178,4 +241,3 @@ export default function ProductBasicInfo({
     </>
   )
 }
-

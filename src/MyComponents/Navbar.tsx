@@ -3,7 +3,7 @@
 import { useContext, useEffect, useState } from "react"
 import { ChevronDown, List, Menu } from "lucide-react"
 import user from "/user.webp"
-import vector from "/Vector.png";
+import vector from "/Vector.png"
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -13,6 +13,7 @@ import { Link } from "react-router-dom"
 import { UserContext } from "../Contexts/UserContext"
 import axios from "axios"
 import Logo from "/Logo.png"
+import { SimpleCartIcon } from "@/Pages/Cart/CartIcon"
 
 export default function Navbar() {
   const userContext = useContext(UserContext)
@@ -37,24 +38,14 @@ export default function Navbar() {
       className={` sticky top-0 z-50 w-full border-b  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 `}
     >
       <div className="container flex h-16 items-center justify-between px-4 md:px-8">
-        <Link
-          to="/"
-          className="flex items-center gap-2 text-xl font-bold text-[#2D2D4C] md:text-2xl group"
-        >
-          <img
-            src={Logo || "/placeholder.svg"}
-            alt="Logo"
-            className=" h-14 w-30 "
-          />
+        <Link to="/" className="flex items-center gap-2 text-xl font-bold text-[#2D2D4C] md:text-2xl group">
+          <img src={Logo || "/placeholder.svg"} alt="Logo" className=" h-14 w-30 " />
           {/* <Home className="h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg]" /> */}
         </Link>
 
         {userToken && (
           <nav className="hidden md:flex items-center space-x-6">
-            <Link
-              to="/"
-              className="text-base font-normal  leading-[23.52px] transition-colors hover:text-primary"
-            >
+            <Link to="/" className="text-base font-normal  leading-[23.52px] transition-colors hover:text-primary">
               Home
             </Link>
             <Link
@@ -78,11 +69,7 @@ export default function Navbar() {
           </nav>
         )}
 
-        <div
-          className={`flex items-center ml-auto  ${
-            userToken && " md:ml-0"
-          }  gap-4 `}
-        >
+        <div className={`flex items-center ml-auto  ${userToken && " md:ml-0"}  gap-4 `}>
           <div className="flex items-center gap-4">
             {!userToken && (
               <div className="hidden md:flex items-center gap-4">
@@ -123,8 +110,7 @@ export default function Navbar() {
                     {/* Add Project/Product buttons in mobile menu */}
                     {userToken &&
                     (localStorage.getItem("user-type") === "engineer" ||
-                      localStorage.getItem("user-type") ===
-                        "technical worker") ? (
+                      localStorage.getItem("user-type") === "technical worker") ? (
                       <Link to="/profile">
                         <Button
                           className="w-full text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white primary-grad hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out"
@@ -145,12 +131,14 @@ export default function Navbar() {
                         </Link>
                         <Link to="/addproduct">
                           <Button className="text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
-                            <img src={vector} alt="Logo" className="w-5 h-5" />
+                            <img src={vector || "/placeholder.svg"} alt="Logo" className="w-5 h-5" />
                             Add Product
                           </Button>
                         </Link>
                       </div>
                     ) : null}
+
+                    {/* Cart icon in mobile menu for general users */}
                   </nav>
                 )}
               </SheetContent>
@@ -172,8 +160,7 @@ export default function Navbar() {
               </Link>
             </div>
           ) : userToken &&
-            (localStorage.getItem("user-type") === "store" ||
-              localStorage.getItem("user-type") === "exhibition") ? (
+            (localStorage.getItem("user-type") === "store" || localStorage.getItem("user-type") === "exhibition") ? (
             <div className="hidden md:flex items-center gap-4">
               <Link to="/productlist">
                 <Button className="text-[#2D2D4C] border-none ring-0 font-bold bg-white primary-grad hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
@@ -183,12 +170,15 @@ export default function Navbar() {
               </Link>
               <Link to="/addproduct">
                 <Button className="text-[#2D2D4C] border border-[#2D2D4C] font-bold bg-white hover:bg-gradient-to-r from-[#B8BCC5] to-[#F0ECE6] hover:opacity-90 transition-opacity duration-700 ease-in-out rounded-xl">
-                  <img src={vector} alt="Logo" className="w-5 h-5" />
+                  <img src={vector || "/placeholder.svg"} alt="Logo" className="w-5 h-5" />
                   Add Product
                 </Button>
               </Link>
             </div>
           ) : null}
+
+          {/* Cart Icon - Show only for general users when authenticated */}
+          {userToken && localStorage.getItem("user-type") === "general user" && <SimpleCartIcon size="lg" />}
 
           {userToken && (
             <DropdownMenu>
@@ -215,11 +205,7 @@ export default function Navbar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className=" p-0  ">
-                  <Link
-                    to="/client"
-                    className="flex w-full p-1 "
-                    onClick={logout}
-                  >
+                  <Link to="/client" className="flex w-full p-1 " onClick={logout}>
                     Logout
                   </Link>
                 </DropdownMenuItem>
@@ -229,7 +215,7 @@ export default function Navbar() {
         </div>
       </div>
     </header>
-  );
+  )
 }
 
 function LoginButton() {
@@ -295,4 +281,3 @@ function JoinUsButton() {
     </DropdownMenu>
   )
 }
-

@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 type SellerDetailsProps = {
   Seller: {
+    image: string;
     name: string;
     price: number;
     seller: string;
@@ -28,7 +29,7 @@ const ProductRecommendations = ({ Seller }: SellerDetailsProps) => {
         <div className="border border-gray-300 rounded-lg p-1 bg-white">
           <div className="flex items-center space-x-4">
             <img
-              src="https://m.media-amazon.com/images/I/618MwWZziYL.jpg"
+              src={Seller.image}
               alt={Seller.name}
               className="w-16 h-16 object-cover rounded-lg"
             />

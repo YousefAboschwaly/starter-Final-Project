@@ -12,8 +12,8 @@ import ProductForm from "@/MyComponents/product-form"
 
 export default function EditProduct() {
   const navigate = useNavigate()
-  const {productId} = useParams()
-  const [initialValues, setInitialValues] = useState<IintialValues|null>(null)
+  const { productId } = useParams()
+  const [initialValues, setInitialValues] = useState<IintialValues | null>(null)
 
   const userContext = useContext(UserContext)
   if (!userContext) {
@@ -44,24 +44,31 @@ export default function EditProduct() {
     if (product && product.businessType && product.baseUnit) {
       // Transform API data to form initial values
       const formattedValues = {
+        // Revert the businessType and businessTypeCategory back to using codes as in the original
         businessType: product.businessType.code,
+        businessTypeCategory: product.businessTypeCategory?.code || "",
+
         productNameEn: product.nameEn,
         productNameAr: product.nameAr,
         price: product.price.toString(),
-        baseUnit: product.baseUnit.code,
+        baseUnit: product.baseUnit.code, // Keep code for base unit as it seems to work with codes
         descriptionEn: product.descriptionEn,
         descriptionAr: product.descriptionAr,
         length: product.length.toString(),
         width: product.width.toString(),
         height: product.height.toString(),
+
         // Transform materials to array of codes
         materials: product.materials.map((material) => material.code),
+
         // Transform colors and stock
         colorRows: product.stocks.map((stock) => ({
           color: stock.color.code,
           stock: stock.amount.toString(),
+          id: stock.id, // Include the stock ID for editing
         })),
-        // Transform image paths
+
+        // Transform image paths to proper URLs
         imageFiles: product.imagePaths
           .filter((img) => img.imagePath)
           .map((img) => {
@@ -74,7 +81,9 @@ export default function EditProduct() {
       }
 
       setInitialValues(formattedValues)
-      console.log("formattedValues",formattedValues);
+      console.log("formattedValues", formattedValues)
+      console.log("businessType ID:", product.businessType.id)
+      console.log("businessTypeCategory ID:", product.businessTypeCategory?.id)
     }
   }, [product, pathUrl])
 
@@ -98,7 +107,7 @@ export default function EditProduct() {
             Unable to load product data. The product may not exist or you may not have permission to edit it.
           </p>
           <button
-            onClick={() => navigate('/productlist')}
+            onClick={() => navigate("/productlist")}
             className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             Go Back
@@ -108,8 +117,8 @@ export default function EditProduct() {
     )
   }
 
-  console.log("initialValues",initialValues)
-  console.log("product",product)
+  console.log("initialValues", initialValues)
+  console.log("product", product)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
@@ -130,4 +139,3 @@ export default function EditProduct() {
     </div>
   )
 }
-

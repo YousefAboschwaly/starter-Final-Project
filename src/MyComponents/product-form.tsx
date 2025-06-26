@@ -2,15 +2,14 @@
 
 import type React from "react"
 
-import { useContext, useRef, useEffect } from "react"
+import { useContext, useRef, useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Eye, Loader2, AlertCircle, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useFormik } from "formik"
 import * as Yup from "yup"
-import { useState } from "react"
 import { useProductData } from "@/lib/product-data"
-import type { IProductFormData, IProductById, IintialValues } from "@/interfaces"
+import type { IProductFormData, IProductById, IintialValues, IProductMaterial } from "@/interfaces"
 import axios from "axios"
 
 import FormHeader from "./form/form-header"
@@ -22,7 +21,6 @@ import ImageUploadSection from "./form/image-upload-section"
 import { UserContext } from "@/Contexts/UserContext"
 import { useNavigate } from "react-router-dom"
 import ProductPreviewModal from "./product-preview"
-
 
 // Alert component for success/error messages
 const Alert = ({
@@ -75,6 +73,7 @@ export const ErrorMessage = ({ message }: { message: string }) => (
 // Product form interface
 interface ProductFormValues {
   businessType: string
+  businessTypeCategory: string
   productNameEn: string
   productNameAr: string
   price: string
@@ -101,7 +100,7 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   }
   const { userToken, pathUrl } = userContext
 
-  const { data,businessTypes ,isLoading } = useProductData()
+  const { data, businessTypes, isLoading } = useProductData()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [alert, setAlert] = useState<{
     message: string
@@ -131,6 +130,7 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   // Validation schema
   const validationSchema = Yup.object({
     businessType: Yup.string().required("Business type is required"),
+    businessTypeCategory: Yup.string().required("Business type category is required"),
     productNameEn: Yup.string().required("Product name in English is required"),
     productNameAr: Yup.string().required("Product name in Arabic is required"),
     price: Yup.string()
@@ -154,6 +154,7 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   const formik = useFormik<ProductFormValues>({
     initialValues: {
       businessType: "",
+      businessTypeCategory: "",
       productNameEn: "",
       productNameAr: "",
       price: "",
@@ -170,37 +171,75 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   })
 
   // Initialize form with initial values if provided
-  // Update the useEffect that sets initial values to include stock IDs
   useEffect(() => {
-    if (initialValues) {
+    // If we're in edit mode and have productData, use it directly
+    if (isEditMode && productData) {
+      console.log("=== DEBUGGING PRODUCT DATA ===")
+      console.log("Full productData:", productData)
+      console.log("Business Type:", productData.businessType)
+      console.log("Business Type Category:", productData.businessTypeCategory)
+      console.log("Available businessTypeCategories:", data?.businessTypeCategories)
+
+      // Set materials if they exist in productData
+      if (productData.materials && productData.materials.length > 0) {
+        const materialCodes = productData.materials.map((material: IProductMaterial) => material.code)
+        setMaterials(materialCodes)
+      } else {
+        setMaterials([])
+      }
+
+      // Set color rows if they exist in productData
+      if (productData.stocks && productData.stocks.length > 0) {
+        const colorRowsFromData = productData.stocks.map((stock: {
+          color: { code: string }
+          amount: number
+          id: number
+        }) => ({
+          color: stock.color.code,
+          stock: stock.amount.toString(),
+          id: stock.id,
+        }))
+        setColorRows(colorRowsFromData)
+      } else {
+        setColorRows([])
+      }
+
+      // Set form values directly from productData
+      const formValues = {
+        businessType: productData.businessType?.code || "",
+        businessTypeCategory: "", // We'll set this later
+        productNameEn: productData.nameEn || "",
+        productNameAr: productData.nameAr || "",
+        price: productData.price ? productData.price.toString() : "",
+        baseUnit: productData.baseUnit?.code || "",
+        descriptionEn: productData.descriptionEn || "",
+        descriptionAr: productData.descriptionAr || "",
+        length: productData.length ? productData.length.toString() : "",
+        width: productData.width ? productData.width.toString() : "",
+        height: productData.height ? productData.height.toString() : "",
+      }
+
+      console.log("Setting form values:", formValues)
+      formik.setValues(formValues)
+    }
+    // If we have initialValues (for new products or manual override), use them
+    else if (initialValues) {
+      console.log("Setting form values from initialValues:", initialValues)
+
       // Set materials if provided
       if (initialValues.materials) {
         setMaterials(initialValues.materials)
       }
 
-      // Set color rows if provided, including stock IDs for existing stocks
-      if (initialValues.colorRows && productData?.stocks) {
-        const colorRowsWithIds = initialValues.colorRows.map((row: { color: string; stock: string }) => {
-          // Find matching stock in productData to get the ID
-          const matchingStock = productData.stocks.find(
-            (stock) => data?.colors.find((c) => c.code === row.color)?.id === stock.color.id,
-          )
-
-          return {
-            color: row.color,
-            stock: row.stock,
-            id: matchingStock?.id, // Include the ID if it exists
-          }
-        })
-
-        setColorRows(colorRowsWithIds)
-      } else if (initialValues.colorRows) {
+      // Set color rows if provided
+      if (initialValues.colorRows) {
         setColorRows(initialValues.colorRows)
       }
 
-      // Set form values
+      // Set form values from initialValues
       formik.setValues({
         businessType: initialValues.businessType || "",
+        businessTypeCategory: initialValues.businessTypeCategory || "",
         productNameEn: initialValues.productNameEn || "",
         productNameAr: initialValues.productNameAr || "",
         price: initialValues.price || "",
@@ -212,8 +251,22 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
         height: initialValues.height || "",
       })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialValues, productData, data?.colors])
+  }, [isEditMode, productData, initialValues, data?.businessTypeCategories])
+
+  // Set businessTypeCategory after businessType is set and data is available
+  useEffect(() => {
+    if (isEditMode && productData && data && formik.values.businessType) {
+      const isValidCategory = data.businessTypeCategories?.some(
+        cat => cat.code === productData.businessTypeCategory?.code && 
+               cat.businessType.code === formik.values.businessType
+      );
+      
+      if (isValidCategory) {
+        console.log("Setting valid category:", productData.businessTypeCategory?.code)
+        formik.setFieldValue("businessTypeCategory", productData.businessTypeCategory?.code || "");
+      }
+    }
+  }, [isEditMode, productData, data, formik.values.businessType])
 
   // Set existing image paths if in edit mode
   useEffect(() => {
@@ -234,8 +287,6 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   }, [isEditMode, productData])
 
   // Formik setup
-
-
   const { values, errors, touched, handleChange, handleBlur, setFieldValue } = formik
 
   // Handle image upload
@@ -291,7 +342,6 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   }
 
   // Add color row
-  // Update the addColorRow function to not include an ID for new rows
   const addColorRow = (color: string, stock: string) => {
     if (color && stock) {
       setColorRows([...colorRows, { color, stock }]) // No ID for new rows
@@ -299,7 +349,6 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   }
 
   // Update color row
-  // Update the updateColorRow function to preserve the ID if it exists
   const updateColorRow = (index: number, color: string, stock: string) => {
     const updatedRows = [...colorRows]
     // Preserve the id if it exists
@@ -391,7 +440,6 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   }
 
   // Transform form data to match API format
-  // Now update the transformFormData function to handle existing vs new stocks differently
   const transformFormData = (
     values: ProductFormValues,
     materials: string[],
@@ -401,6 +449,10 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
   ): IProductFormData & { id?: number } => {
     // Find business type id from code
     const businessTypeId = businessTypes?.find((type) => type.code === values.businessType)?.id || 0
+
+    // Find business type category id from code
+    const businessTypeCategoryId =
+      data?.businessTypeCategories.find((category) => category.code === values.businessTypeCategory)?.id || 0
 
     // Find base unit id from code
     const baseUnitId = data?.productBaseUnits.find((unit) => unit.code === values.baseUnit)?.id || 0
@@ -438,6 +490,7 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
       descriptionAr: values.descriptionAr,
       descriptionEn: values.descriptionEn,
       businessType: { id: businessTypeId },
+      businessTypeCategory: { id: businessTypeCategoryId },
       price: Number.parseFloat(values.price),
       length: values.length ? Number.parseFloat(values.length) : undefined,
       width: values.width ? Number.parseFloat(values.width) : undefined,
@@ -479,7 +532,6 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
       setTimeout(() => setAlert(null), 5000)
       return
     }
-
 
     setIsSubmitting(true)
 
@@ -670,4 +722,3 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
     </>
   )
 }
-

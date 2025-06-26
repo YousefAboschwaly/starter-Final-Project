@@ -51,7 +51,7 @@ interface City {
 }
 
 interface RequestFormProps {
-  formType: "engineer" | "worker"
+  formType: "engineer" | "worker" 
   pathUrl: string
   userToken: string | null
   onStepChange?: (step: number) => void
@@ -188,7 +188,7 @@ const AskEngWorker: React.FC<RequestFormProps> = ({ formType, pathUrl, userToken
     onSubmit: async (values) => {
       setIsLoading(true)
       try {
-        let formData: any = {}
+        let formData: unknown = {}
 
         if (formType === "engineer") {
           formData = {

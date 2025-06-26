@@ -10,6 +10,11 @@ import engineer1 from "/engineer1.jpg"
 import engineer2 from "/engineer2.jpg"
 import worker1 from "/worker1.jpg"
 import worker2 from "/worker2.jpg"
+import ShopNow from "./ShopNow/ShopNow"
+import RequestDesign from "./RequestDesign"
+import HomeRenovate from "./HomeRenovate"
+import FurnishYourHome from "./FurnishYourHome"
+import KitchensAndDressing from "./kitchens-and-dressing"
 
 export default function Ask() {
   const userContext = useContext(UserContext)
@@ -20,14 +25,35 @@ export default function Ask() {
 
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [formType, setFormType] = useState<"engineer" | "worker" | null>(null)
+  const [formType, setFormType] = useState<
+    | "engineer"
+    | "worker"
+    | "shop"
+    | "request-design"
+    | "home-renovate"
+    | "furnish-house"
+    | "kitchen"
+    | "dressing"
+    | null
+  >(null)
   const [currentStep, setCurrentStep] = useState(1)
 
   useEffect(() => {
     const type = searchParams.get("type")
-    if (type === "engineer" || type === "worker") {
+    if (  type === "engineer" ||
+      type === "worker" ||
+      type === "request-design" ||
+      type === "home-renovate" ||
+      type === "furnish-house" ||
+      type === "kitchen" ||
+      type === "dressing") {
       setFormType(type)
-    } else {
+    } 
+   else if (type ==="shop") {
+      setFormType(type)
+    } 
+    
+    else {
       // Redirect to home if no valid type is provided
       navigate("/")
     }
@@ -37,6 +63,12 @@ export default function Ask() {
   const handleStepChange = (step: number) => {
     setCurrentStep(step)
   }
+  if (formType === "shop") {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <ShopNow />
+      </div>
+    )}
 
   if (!formType) {
     return (
@@ -50,10 +82,31 @@ export default function Ask() {
   const getBackgroundImage = () => {
     if (formType === "engineer") {
       return currentStep === 1 ? engineer1 : engineer2
+     } else if (formType === "worker") {
+      return currentStep === 1 ? worker1 : worker2;
+    } else if (
+      formType === "request-design" ||
+      formType === "home-renovate" ||
+      formType === "furnish-house" ||
+      formType === "kitchen" ||
+      formType === "dressing"
+    ) {
+      return worker1;
     } else {
-      return currentStep === 1 ? worker1 : worker2
+      return "/default.jpg";
     }
   }
+
+    const getTitle = () => {
+    if (formType === "engineer") return "Ask to Engineer";
+    if (formType === "worker") return "Ask to Worker";
+    if (formType === "request-design") return "Request a Design";
+    if (formType === "home-renovate") return "Renovate Your Home";
+    if (formType === "furnish-house") return "Furnish Your Home";
+    if (formType === "kitchen" || formType === "dressing")
+      return "Kitchen and Dressing";
+    return "";
+  };
 
   return (
     <div
@@ -77,11 +130,48 @@ export default function Ask() {
         <Card className="w-full bg-white/95 backdrop-blur-sm shadow-xl">
           <CardHeader className="pb-3">
             <CardTitle className="text-2xl md:text-3xl font-bold text-center">
-              {formType === "engineer" ? "Ask to Engineer" : "Ask to Worker"}
+              {getTitle()}
+
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <AskEngWorker formType={formType} userToken={userToken} pathUrl={pathUrl} onStepChange={handleStepChange} />
+           { (formType === 'engineer' || formType === 'worker')?<AskEngWorker formType={formType} userToken={userToken} pathUrl={pathUrl} onStepChange={handleStepChange} />: null}
+
+            {formType === "request-design" && (
+              <RequestDesign
+                formType={formType}
+                userToken={userToken}
+                pathUrl={pathUrl}
+                onStepChange={handleStepChange}
+              />
+            )}
+
+            {formType === "home-renovate" && (
+              <HomeRenovate
+                formType={formType}
+                userToken={userToken}
+                pathUrl={pathUrl}
+                onStepChange={handleStepChange}
+              />
+            )}
+
+              {formType === "furnish-house" && (
+              <FurnishYourHome
+                formType={formType}
+                userToken={userToken}
+                pathUrl={pathUrl}
+                onStepChange={handleStepChange}
+              />
+            )}
+              {(formType === "kitchen" || formType === "dressing") && (
+              <KitchensAndDressing
+                formType={formType}
+                userToken={userToken}
+                pathUrl={pathUrl}
+                onStepChange={handleStepChange}
+              />
+            )}
+   
           </CardContent>
         </Card>
       </motion.div>

@@ -105,6 +105,8 @@ export async function deleteProduct(id: number): Promise<boolean> {
         "Content-Language": "en", // Specifies language of request content
       },
     })
+    const data = await response.json()
+    console.log(`Deleting product with ID ${id}:`, data)
     return response.ok
   } catch (error) {
     console.error("Error deleting product:", error)

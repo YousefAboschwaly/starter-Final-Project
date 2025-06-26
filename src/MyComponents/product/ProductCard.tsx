@@ -10,6 +10,27 @@ import { useNavigate } from "react-router-dom"
 import type { IProduct } from "@/interfaces"
 import ProductDetails from "./ProductDetails"
 
+
+function ImagePlaceholder({ className = "" }) {
+  return (
+    <div className={`bg-gray-100 rounded-lg flex items-center justify-center ${className}`}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="100%"
+        height="100%"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#9CA3AF"
+        strokeWidth="1.5"
+        className="h-48 max-w-[80%]"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <path d="M21 15l-5-5L5 21" />
+      </svg>
+    </div>
+  )
+}
 interface ProductCardProps {
   product: IProduct
   onDelete?: (id: number) => void
@@ -45,7 +66,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onDelete }) => {
   // Check if there's a valid image path
   const imageSrc = product.imagePath
     ? pathUrl + product.imagePath.substring(1)
-    : "/placeholder.svg?height=300&width=400"
+    : null
 
   return (
     <>
@@ -80,16 +101,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onDelete }) => {
           )}
 
           {/* Product image */}
-          <img
-            src={imageSrc || "/placeholder.svg"}
+          {imageSrc ? <img
+            src={imageSrc }
             alt={product.name}
             className="w-full h-48 object-cover transition-transform duration-300"
             style={{ transform: isHovered ? "scale(1.05)" : "scale(1)" }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                "/placeholder.svg?height=300&width=400";
-            }}
-          />
+          
+          />:<ImagePlaceholder/>}
 
           {/* Hover overlay with action buttons */}
           <AnimatePresence>

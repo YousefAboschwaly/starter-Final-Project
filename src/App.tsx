@@ -10,8 +10,6 @@ import Login from "./MyComponents/Login";
 import SignUp from "./MyComponents/SignUp";
 import Client from "./Pages/Client";
 import Company from "./Pages/JoinUs/Company";
-import Engineer from "./Pages/JoinUs/Engineer";
-import Technical from "./Pages/JoinUs/Technical";
 import ForgetPassword from "./Pages/ForgetPassword";
 import ProtectedRoute from "./MyComponents/ProtectedRoute";
 import UserContextProvider from "./Contexts/UserContext";
@@ -23,8 +21,10 @@ import AddProduct from "./Pages/AddProduct";
 import ProductList from "./Pages/ProductList";
 import EditProduct from "./Pages/JoinUs/EditProduct";
 import Ask from "./Pages/Ask/Ask";
-import LandingPage from "./Pages/LandingPage/LandingPage.tsx";
 import Viewdetails from "./Pages/Viewdetails.tsx";
+import { CartProvider } from "./Contexts/CartContext.tsx";
+import ShoppingCart from "./Pages/Cart/ShoppingCart.tsx";
+import OrderSuccess from "./Pages/Cart/Order-Success.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -35,6 +35,12 @@ function App() {
       path: "",
       element: <Layout />,
       children: [
+                {
+          index: true,
+          element: (
+              <Home />
+          ),
+        },
         {
           path: "edit_profile",
           element: (
@@ -51,14 +57,7 @@ function App() {
             </ProtectedRoute>
           ),
         },
-        {
-          index: true,
-          element: (
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          ),
-        },
+
         {
           path: "about",
           element: (
@@ -108,18 +107,26 @@ function App() {
           ),
         },
         {
-          path: "landing",
+          path: "products/:id",
           element: (
             <ProtectedRoute>
-              <LandingPage />
+              <Viewdetails />
             </ProtectedRoute>
           ),
         },
         {
-          path: "product-details",
+          path: "cart",
           element: (
             <ProtectedRoute>
-              <Viewdetails />
+              <ShoppingCart />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "order-success",
+          element: (
+            <ProtectedRoute>
+              <OrderSuccess />
             </ProtectedRoute>
           ),
         },
@@ -135,8 +142,6 @@ function App() {
         { path: "forgot-password", element: <ForgetPassword /> },
         { path: "access-account/:email", element: <AccessAccount /> },
         { path: "join-as/:userType", element: <Company /> },
-        { path: "engineer", element: <Engineer /> },
-        { path: "consultative", element: <Technical /> },
         { path: "*", element: <NotFound /> }, // Wildcard route for 404
       ],
     },
@@ -147,7 +152,11 @@ function App() {
       <ReactQueryDevtools initialIsOpen={false} />
 
       <UserContextProvider>
+        <CartProvider>
+          
+
         <RouterProvider router={routes} />
+        </CartProvider>
       </UserContextProvider>
     </QueryClientProvider>
   );
