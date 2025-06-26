@@ -46,7 +46,7 @@ export default function EditProduct() {
       const formattedValues = {
         // Revert the businessType and businessTypeCategory back to using codes as in the original
         businessType: product.businessType.code,
-        businessTypeCategory: product.businessTypeCategory?.code || "",
+        businessTypeCategory: product.businessTypeCategory?.code ,
 
         productNameEn: product.nameEn,
         productNameAr: product.nameAr,
@@ -81,9 +81,7 @@ export default function EditProduct() {
       }
 
       setInitialValues(formattedValues)
-      console.log("formattedValues", formattedValues)
-      console.log("businessType ID:", product.businessType.id)
-      console.log("businessTypeCategory ID:", product.businessTypeCategory?.id)
+      
     }
   }, [product, pathUrl])
 

@@ -57,8 +57,7 @@ export default function ProductBasicInfo({
 
   // Debug logging
   console.log("Current values:", values)
-  console.log("Available categories:", data?.businessTypeCategories)
-  console.log("Filtered categories:", getFilteredCategories())
+
 
   return (
     <>
@@ -122,13 +121,7 @@ export default function ProductBasicInfo({
           <ErrorMessage message={errors.businessTypeCategory} />
         )}
 
-        {/* Debug info */}
-        {values.businessType && (
-          <div className="text-xs text-gray-500">
-            Business Type: {values.businessType}, Category: {values.businessTypeCategory}, Available Categories:{" "}
-            {getFilteredCategories().length}
-          </div>
-        )}
+
       </div>
 
       {/* Product Name Fields */}

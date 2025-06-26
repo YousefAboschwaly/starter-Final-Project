@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { useFormik } from "formik"
 import * as Yup from "yup"
 import { useProductData } from "@/lib/product-data"
-import type { IProductFormData, IProductById, IintialValues, IProductMaterial } from "@/interfaces"
+import type { IProductFormData, IProductById, IintialValues } from "@/interfaces"
 import axios from "axios"
 
 import FormHeader from "./form/form-header"
@@ -91,8 +91,22 @@ interface ProductFormProps {
   initialValues?: IintialValues
   productData?: IProductById
 }
+const emptyInitialValues={
+      businessType: "",
+      businessTypeCategory: "",
+      productNameEn: "",
+      productNameAr: "",
+      price: "",
+      baseUnit: "",
+      descriptionEn: "",
+      descriptionAr: "",
+      length: "",
+      width: "",
+      height: "",
+    }
 
 export default function ProductForm({ isEditMode = false, productId, initialValues, productData }: ProductFormProps) {
+  console.log(initialValues)
   const navigate = useNavigate()
   const userContext = useContext(UserContext)
   if (!userContext) {
@@ -152,121 +166,14 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
     }),
   })
   const formik = useFormik<ProductFormValues>({
-    initialValues: {
-      businessType: "",
-      businessTypeCategory: "",
-      productNameEn: "",
-      productNameAr: "",
-      price: "",
-      baseUnit: "",
-      descriptionEn: "",
-      descriptionAr: "",
-      length: "",
-      width: "",
-      height: "",
-    },
+    initialValues: isEditMode && initialValues ? initialValues : emptyInitialValues,
     validationSchema,
     onSubmit: handleSubmit,
     enableReinitialize: true,
   })
 
-  // Initialize form with initial values if provided
-  useEffect(() => {
-    // If we're in edit mode and have productData, use it directly
-    if (isEditMode && productData) {
-      console.log("=== DEBUGGING PRODUCT DATA ===")
-      console.log("Full productData:", productData)
-      console.log("Business Type:", productData.businessType)
-      console.log("Business Type Category:", productData.businessTypeCategory)
-      console.log("Available businessTypeCategories:", data?.businessTypeCategories)
 
-      // Set materials if they exist in productData
-      if (productData.materials && productData.materials.length > 0) {
-        const materialCodes = productData.materials.map((material: IProductMaterial) => material.code)
-        setMaterials(materialCodes)
-      } else {
-        setMaterials([])
-      }
 
-      // Set color rows if they exist in productData
-      if (productData.stocks && productData.stocks.length > 0) {
-        const colorRowsFromData = productData.stocks.map((stock: {
-          color: { code: string }
-          amount: number
-          id: number
-        }) => ({
-          color: stock.color.code,
-          stock: stock.amount.toString(),
-          id: stock.id,
-        }))
-        setColorRows(colorRowsFromData)
-      } else {
-        setColorRows([])
-      }
-
-      // Set form values directly from productData
-      const formValues = {
-        businessType: productData.businessType?.code || "",
-        businessTypeCategory: "", // We'll set this later
-        productNameEn: productData.nameEn || "",
-        productNameAr: productData.nameAr || "",
-        price: productData.price ? productData.price.toString() : "",
-        baseUnit: productData.baseUnit?.code || "",
-        descriptionEn: productData.descriptionEn || "",
-        descriptionAr: productData.descriptionAr || "",
-        length: productData.length ? productData.length.toString() : "",
-        width: productData.width ? productData.width.toString() : "",
-        height: productData.height ? productData.height.toString() : "",
-      }
-
-      console.log("Setting form values:", formValues)
-      formik.setValues(formValues)
-    }
-    // If we have initialValues (for new products or manual override), use them
-    else if (initialValues) {
-      console.log("Setting form values from initialValues:", initialValues)
-
-      // Set materials if provided
-      if (initialValues.materials) {
-        setMaterials(initialValues.materials)
-      }
-
-      // Set color rows if provided
-      if (initialValues.colorRows) {
-        setColorRows(initialValues.colorRows)
-      }
-
-      // Set form values from initialValues
-      formik.setValues({
-        businessType: initialValues.businessType || "",
-        businessTypeCategory: initialValues.businessTypeCategory || "",
-        productNameEn: initialValues.productNameEn || "",
-        productNameAr: initialValues.productNameAr || "",
-        price: initialValues.price || "",
-        baseUnit: initialValues.baseUnit || "",
-        descriptionEn: initialValues.descriptionEn || "",
-        descriptionAr: initialValues.descriptionAr || "",
-        length: initialValues.length || "",
-        width: initialValues.width || "",
-        height: initialValues.height || "",
-      })
-    }
-  }, [isEditMode, productData, initialValues, data?.businessTypeCategories])
-
-  // Set businessTypeCategory after businessType is set and data is available
-  useEffect(() => {
-    if (isEditMode && productData && data && formik.values.businessType) {
-      const isValidCategory = data.businessTypeCategories?.some(
-        cat => cat.code === productData.businessTypeCategory?.code && 
-               cat.businessType.code === formik.values.businessType
-      );
-      
-      if (isValidCategory) {
-        console.log("Setting valid category:", productData.businessTypeCategory?.code)
-        formik.setFieldValue("businessTypeCategory", productData.businessTypeCategory?.code || "");
-      }
-    }
-  }, [isEditMode, productData, data, formik.values.businessType])
 
   // Set existing image paths if in edit mode
   useEffect(() => {
@@ -573,8 +480,6 @@ export default function ProductForm({ isEditMode = false, productId, initialValu
       if (imageFiles.length > 0) {
         await uploadImages(product_id!)
       }
-
-      console.log(data, product_id)
 
       // Show success message
       setAlert({
