@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
-import { Formik, Form } from "formik";
+import { useEffect, useState, useCallback } from "react";
+import { Formik, Form, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import FileUpload from "./file-upload";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export interface IHomeDataResponse {
   success: boolean;
@@ -92,7 +92,6 @@ export interface KitchenType {
 }
 
 interface FinishYourHomeProps {
-  formType: "furnish-house";
   userToken: string | null;
   pathUrl: string;
   onStepChange: (step: number) => void;
@@ -103,6 +102,16 @@ interface ILocation {
   code?: string;
   name: string;
 }
+
+interface FormValues {
+  phoneNumber: string;
+  governorateId: number;
+  budget: string;
+  requiredDuration: string;
+  furnitureTypeId: number;
+  notes: string;
+}
+
 const ErrorMessage = ({ message }: { message: string }) => (
   <motion.div
     initial={{ opacity: 0, y: -10 }}
@@ -117,11 +126,11 @@ const ErrorMessage = ({ message }: { message: string }) => (
 );
 
 const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
-  formType,
   pathUrl,
   userToken,
   onStepChange,
 }) => {
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{
     message: string;
@@ -130,22 +139,11 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
   const [HomeData, setHomeData] = useState<IHomeData | null>(null);
   const [governorates, setGovernorates] = useState<ILocation[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
-  const [activeTab, setActiveTab] = useState(1);
-  const [phone, setPhone] = useState<string>("");
-  const [selectedGovernorate, setSelectedGovernorate] = useState<number | null>(
-    null
-  );
-  const [Selectedfurniture, setSelectedfurniture] = useState<number | null>(
-    null
-  );
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [requestTypeId, setRequestTypeId] = useState<number | null>(null);
 
-  const useQuery = () => {
-    return new URLSearchParams(useLocation().search);
-  };
-
-  const query = useQuery();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
   const type = query.get("type");
 
   useEffect(() => {
@@ -153,6 +151,7 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
       onStepChange(currentStep);
     }
   }, [currentStep, onStepChange]);
+
   const validationSchema = Yup.object().shape({
     phoneNumber: Yup.string()
       .matches(/^01[0125][0-9]{8}$/, "Invalid phone number")
@@ -173,8 +172,9 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
       .required("Furniture type is required"),
     notes: Yup.string().optional(),
   });
+
   //fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axios.get<IHomeDataResponse>(
@@ -192,15 +192,9 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
       const normalizedType = type?.replace("-", "_").toUpperCase();
       const matchedType = allTypes.find((item) => item.code === normalizedType);
 
-      console.log("Matched type:", matchedType);
       if (matchedType) {
         setRequestTypeId(matchedType.id);
       }
-      console.log("Query type from URL:", type);
-      console.log(
-        "Available types from API:",
-        allTypes.map((i) => i.code)
-      );
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         setAlert({
@@ -216,11 +210,11 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pathUrl, userToken, type]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   //getGovernorates
   useEffect(() => {
@@ -256,7 +250,7 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
     getGovernorates();
   }, [pathUrl]);
 
-  const handleNextStep = (formik: any) => {
+  const handleNextStep = (formik: FormikHelpers<FormValues>) => {
     const firstStepFields = [
       "phoneNumber",
       "governorateId",
@@ -268,7 +262,7 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
       formik.setFieldTouched(field, true, false);
     });
 
-    formik.validateForm().then((errors: Record<string, string>) => {
+    formik.validateForm().then((errors) => {
       const hasErrors = firstStepFields.some((field) =>
         Object.keys(errors).includes(field)
       );
@@ -278,17 +272,17 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
       }
     });
   };
+  
   const handlePrevStep = () => {
     setCurrentStep(1);
   };
-  const switchTab = (tabIndex: number) => {
-    setActiveTab(tabIndex);
-  };
+  
   const handleFileChange = (files: File[]) => {
     setSelectedFiles(files);
   };
+  
   // handleSubmit
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: FormValues) => {
     const formData = new FormData();
 
     if (!requestTypeId) {
@@ -332,12 +326,12 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
           message: "Furnishing submitted successfully!",
           type: "success",
         });
-        setTimeout(() => setAlert(null), 3000);
+        setTimeout(() => {setAlert(null); navigate('/')}, 3000);
       } else {
         setAlert({ message: "Failed to submit", type: "error" });
         setTimeout(() => setAlert(null), 3000);
       }
-    } catch (error: any) {
+    } catch (error) {
       setAlert({ message: "Something went wrong", type: "error" });
       console.error(error);
       setTimeout(() => setAlert(null), 3000);
@@ -365,15 +359,6 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
         {message}
       </motion.div>
     );
-  };
-  const formVariants = {
-    hidden: { opacity: 0, x: 0 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { staggerChildren: 0.07, delayChildren: 0.1 },
-    },
-    exit: { opacity: 0, x: 0 },
   };
 
   const itemVariants = {
@@ -413,11 +398,7 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
                     name="phoneNumber"
                     placeholder="Enter phone number"
                     value={formik.values.phoneNumber}
-                    // onChange={formik.handleChange}
-                    onChange={(e) => {
-                      formik.handleChange(e);
-                      setPhone(e.target.value);
-                    }}
+                    onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     className={
                       formik.touched.phoneNumber && formik.errors.phoneNumber
@@ -434,6 +415,7 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
                       )}
                   </AnimatePresence>
                 </motion.div>
+                
                 <motion.div variants={itemVariants} className="space-y-2">
                   {/* Governorate */}
                   <motion.div variants={itemVariants} className="space-y-2">
@@ -443,7 +425,6 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
                       onValueChange={(value) => {
                         const selectedId = Number(value);
                         formik.setFieldValue("governorateId", selectedId);
-                        setSelectedGovernorate(selectedId);
                       }}
                       value={
                         formik.values.governorateId
@@ -487,7 +468,6 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
                       onValueChange={(value) => {
                         const selectedId = Number(value);
                         formik.setFieldValue("furnitureTypeId", selectedId);
-                        setSelectedfurniture(selectedId);
                       }}
                       value={
                         formik.values.furnitureTypeId
@@ -552,7 +532,7 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
                   </motion.div>
                   <Button
                     type="button"
-                    className="w-full h-12 text-base font-medium btn primary-grad"
+                    className="w-full h-12 text-base font-medium btn primary-grad "
                     onClick={() => handleNextStep(formik)}
                   >
                     Next
@@ -603,36 +583,35 @@ const FurnishYourHome: React.FC<FinishYourHomeProps> = ({
                   <Label>Attach Photos & Attachments</Label>
                   <FileUpload onFileChange={handleFileChange} />
                 </motion.div>
-                {activeTab === 1 && (
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex gap-2 pt-4"
+
+                <motion.div
+                  variants={itemVariants}
+                  className="flex gap-2 pt-4"
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-1/2 h-12 text-base font-medium"
+                    onClick={handlePrevStep}
                   >
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-1/2 h-12 text-base font-medium"
-                      onClick={handlePrevStep}
-                    >
-                      <ArrowLeft className="mr-2 h-5 w-5" />
-                      Back
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="w-1/2 h-12 text-base font-medium btn primary-grad"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        "Submit"
-                      )}
-                    </Button>
-                  </motion.div>
-                )}
+                    <ArrowLeft className="mr-2 h-5 w-5" />
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="w-1/2 h-12 text-base font-medium btn primary-grad"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit"
+                    )}
+                  </Button>
+                </motion.div>
               </>
             )}
           </Form>

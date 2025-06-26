@@ -1,4 +1,3 @@
-import React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { FilterSection } from "./FilterSection"
@@ -7,6 +6,7 @@ import { ColorFilter } from "./ColorFilter"
 import { MaterialFilter } from "./MaterialFilter"
 import { BusinessTypeFilter } from "./BusinessTypeFilter"
 import { BusinessCategoryFilter } from "./BusinessCategoryFilter"
+import { IBusinessType, IBusinessTypeCategories, IColor, IProductMaterial } from "@/interfaces"
 
 interface FilterSidebarProps {
   // Filter states
@@ -18,10 +18,10 @@ interface FilterSidebarProps {
   selectedBusinessCategoryIds: number[]
   
   // Data arrays
-  colors: any[]
-  materials: any[]
-  businessTypes: any[]
-  availableBusinessCategories: any[]
+  colors: IColor[]
+  materials: IProductMaterial[]
+  businessTypes: IBusinessType[]
+  availableBusinessCategories: IBusinessTypeCategories[]
   
   // Handler functions
   onMinPriceChange: (value: string) => void
