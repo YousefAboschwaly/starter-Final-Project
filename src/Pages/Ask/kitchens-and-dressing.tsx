@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, AlertCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as Yup from "yup";
-import { Formik, Form } from "formik";
+import { Formik, Form, FormikContextType } from "formik";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,18 +13,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import axios from "axios";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import FileUpload from "./file-upload";
 import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
 
 export interface IHomeDataResponse {
   success: boolean;
   status: number;
   data: IHomeData;
 }
+
 export interface IHomeData {
   colors: ColorOption[];
   productBaseUnits: ProductUnit[];
@@ -92,39 +92,32 @@ export interface KitchenType {
   code: string;
   name: string;
 }
+
 interface KitchensAndDressingProps {
   formType: "kitchen" | "dressing";
   userToken: string | null;
   pathUrl: string;
   onStepChange: (step: number) => void;
 }
-interface KitchenRequestPayload {
-  requestType: {
-    id: number;
-  };
-  phoneNumber: string;
-  government: {
-    id: number;
-  };
-  timeFrameDays: number;
-  budget: number;
-  kitchenSize: number;
-  devicesAttacheds: {
-    id: number;
-  }[];
-  productMaterial: {
-    id: number;
-  }[];
-  kitchenType: {
-    id: number;
-  };
-  note?: string;
-}
+
 interface ILocation {
   id: number;
   code?: string;
   name: string;
 }
+
+interface FormValues {
+  phoneNumber: string;
+  governorateId: number;
+  budget: string;
+  requiredDuration: string;
+  kitchenSize: string;
+  kitchenTypeId: number;
+  devicesAttacheds: { id: number }[];
+  productMaterial: { id: number }[];
+  notes: string;
+}
+
 const ErrorMessage = ({ message }: { message: string }) => (
   <motion.div
     initial={{ opacity: 0, y: -10 }}
@@ -142,7 +135,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
   formType,
   pathUrl,
   userToken,
-  onStepChange,
+  
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{
@@ -152,22 +145,14 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
   const [KitchenData, setKitchenData] = useState<IHomeData | null>(null);
   const [activeTab, setActiveTab] = useState(1);
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedGovernorate, setSelectedGovernorate] = useState<number | null>(
-    null
-  );
   const [governorates, setGovernorates] = useState<ILocation[]>([]);
   const [requestTypeId, setRequestTypeId] = useState<number | null>(null);
-  const [SelectedKitchen, setSelectedkitchen] = useState<number | null>(null);
-  const [Selecteddevice, setSelecteddevice] = useState<number | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const navigate = useNavigate();
-
-  const useQuery = () => {
-    return new URLSearchParams(useLocation().search);
-  };
-
-  const query = useQuery();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
   const type = query.get("type");
+  
   useEffect(() => {
     if (formType === "kitchen") {
       setActiveTab(1);
@@ -226,7 +211,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
   });
 
   //fetchData
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axios.get<IHomeDataResponse>(
@@ -256,17 +241,11 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
         (item) => item.code === normalizedType(type)
       );
 
-      console.log("Matched type:", matchedType);
       if (matchedType) {
         setRequestTypeId(matchedType.id);
       } else {
         setRequestTypeId(null);
       }
-      console.log("Query type from URL:", type);
-      console.log(
-        "Available types from API:",
-        allTypes.map((i) => i.code)
-      );
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         setAlert({
@@ -282,10 +261,11 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pathUrl, userToken, type]);
+
   useEffect(() => {
     fetchData();
-  }, [type]);
+  }, [fetchData]);
 
   //getGovernorates
   useEffect(() => {
@@ -321,44 +301,33 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
     getGovernorates();
   }, [pathUrl]);
 
-  const handleNextStep = (formik: any) => {
+  const handleNextStep = (formik: FormikContextType<FormValues>) => {
     const firstStepFields = [
       "phoneNumber",
       "governorateId",
-      "kitchenSize",
-      "kitchenTypeId",
-      "devicesAttacheds",
+      ...(formType === "kitchen" ? [
+        "kitchenSize",
+        "kitchenTypeId",
+        "devicesAttacheds"
+      ] : [])
     ];
 
     firstStepFields.forEach((field) => {
       formik.setFieldTouched(field, true, false);
     });
 
-    formik.validateForm().then((errors: Record<string, string>) => {
-      const hasErrors = firstStepFields.some((field) =>
-        Object.keys(errors).includes(field)
-      );
-
-      if (!hasErrors) {
-        setCurrentStep(2);
-      }
+    formik.validateForm().then((errors) => {
+      const hasErrors = firstStepFields.some(field => field in errors);
+      if (!hasErrors) setCurrentStep(2);
     });
   };
 
-  const firstStepFields = ["phoneNumber", "governorateId"];
-  if (formType === "kitchen") {
-    firstStepFields.push("kitchenSize", "kitchenTypeId", "devicesAttacheds");
-  }
-
-  const handlePrevStep = () => {
-    setCurrentStep(1);
-  };
-  const handleFileChange = (files: File[]) => {
-    setSelectedFiles(files);
-  };
+  const handlePrevStep = () => setCurrentStep(1);
+  
+  const handleFileChange = (files: File[]) => setSelectedFiles(files);
 
   // handleSubmit
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: FormValues) => {
     const formData = new FormData();
 
     if (!requestTypeId) {
@@ -376,35 +345,23 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
       formData.append("kitchenSize", values.kitchenSize.toString());
       formData.append("kitchenType.id", values.kitchenTypeId.toString());
 
-      values.devicesAttacheds.forEach(
-        (device: { id: number }, index: number) => {
-          formData.append(
-            `devicesAttacheds[${index}].id`,
-            device.id.toString()
-          );
-        }
-      );
+      values.devicesAttacheds.forEach((device, index) => {
+        formData.append(`devicesAttacheds[${index}].id`, device.id.toString());
+      });
     }
 
-    values.productMaterial.forEach(
-      (material: { id: number }, index: number) => {
-        formData.append(`productMaterial[${index}].id`, material.id.toString());
-      }
-    );
+    values.productMaterial.forEach((material, index) => {
+      formData.append(`productMaterial[${index}].id`, material.id.toString());
+    });
 
-    if (values.notes) {
-      formData.append("note", values.notes);
-    }
-
-    if (selectedFiles.length > 0) {
-      formData.append("attachmentFile", selectedFiles[0]);
-    }
+    if (values.notes) formData.append("note", values.notes);
+    if (selectedFiles.length > 0) formData.append("attachmentFile", selectedFiles[0]);
 
     setIsLoading(true);
     setAlert(null);
 
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         `${pathUrl}/api/v1/home-furnishing-requests`,
         formData,
         {
@@ -416,16 +373,16 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
         }
       );
 
-      if (response.data.success) {
+      if (data.success) {
         setAlert({ message: "Submitted successfully!", type: "success" });
       } else {
         setAlert({ message: "Failed to submit", type: "error" });
       }
-      setTimeout(() => setAlert(null), 3000);
-    } catch (error: any) {
+      setTimeout(() =>{ setAlert(null);navigate('/')}, 3000);
+    } catch (error) {
       console.error("Submit error:", error);
       setAlert({ message: "Something went wrong", type: "error" });
-      setTimeout(() => setAlert(null), 3000);
+      setTimeout(() =>{ setAlert(null);navigate('/')}, 3000);
     } finally {
       setIsLoading(false);
     }
@@ -457,29 +414,6 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
     visible: { opacity: 1, y: 0 },
     exit: { opacity: 0, y: -20 },
   };
-  const handleSubmitForm = (formik: any) => {
-    const firstStepFields = [
-      "phoneNumber",
-      "governorateId",
-      "kitchenSize",
-      "devicesAttacheds",
-      "kitchenTypeId",
-    ];
-
-    firstStepFields.forEach((field) => {
-      formik.setFieldTouched(field, true, false);
-    });
-
-    formik.validateForm().then((errors: Record<string, string>) => {
-      const hasErrors: boolean = firstStepFields.some((field: string) =>
-        Object.keys(errors).includes(field)
-      );
-
-      if (!hasErrors) {
-        formik.handleSubmit();
-      }
-    });
-  };
 
   return (
     <>
@@ -507,7 +441,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
         </button>
       </div>
 
-      <Formik
+      <Formik<FormValues>
         initialValues={{
           phoneNumber: "",
           governorateId: 0,
@@ -557,9 +491,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
                   <Select
                     name="governorateId"
                     onValueChange={(value) => {
-                      const selectedId = Number(value);
-                      formik.setFieldValue("governorateId", selectedId);
-                      setSelectedGovernorate(selectedId);
+                      formik.setFieldValue("governorateId", Number(value));
                     }}
                     value={
                       formik.values.governorateId
@@ -591,7 +523,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
                   <AnimatePresence>
                     {formik.touched.governorateId &&
                       formik.errors.governorateId && (
-                        <ErrorMessage message={formik.errors.governorateId} />
+                        <ErrorMessage message={formik.errors.governorateId as string} />
                       )}
                   </AnimatePresence>
                 </motion.div>
@@ -602,9 +534,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
                     <Select
                       name="kitchenTypeId"
                       onValueChange={(value) => {
-                        const selectedId = Number(value);
-                        formik.setFieldValue("kitchenTypeId", selectedId);
-                        setSelectedkitchen(selectedId);
+                        formik.setFieldValue("kitchenTypeId", Number(value));
                       }}
                       value={
                         formik.values.kitchenTypeId
@@ -636,7 +566,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
                     <AnimatePresence>
                       {formik.touched.kitchenTypeId &&
                         formik.errors.kitchenTypeId && (
-                          <ErrorMessage message={formik.errors.kitchenTypeId} />
+                          <ErrorMessage message={formik.errors.kitchenTypeId as string} />
                         )}
                     </AnimatePresence>
                   </motion.div>
@@ -829,7 +759,7 @@ const KitchensAndDressing: React.FC<KitchensAndDressingProps> = ({
                   />
                   {formik.errors.requiredDuration &&
                     formik.touched.requiredDuration && (
-                      <ErrorMessage message={formik.errors.requiredDuration} />
+                      <ErrorMessage message={formik.errors.requiredDuration as string} />
                     )}
                 </motion.div>
                 {/* Notes */}
