@@ -1,9 +1,9 @@
-import { Formik, Form } from "formik";
+import { Formik, Form, FormikHelpers, FormikContextType } from "formik";
 import * as Yup from "yup";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,9 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import FixedPackageSlider from "./FixedPackageData";
+import { useNavigate } from "react-router-dom";
 
 interface HomeRenovateProps {
-  formType: "home-renovate";
   userToken: string | null;
   pathUrl: string;
   onStepChange: (step: number) => void;
@@ -92,6 +92,24 @@ interface IFixedPackage {
   data: ClientData[];
 }
 
+interface FormValues {
+  phoneNumber: string;
+  unitTypeId: number;
+  isInsideCompound: boolean | "";
+  unitStatusesId: number;
+  unitWorkTypesId: number;
+  workSkillsId: number;
+  governorateId: number;
+  cityId: number;
+  unitArea: string;
+  budget: string;
+  region: string;
+  numberOfRooms: string;
+  numberOfBathrooms: string;
+  requiredDuration: string;
+  notes: string;
+}
+
 const ErrorMessage = ({ message }: { message: string }) => (
   <motion.div
     initial={{ opacity: 0, y: -10 }}
@@ -106,11 +124,11 @@ const ErrorMessage = ({ message }: { message: string }) => (
 );
 
 const HomeRenovate: React.FC<HomeRenovateProps> = ({
-  formType,
   pathUrl,
   userToken,
   onStepChange,
 }) => {
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{
     message: string;
@@ -118,7 +136,6 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
   } | null>(null);
   const [homeData, setHomeData] = useState<IHomeData | null>(null);
   const [packageData, setPackageData] = useState<IFixedPackage | null>(null);
-  console.log("packageData", packageData?.data);
   const [governorates, setGovernorates] = useState<ILocation[]>([]);
   const [cities, setCities] = useState<ILocation[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
@@ -131,6 +148,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
   const [InsideCompound, setInsideCompound] = useState<string | undefined>(
     undefined
   );
+
   useEffect(() => {
     if (onStepChange) {
       onStepChange(currentStep);
@@ -189,7 +207,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
     notes: Yup.string().optional(),
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axios.get<IHomeData>(
@@ -201,6 +219,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
           },
         }
       );
+      console.log(response)
       setHomeData(response.data);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -217,11 +236,11 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pathUrl, userToken]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     async function getGovernorates() {
@@ -264,7 +283,6 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
           {
             headers: {
               "Accept-Language": "en",
-              
             },
           }
         );
@@ -298,7 +316,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
     }
   }, [selectedGovernorate, pathUrl]);
 
-  const GetFixedPackage = async () => {
+  const GetFixedPackage = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await axios.get<IFixedPackage>(
@@ -326,20 +344,20 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [pathUrl, userToken]);
 
   useEffect(() => {
     GetFixedPackage();
-  }, []);
+  }, [GetFixedPackage]);
 
-  const handleNextStep = (formik: any) => {
+  const handleNextStep = (formik: FormikContextType<FormValues>) => {
     const firstStepFields = ["phoneNumber", "unitTypeId", "isInsideCompound"];
 
     firstStepFields.forEach((field) => {
       formik.setFieldTouched(field, true, false);
     });
 
-    formik.validateForm().then((errors: Record<string, string>) => {
+    formik.validateForm().then((errors) => {
       const hasErrors = firstStepFields.some((field) =>
         Object.keys(errors).includes(field)
       );
@@ -349,16 +367,18 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
       }
     });
   };
+  
   const handlePrevStep = () => {
     setCurrentStep(1);
   };
+  
   const switchTab = (tabIndex: number) => {
     setActiveTab(tabIndex);
   };
 
   const handleSubmit = async (
-    values: any,
-    { resetForm }: { resetForm: () => void }
+    values: FormValues,
+    { resetForm }: FormikHelpers<FormValues>
   ) => {
     setIsLoading(true);
     try {
@@ -384,17 +404,16 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
         };
       }
 
-      console.log("payload1", payload);
       let endpoint;
       if (activeTab === 1) {
         endpoint = `${pathUrl}/api/v1/home-renovate`;
-
       }
 
       if (!endpoint) {
         throw new Error("Endpoint is undefined");
       }
-      const response = await axios.post(endpoint, payload, {
+      
+      const { data } = await axios.post(endpoint, payload, {
         headers: {
           Authorization: `Bearer ${userToken}`,
           "Content-Type": "application/json",
@@ -402,12 +421,22 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
         },
       });
 
-      setAlert({ message: "Package submitted successfully!", type: "success" });
-      setTimeout(() => {
-        setAlert(null);
-      }, 3000);
-
-      resetForm();
+      if (data.success) {
+        setAlert({ message: "Package submitted successfully!", type: "success" });
+        setTimeout(() => {
+          setAlert(null);
+          navigate('/')
+        }, 3000);
+        resetForm();
+      } else {
+        setAlert({
+          message: data.message || "Submission failed",
+          type: "error",
+        });
+        setTimeout(() => {
+          setAlert(null);
+        }, 3000);
+      }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         setAlert({
@@ -416,18 +445,16 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
             "An error occurred during submission.",
           type: "error",
         });
-        setTimeout(() => {
-          setAlert(null);
-        }, 3000);
       } else {
         setAlert({
           message: "An unexpected error occurred. Please try again.",
           type: "error",
         });
-        setTimeout(() => {
-          setAlert(null);
-        }, 3000);
       }
+      setTimeout(() => {
+        setAlert(null);
+        navigate('/')
+      }, 3000);
     } finally {
       setIsLoading(false);
     }
@@ -452,16 +479,6 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
         {message}
       </motion.div>
     );
-  };
-
-  const formVariants = {
-    hidden: { opacity: 0, x: 0 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { staggerChildren: 0.07, delayChildren: 0.1 },
-    },
-    exit: { opacity: 0, x: 0 },
   };
 
   const itemVariants = {
@@ -701,7 +718,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                         {formik.touched.unitStatusesId &&
                           formik.errors.unitStatusesId && (
                             <ErrorMessage
-                              message={formik.errors.unitStatusesId}
+                              message={formik.errors.unitStatusesId as string}
                             />
                           )}
                       </AnimatePresence>
@@ -749,7 +766,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                         {formik.touched.unitWorkTypesId &&
                           formik.errors.unitWorkTypesId && (
                             <ErrorMessage
-                              message={formik.errors.unitWorkTypesId}
+                              message={formik.errors.unitWorkTypesId as string}
                             />
                           )}
                       </AnimatePresence>
@@ -796,7 +813,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                         {formik.touched.workSkillsId &&
                           formik.errors.workSkillsId && (
                             <ErrorMessage
-                              message={formik.errors.workSkillsId}
+                              message={formik.errors.workSkillsId as string}
                             />
                           )}
                       </AnimatePresence>
@@ -844,7 +861,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                         {formik.touched.governorateId &&
                           formik.errors.governorateId && (
                             <ErrorMessage
-                              message={formik.errors.governorateId}
+                              message={formik.errors.governorateId as string}
                             />
                           )}
                       </AnimatePresence>
@@ -890,7 +907,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                       </Select>
                       <AnimatePresence>
                         {formik.touched.cityId && formik.errors.cityId && (
-                          <ErrorMessage message={formik.errors.cityId} />
+                          <ErrorMessage message={formik.errors.cityId as string} />
                         )}
                       </AnimatePresence>
                     </motion.div>
@@ -984,7 +1001,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                       />
                       {formik.errors.numberOfRooms &&
                         formik.touched.numberOfRooms && (
-                          <ErrorMessage message={formik.errors.numberOfRooms} />
+                          <ErrorMessage message={formik.errors.numberOfRooms as string} />
                         )}
                     </motion.div>
 
@@ -1011,7 +1028,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                       {formik.errors.numberOfBathrooms &&
                         formik.touched.numberOfBathrooms && (
                           <ErrorMessage
-                            message={formik.errors.numberOfBathrooms}
+                            message={formik.errors.numberOfBathrooms as string}
                           />
                         )}
                     </motion.div>
@@ -1038,7 +1055,7 @@ const HomeRenovate: React.FC<HomeRenovateProps> = ({
                       {formik.errors.requiredDuration &&
                         formik.touched.requiredDuration && (
                           <ErrorMessage
-                            message={formik.errors.requiredDuration}
+                            message={formik.errors.requiredDuration as string}
                           />
                         )}
                     </motion.div>
