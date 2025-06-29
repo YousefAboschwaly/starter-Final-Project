@@ -20,7 +20,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
   ]
 
   const accountItems = [
-    { icon: User, label: "Profile", key: "Profile", path: "/profile" },
+    { icon: User, label: "Profile", key: "Profile", path: "/user-profile" },
     { icon: MapPin, label: "Addresses", key: "Addresses", path: "/addresses" },
     { icon: CreditCard, label: "Payments", key: "Payments", path: "/payments" },
   ]
