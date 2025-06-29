@@ -25,6 +25,15 @@ import Viewdetails from "./Pages/Viewdetails.tsx";
 import { CartProvider } from "./Contexts/CartContext.tsx";
 import ShoppingCart from "./Pages/Cart/ShoppingCart.tsx";
 import OrderSuccess from "./Pages/Cart/Order-Success.tsx";
+import OrdersPage from "./Pages/UserPages/OrdersPage.tsx";
+import WishlistPage from "./Pages/UserPages/WishlistPage.tsx";
+import ProfilePage from "./Pages/UserPages/ProfilePage.tsx";
+import AddressesPage from "./Pages/UserPages/AddressesPage.tsx";
+import PaymentsPage from "./Pages/UserPages/PaymentsPage.tsx";
+import NotificationsPage from "./Pages/UserPages/NotificationsPage.tsx";
+import UsrLayout from './Pages/UserPages/components/Layout';
+import OrderDetailsPage from "./Pages/UserPages/OrderDetailsPage.tsx";
+
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -35,11 +44,9 @@ function App() {
       path: "",
       element: <Layout />,
       children: [
-                {
+        {
           index: true,
-          element: (
-              <Home />
-          ),
+          element: <Home />,
         },
         {
           path: "edit_profile",
@@ -130,6 +137,43 @@ function App() {
             </ProtectedRoute>
           ),
         },
+         {
+    path: "/",
+    element: <UsrLayout />,
+    children: [
+      {
+        index: true,
+        element: <OrdersPage />,
+      },
+      {
+        path: "orders",
+        element: <OrdersPage />,
+      },
+       {
+        path: "orders/:id",
+        element: <OrderDetailsPage />,
+      },
+      {
+        path: "wishlist",
+        element: <WishlistPage />,
+      },
+      {
+        path: "user-profile",
+        element: <ProfilePage />,
+      },
+      {
+        path: "addresses",
+        element: <AddressesPage />,
+      },
+      {
+        path: "payments",
+        element: <PaymentsPage />,
+      },
+      {
+        path: "notifications",
+        element: <NotificationsPage />,
+      },
+    ]},
 
         {
           path: "client",
@@ -153,9 +197,7 @@ function App() {
 
       <UserContextProvider>
         <CartProvider>
-          
-
-        <RouterProvider router={routes} />
+          <RouterProvider router={routes} />
         </CartProvider>
       </UserContextProvider>
     </QueryClientProvider>
