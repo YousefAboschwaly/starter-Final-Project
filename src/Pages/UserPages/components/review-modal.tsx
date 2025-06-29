@@ -26,6 +26,8 @@ interface OrderDetail {
 }
 
 interface ReviewData {
+  id?: number
+  statusCode?: number
   rating: number
   comment: string
 }
@@ -39,16 +41,19 @@ interface ReviewModalProps {
 }
 
 export function ReviewModal({ isOpen, onClose, product, existingReview, onReviewSubmitted }: ReviewModalProps) {
-        const userContext = useContext(UserContext)
-        if (!userContext) {
-          throw new Error("UserContext must be used within a UserContextProvider")
-        }
-        const { userToken, pathUrl } = userContext
+  const userContext = useContext(UserContext)
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider")
+  }
+  const { userToken, pathUrl } = userContext
+
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Check if this is an edit operation
+  const isEditMode = !!existingReview
 
   // Load existing review data when modal opens
   useEffect(() => {
@@ -125,33 +130,59 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`${pathUrl}/api/v1/product-ratings`, {
-        method: "POST",
+      // Use PUT for editing existing reviews, POST for creating new reviews
+      const method = isEditMode ? "PUT" : "POST"
+      const endpoint = `${pathUrl}/api/v1/product-ratings`
+
+      // Prepare request body
+      const requestBody: {
+        productId: number
+        rate: number
+        comment: string
+        id?: number
+        statusCode?: number
+      } = {
+        productId: product.product.id,
+        rate: rating,
+        comment: comment.trim(),
+      }
+
+      // Add id and statusCode for edit operations
+      if (isEditMode && existingReview) {
+        if (existingReview.id) {
+          requestBody.id = existingReview.id
+        }
+        if (existingReview.statusCode) {
+          requestBody.statusCode = existingReview.statusCode
+        }
+      }
+
+      const response = await fetch(endpoint, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
-          authorization: `Bearer ${userToken}`,
+          Authorization: `Bearer ${userToken}`,
+          "Accept-language": "en",
         },
-        body: JSON.stringify({
-          productId: product.product.id,
-          rate: rating,
-          comment: comment.trim(),
-        }),
-      });
+        body: JSON.stringify(requestBody),
+      })
+      console.log(response)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      console.log("Response:", response);
 
       const result = await response.json()
-      console.log("Result:", result);
+      console.log(result)
 
       if (result.success) {
         // Success
-        toast.success("Thank you for your review!")
+        toast.success(isEditMode ? "Review updated successfully!" : "Thank you for your review!")
 
         // Call the callback to update the parent component
         onReviewSubmitted(product.product.id, {
+          id: existingReview?.id,
+          statusCode: existingReview?.statusCode,
           rating,
           comment: comment.trim(),
         })
@@ -159,11 +190,15 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
         // Reset form and close modal
         handleCloseModal()
       } else {
-        throw new Error(result.message || "Failed to submit review")
+        throw new Error(result.message || `Failed to ${isEditMode ? "update" : "submit"} review`)
       }
     } catch (error) {
-      console.error("Error submitting review:", error)
-      toast.error(error instanceof Error ? error.message : "Failed to submit review. Please try again.")
+      console.error(`Error ${isEditMode ? "updating" : "submitting"} review:`, error)
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `Failed to ${isEditMode ? "update" : "submit"} review. Please try again.`,
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -184,9 +219,7 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
     <Dialog open={isOpen} onOpenChange={handleCloseModal}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            {existingReview ? "Edit Review" : "Write a Review"}
-          </DialogTitle>
+          <DialogTitle className="text-xl font-semibold">{isEditMode ? "Edit Review" : "Write a Review"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -198,7 +231,7 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
                   <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {product.product.mainImagePath ? (
                       <img
-                        src={pathUrl+product.product.mainImagePath || "/placeholder.svg"}
+                        src={pathUrl + product.product.mainImagePath || "/placeholder.svg"}
                         alt={product.product.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -237,7 +270,9 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
 
           {/* Comment Section */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <h4 className="text-lg font-semibold text-gray-900 mb-3">Write your review</h4>
+            <h4 className="text-lg font-semibold text-gray-900 mb-3">
+              {isEditMode ? "Edit your review" : "Write your review"}
+            </h4>
             <div className="relative">
               <Textarea
                 placeholder="What did you like or dislike? How did you use the product? What should others know before buying?"
@@ -267,9 +302,9 @@ export function ReviewModal({ isOpen, onClose, product, existingReview, onReview
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Submitting...
+                  {isEditMode ? "Updating..." : "Submitting..."}
                 </>
-              ) : existingReview ? (
+              ) : isEditMode ? (
                 "UPDATE REVIEW"
               ) : (
                 "SUBMIT REVIEW"

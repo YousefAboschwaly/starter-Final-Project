@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, CheckCircle, Headphones, Star, ChevronRight, Loader2 } from "lucide-react"
 import { ReviewModal } from "./review-modal"
 import { UserContext } from "@/Contexts/UserContext"
+import toast from "react-hot-toast"
 
 interface Product {
   id: number
@@ -39,25 +40,88 @@ interface OrderDetailsProps {
 }
 
 interface ReviewData {
+  id?: number
+  statusCode?: number
   rating: number
   comment: string
 }
 
+interface ExistingReviewData {
+  id: number
+  statusCode: number
+  productId: number
+  rate: number
+  comment: string
+}
 
 export function OrderDetails({ order, onBack }: OrderDetailsProps) {
-        const userContext = useContext(UserContext)
-      if (!userContext) {
-        throw new Error("UserContext must be used within a UserContextProvider")
-      }
-      const { userToken, pathUrl } = userContext
+  const userContext = useContext(UserContext)
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider")
+  }
+  const { userToken, pathUrl } = userContext
+
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [selectedProductForReview, setSelectedProductForReview] = useState<OrderDetail | null>(null)
   const [submittedReviews, setSubmittedReviews] = useState<Record<number, ReviewData>>({})
   const [reviewStatuses, setReviewStatuses] = useState<Record<number, boolean>>({})
   const [loadingReviewStatuses, setLoadingReviewStatuses] = useState(true)
+  const [existingReviewData, setExistingReviewData] = useState<ReviewData | undefined>(undefined)
+  const [loadingExistingReview, setLoadingExistingReview] = useState(false)
 
-  const handleAddReviewClick = (product: OrderDetail) => {
+  const fetchExistingReview = async (productId: number, userId: number): Promise<ReviewData | null> => {
+    try {
+      const response = await fetch(`${pathUrl}/api/v1/product-ratings/product/${productId}/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Accept-language": "en",
+        },
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          const reviewData: ExistingReviewData = result.data
+          console.log(
+            `Existing review data for product ${productId}:`,
+            result
+          );
+          return {
+            id: reviewData.id,
+            statusCode: reviewData.statusCode,
+            rating: reviewData.rate,
+            comment: reviewData.comment,
+          }
+        }
+      }
+      return null
+    } catch (error) {
+      console.error(`Error fetching existing review for product ${productId}:`, error)
+      return null
+    }
+  }
+
+  const handleAddReviewClick = async (product: OrderDetail) => {
     setSelectedProductForReview(product)
+
+    // If this is an edit review (user has already reviewed), fetch existing review data
+    if (hasReviewed(product.product.id)) {
+      setLoadingExistingReview(true)
+
+      try {
+        const existingReview = await fetchExistingReview(product.product.id, order.userId)
+        setExistingReviewData(existingReview || undefined)
+      } catch (error) {
+        console.error("Error fetching existing review:", error)
+        toast.error("Failed to load existing review data")
+        setExistingReviewData(undefined)
+      } finally {
+        setLoadingExistingReview(false)
+      }
+    } else {
+      setExistingReviewData(undefined)
+    }
+
     setShowReviewModal(true)
   }
 
@@ -68,14 +132,22 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
       [productId]: reviewData,
     }))
 
+    // Update review status to true since user just submitted/updated a review
+    setReviewStatuses((prev) => ({
+      ...prev,
+      [productId]: true,
+    }))
+
     // Close modal
     setShowReviewModal(false)
     setSelectedProductForReview(null)
+    setExistingReviewData(undefined)
   }
 
   const handleCloseReviewModal = () => {
     setShowReviewModal(false)
     setSelectedProductForReview(null)
+    setExistingReviewData(undefined)
   }
 
   const hasReviewed = (productId: number) => {
@@ -83,9 +155,13 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
   }
 
   const getExistingReview = (productId: number) => {
+    // First check if we have fetched existing review data
+    if (existingReviewData) {
+      return existingReviewData
+    }
+    // Fallback to submitted reviews
     return submittedReviews[productId]
   }
-
 
   const checkReviewStatuses = useCallback(async () => {
     if (!order.orderDetails || order.orderDetails.length === 0) {
@@ -105,13 +181,13 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
             {
               headers: {
                 Authorization: `Bearer ${userToken}`,
-                "Accept-language": "en"
+                "Accept-language": "en",
               },
-            }
-          );
-          console.log('is it Reviewed ', response)
+            },
+          )
           if (response.ok) {
             const result = await response.json()
+            console.log("is it Reviewed ", result)
             if (result.success) {
               statuses[detail.product.id] = result.data
             } else {
@@ -237,7 +313,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                 <motion.div
                   key={detail.id}
                   whileHover={{ y: -2 }}
-                  transition={{ duration: 0.2 ,delay: 0.6 + index * 0.1}}
+                  transition={{ duration: 0.2, delay: 0.6 + index * 0.1 }}
                   className="group"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -252,7 +328,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                         >
                           {detail.product.mainImagePath ? (
                             <img
-                              src={pathUrl+detail.product.mainImagePath || "/placeholder.svg"}
+                              src={pathUrl + detail.product.mainImagePath || "/placeholder.svg"}
                               alt={detail.product.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -293,19 +369,14 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                           </motion.div>
 
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-
                             <motion.div
-                              className="flex flex-col  text-sm text-gray-600"
+                              className="flex flex-col text-sm text-gray-600"
                               initial={{ opacity: 0, x: 20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 1.0 + index * 0.1 }}
                             >
                               <span>
-                                Quantity:{" "}
-                                <span className="text-black text-medium">
-                                  {" "}
-                                  {detail.amount}
-                                </span>
+                                Quantity: <span className="text-black text-medium"> {detail.amount}</span>
                               </span>
                               <span className=" text-lg text-black font-semibold">
                                 EGP {(detail.price * detail.amount).toFixed(2)}
@@ -328,12 +399,18 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                                       : "bg-blue-600 hover:bg-blue-700"
                                   }`}
                                   onClick={() => handleAddReviewClick(detail)}
-                                  disabled={loadingReviewStatuses}
+                                  disabled={loadingReviewStatuses || loadingExistingReview}
                                 >
                                   {loadingReviewStatuses ? (
                                     <>
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                       Checking...
+                                    </>
+                                  ) : loadingExistingReview &&
+                                    selectedProductForReview?.product.id === detail.product.id ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      Loading...
                                     </>
                                   ) : (
                                     <>
