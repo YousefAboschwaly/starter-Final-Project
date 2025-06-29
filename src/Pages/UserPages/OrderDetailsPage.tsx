@@ -127,5 +127,5 @@ export default function OrderDetailsPage() {
     userId: orderData.userId,
   }
 
-  return <OrderDetails order={transformedOrder} onBack={() => navigate("/orders")} pathUrl={pathUrl} />
+  return <OrderDetails order={transformedOrder} onBack={() => navigate("/orders")}  />
 }

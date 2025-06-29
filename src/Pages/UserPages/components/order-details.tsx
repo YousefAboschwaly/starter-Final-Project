@@ -1,13 +1,12 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect, useCallback, useContext } from "react"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, CheckCircle, Headphones, Star, ChevronRight, X } from "lucide-react"
+import { ArrowLeft, CheckCircle, Headphones, Star, ChevronRight, Loader2 } from "lucide-react"
+import { ReviewModal } from "./review-modal"
+import { UserContext } from "@/Contexts/UserContext"
 
 interface Product {
   id: number
@@ -24,7 +23,6 @@ interface OrderDetail {
 }
 
 interface OrderDetailsProps {
-  pathUrl:string
   order: {
     id: string
     status: string
@@ -40,81 +38,110 @@ interface OrderDetailsProps {
   onBack: () => void
 }
 
-export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
-  const [showReviewSection, setShowReviewSection] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [review, setReview] = useState("");
+interface ReviewData {
+  rating: number
+  comment: string
+}
 
-  const handleStarClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    starIndex: number
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const starWidth = rect.width;
-    const isLeftHalf = clickX < starWidth / 2;
 
-    const newRating = isLeftHalf ? starIndex - 0.5 : starIndex;
-    setRating(newRating);
-  };
+export function OrderDetails({ order, onBack }: OrderDetailsProps) {
+        const userContext = useContext(UserContext)
+      if (!userContext) {
+        throw new Error("UserContext must be used within a UserContextProvider")
+      }
+      const { userToken, pathUrl } = userContext
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedProductForReview, setSelectedProductForReview] = useState<OrderDetail | null>(null)
+  const [submittedReviews, setSubmittedReviews] = useState<Record<number, ReviewData>>({})
+  const [reviewStatuses, setReviewStatuses] = useState<Record<number, boolean>>({})
+  const [loadingReviewStatuses, setLoadingReviewStatuses] = useState(true)
 
-  const handleStarHover = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    starIndex: number
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const hoverX = event.clientX - rect.left;
-    const starWidth = rect.width;
-    const isLeftHalf = hoverX < starWidth / 2;
+  const handleAddReviewClick = (product: OrderDetail) => {
+    setSelectedProductForReview(product)
+    setShowReviewModal(true)
+  }
 
-    const newHoveredRating = isLeftHalf ? starIndex - 0.5 : starIndex;
-    setHoveredRating(newHoveredRating);
-  };
+  const handleReviewSubmitted = (productId: number, reviewData: ReviewData) => {
+    // Save the review for this specific product
+    setSubmittedReviews((prev) => ({
+      ...prev,
+      [productId]: reviewData,
+    }))
 
-  const handleStarLeave = () => {
-    setHoveredRating(0);
-  };
+    // Close modal
+    setShowReviewModal(false)
+    setSelectedProductForReview(null)
+  }
 
-  const renderStar = (starIndex: number) => {
-    const currentRating = hoveredRating || rating;
-    const isFull = currentRating >= starIndex;
-    const isHalf =
-      currentRating >= starIndex - 0.5 && currentRating < starIndex;
+  const handleCloseReviewModal = () => {
+    setShowReviewModal(false)
+    setSelectedProductForReview(null)
+  }
 
-    return (
-      <motion.button
-        key={starIndex}
-        className="relative focus:outline-none"
-        onClick={(e) => handleStarClick(e, starIndex)}
-        onMouseMove={(e) => handleStarHover(e, starIndex)}
-        onMouseLeave={handleStarLeave}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ duration: 0.1 }}
-      >
-        <Star className="h-8 w-8 sm:h-10 sm:w-10 text-gray-300" />
-        {isHalf && (
-          <div className="absolute inset-0 overflow-hidden w-1/2">
-            <Star className="h-8 w-8 sm:h-10 sm:w-10 fill-yellow-400 text-yellow-400" />
-          </div>
-        )}
-        {isFull && (
-          <Star className="absolute inset-0 h-8 w-8 sm:h-10 sm:w-10 fill-yellow-400 text-yellow-400" />
-        )}
-      </motion.button>
-    );
-  };
+  const hasReviewed = (productId: number) => {
+    return reviewStatuses[productId] === true || submittedReviews[productId] !== undefined
+  }
 
-  const handleSubmitReview = () => {
-    // Handle review submission here
-    console.log({ rating, review });
-    setShowReviewSection(false);
-    setRating(0);
-    setReview("");
-  };
+  const getExistingReview = (productId: number) => {
+    return submittedReviews[productId]
+  }
 
-  if (!order) return null;
+
+  const checkReviewStatuses = useCallback(async () => {
+    if (!order.orderDetails || order.orderDetails.length === 0) {
+      setLoadingReviewStatuses(false)
+      return
+    }
+
+    setLoadingReviewStatuses(true)
+    const statuses: Record<number, boolean> = {}
+
+    try {
+      // Check review status for each product
+      const promises = order.orderDetails.map(async (detail) => {
+        try {
+          const response = await fetch(
+            `${pathUrl}/api/v1/product-ratings/check?productId=${detail.product.id}&userId=${order.userId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${userToken}`,
+                "Accept-language": "en"
+              },
+            }
+          );
+          console.log('is it Reviewed ', response)
+          if (response.ok) {
+            const result = await response.json()
+            if (result.success) {
+              statuses[detail.product.id] = result.data
+            } else {
+              statuses[detail.product.id] = false
+            }
+          } else {
+            statuses[detail.product.id] = false
+          }
+        } catch (error) {
+          console.error(`Error checking review status for product ${detail.product.id}:`, error)
+          statuses[detail.product.id] = false
+        }
+      })
+
+      await Promise.all(promises)
+      setReviewStatuses(statuses)
+    } catch (error) {
+      console.error("Error checking review statuses:", error)
+    } finally {
+      setLoadingReviewStatuses(false)
+    }
+  }, [order.orderDetails, order.userId, pathUrl, userToken])
+
+  useEffect(() => {
+    if (order && order.orderDetails) {
+      checkReviewStatuses()
+    }
+  }, [checkReviewStatuses, order])
+
+  if (!order) return null
 
   return (
     <motion.div
@@ -126,11 +153,7 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
     >
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="mb-4 gap-2 hover:bg-gray-100"
-        >
+        <Button variant="ghost" onClick={onBack} className="mb-4 gap-2 hover:bg-gray-100">
           <ArrowLeft className="h-4 w-4" />
           Back to orders
         </Button>
@@ -157,18 +180,14 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
         {/* Main Content */}
         <div className="xl:col-span-2 space-y-6 lg:space-y-8">
           {/* Delivery Status */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card
               className={`${
                 order.status === "Delivered"
                   ? "border-green-200 bg-green-50"
                   : order.status === "Cancelled"
-                  ? "border-red-200 bg-red-50"
-                  : "border-blue-200 bg-blue-50"
+                    ? "border-red-200 bg-red-50"
+                    : "border-blue-200 bg-blue-50"
               }`}
             >
               <CardContent className="p-4 lg:p-6">
@@ -178,8 +197,8 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                       order.status === "Delivered"
                         ? "text-green-600"
                         : order.status === "Cancelled"
-                        ? "text-red-600"
-                        : "text-blue-600"
+                          ? "text-red-600"
+                          : "text-blue-600"
                     }`}
                   />
                   <div>
@@ -188,8 +207,8 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                         order.status === "Delivered"
                           ? "text-green-800"
                           : order.status === "Cancelled"
-                          ? "text-red-800"
-                          : "text-blue-800"
+                            ? "text-red-800"
+                            : "text-blue-800"
                       }`}
                     >
                       {order.status} on {order.date}
@@ -201,11 +220,7 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
           </motion.div>
 
           {/* Order Items */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
               <motion.h2
                 className="text-xl font-semibold text-gray-800"
@@ -222,7 +237,7 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                 <motion.div
                   key={detail.id}
                   whileHover={{ y: -2 }}
-                  transition={{ duration: 0.2, delay: 0.6 + index * 0.1 }}
+                  transition={{ duration: 0.2 ,delay: 0.6 + index * 0.1}}
                   className="group"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -237,19 +252,14 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                         >
                           {detail.product.mainImagePath ? (
                             <img
-                              src={
-                                pathUrl + detail.product.mainImagePath ||
-                                "/placeholder.svg"
-                              }
+                              src={pathUrl+detail.product.mainImagePath || "/placeholder.svg"}
                               alt={detail.product.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 // Fallback to icon if image fails to load
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = "none";
-                                target.nextElementSibling?.classList.remove(
-                                  "hidden"
-                                );
+                                const target = e.target as HTMLImageElement
+                                target.style.display = "none"
+                                target.nextElementSibling?.classList.remove("hidden")
                               }}
                             />
                           ) : (
@@ -258,7 +268,7 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                           <Headphones className="h-10 w-10 text-gray-400 hidden" />
                         </motion.div>
 
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-1">
                           <motion.h3
                             className="font-medium text-gray-900"
                             initial={{ opacity: 0 }}
@@ -268,22 +278,37 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                             {detail.product.name}
                           </motion.h3>
 
+                          <motion.div
+                            className="flex items-center gap-2"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.8 + index * 0.1 }}
+                          >
+                            {hasReviewed(detail.product.id) && (
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                <span className="text-sm text-green-600 font-medium">Reviewed</span>
+                              </div>
+                            )}
+                          </motion.div>
+
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+
                             <motion.div
-                              className="flex flex-col  text-md text-[#777E90]"
+                              className="flex flex-col  text-sm text-gray-600"
                               initial={{ opacity: 0, x: 20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 1.0 + index * 0.1 }}
                             >
                               <span>
                                 Quantity:{" "}
-                                <span className=" font-semibold text-black">
+                                <span className="text-black text-medium">
+                                  {" "}
                                   {detail.amount}
                                 </span>
                               </span>
-                              <span>
-                                 <span className="font-semibold text-black"> EGP{" "}
-                                {(detail.price * detail.amount).toFixed(2)}</span>
+                              <span className=" text-lg text-black font-semibold">
+                                EGP {(detail.price * detail.amount).toFixed(2)}
                               </span>
                             </motion.div>
 
@@ -297,15 +322,25 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                                 whileTap={{ scale: 0.95 }}
                               >
                                 <Button
-                                  className="bg-blue-600 hover:bg-blue-700 gap-2 w-full sm:w-auto shadow-md hover:shadow-lg transition-all duration-200"
-                                  onClick={() =>
-                                    setShowReviewSection(!showReviewSection)
-                                  }
+                                  className={`gap-2 w-full sm:w-auto shadow-md hover:shadow-lg transition-all duration-200 ${
+                                    hasReviewed(detail.product.id)
+                                      ? "bg-green-600 hover:bg-green-700"
+                                      : "bg-blue-600 hover:bg-blue-700"
+                                  }`}
+                                  onClick={() => handleAddReviewClick(detail)}
+                                  disabled={loadingReviewStatuses}
                                 >
-                                  <Star className="h-4 w-4" />
-                                  {showReviewSection
-                                    ? "Cancel Review"
-                                    : "Add Review"}
+                                  {loadingReviewStatuses ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      Checking...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Star className="h-4 w-4" />
+                                      {hasReviewed(detail.product.id) ? "Edit Review" : "Add Review"}
+                                    </>
+                                  )}
                                 </Button>
                               </motion.div>
                             )}
@@ -328,134 +363,18 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
               <Card className="border-gray-300 bg-gray-50">
                 <CardContent className="p-4 lg:p-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-900">
-                      Total Order Price:
-                    </span>
-                    <span className="text-xl font-bold text-gray-900">
-                      EGP {order.price.toFixed(2)}
-                    </span>
+                    <span className="text-lg font-semibold text-gray-900">Total Order Price:</span>
+                    <span className="text-xl font-bold text-gray-900">EGP {order.price.toFixed(2)}</span>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
           </motion.div>
-
-          {/* Review Section - Only for Delivered orders */}
-          {order.status === "Delivered" && (
-            <AnimatePresence>
-              {showReviewSection && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, y: -20 }}
-                  animate={{ opacity: 1, height: "auto", y: 0 }}
-                  exit={{ opacity: 0, height: 0, y: -20 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="overflow-hidden"
-                >
-                  <Card className="border-blue-200 bg-blue-50/30">
-                    <CardContent className="p-4 lg:p-6">
-                      <div className="flex items-center justify-between mb-6">
-                        <div>
-                          <h3 className="text-xl font-semibold text-gray-900">
-                            Write a Review
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            Help others know what to buy!
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowReviewSection(false)}
-                          className="flex-shrink-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      {/* Rating Section */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="mb-6"
-                      >
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                          How do you rate this product?
-                        </h4>
-                        <div className="flex gap-1 sm:gap-2 mb-2">
-                          {[1, 2, 3, 4, 5].map((starIndex) =>
-                            renderStar(starIndex)
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          {rating > 0
-                            ? `${rating} out of 5 stars`
-                            : "Tap to rate"}
-                        </p>
-                      </motion.div>
-
-                      {/* Review Text */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="mb-6"
-                      >
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">
-                          Write your review
-                        </h4>
-                        <div className="relative">
-                          <Textarea
-                            placeholder="What did you like or dislike? How did you use the product? What should others know before buying?"
-                            value={review}
-                            onChange={(e) => setReview(e.target.value)}
-                            maxLength={1000}
-                            rows={4}
-                            className="resize-none pr-16 text-sm sm:text-base bg-white"
-                          />
-                          <span className="absolute right-3 bottom-3 text-xs text-gray-400">
-                            {review.length}/1000
-                          </span>
-                        </div>
-                      </motion.div>
-
-                      {/* Submit Button */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="flex gap-3"
-                      >
-                        <Button
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 text-sm sm:text-base"
-                          disabled={rating === 0 || !review.trim()}
-                          onClick={handleSubmitReview}
-                        >
-                          SUBMIT REVIEW
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowReviewSection(false)}
-                          className="px-6 py-3 text-sm sm:text-base"
-                        >
-                          Cancel
-                        </Button>
-                      </motion.div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          )}
         </div>
 
         {/* Right Sidebar */}
         <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-          >
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
             <Card>
               <CardContent className="p-4 lg:p-6">
                 <div className="space-y-4">
@@ -470,9 +389,7 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Delivery Address:
-                    </p>
+                    <p className="text-sm text-gray-600 mb-1">Delivery Address:</p>
                     <p className="font-medium">{order.deliveryAddress}</p>
                   </div>
 
@@ -481,10 +398,7 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
                     <p className="font-medium">{order.quantity}</p>
                   </div>
 
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-blue-600 hover:text-blue-800 justify-start"
-                  >
+                  <Button variant="link" className="p-0 h-auto text-blue-600 hover:text-blue-800 justify-start">
                     View order/invoice summary
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
@@ -494,6 +408,15 @@ export function OrderDetails({ order, onBack, pathUrl }: OrderDetailsProps) {
           </motion.div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={handleCloseReviewModal}
+        product={selectedProductForReview}
+        existingReview={selectedProductForReview ? getExistingReview(selectedProductForReview.product.id) : undefined}
+        onReviewSubmitted={handleReviewSubmitted}
+      />
     </motion.div>
-  );
+  )
 }
