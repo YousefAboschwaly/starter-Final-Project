@@ -1,7 +1,7 @@
 "use client"
 
 import { useContext, useEffect, useState } from "react"
-import { ChevronDown, List, Menu } from "lucide-react"
+import { ChevronDown, List, Menu, Heart, User } from "lucide-react"
 import user from "/user.webp"
 import vector from "/Vector.png"
 
@@ -22,6 +22,9 @@ export default function Navbar() {
   }
   const { userToken, setUserToken, setUserId, setShowAddProject } = userContext
 
+  const userType = localStorage.getItem("user-type")
+  const isGeneralUser = userType === "general user"
+
   function logout() {
     setUserToken("")
     setUserId(null)
@@ -33,6 +36,130 @@ export default function Navbar() {
     localStorage.removeItem("user-business-id")
   }
 
+  // If user is a general user and authenticated, show the e-commerce style navbar
+  if (userToken && isGeneralUser) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4 md:px-8">
+          <Link to="/" className="flex items-center gap-2 text-xl font-bold text-[#2D2D4C] md:text-2xl group">
+            <img src={Logo || "/placeholder.svg"} alt="Logo" className="h-14 w-30" />
+          </Link>
+
+          <div className="flex items-center gap-4">
+            {/* Language Toggle */}
+            <button className="text-base font-normal leading-[23.52px] transition-colors hover:text-primary">
+              العربية
+            </button>
+
+            {/* Wishlist */}
+            <Link
+              to="/wishlist"
+              className="text-base font-normal leading-[23.52px] transition-colors hover:text-primary"
+            >
+              <Heart className="h-5 w-5" />
+            </Link>
+
+            {/* Cart */}
+            <SimpleCartIcon size="lg" />
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <User id="user-icon" />
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="p-0">
+                  <Link to="/orders" className="flex w-full items-center gap-2 p-2">
+                    <span>📦</span>
+                    Orders
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <Link to="/addresses" className="flex w-full items-center gap-2 p-2">
+                    <span>📍</span>
+                    Addresses
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <Link to="/payments" className="flex w-full items-center gap-2 p-2">
+                    <span>💳</span>
+                    Payments
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <Link to="/credits" className="flex w-full items-center gap-2 p-2">
+                    <span>💰</span>
+                    Credits
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <Link to="/returns" className="flex w-full items-center gap-2 p-2">
+                    <span>↩️</span>
+                    Returns
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <Link to="/warranty" className="flex w-full items-center gap-2 p-2">
+                    <span>🛡️</span>
+                    Warranty Claims
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <Link to="/profile" className="flex w-full items-center gap-2 p-2">
+                    <span>👤</span>
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <Link to="/help" className="flex w-full items-center gap-2 p-2">
+                    <span>❓</span>
+                    Need Help?
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="p-0">
+                  <button onClick={logout} className="flex w-full items-center gap-2 p-2 text-left">
+                    <span>🚪</span>
+                    Sign Out
+                  </button>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Mobile Menu */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle navigation menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <nav className="grid gap-4 mt-8">
+                  <Link to="/profile" className="text-lg font-semibold">
+                    Profile
+                  </Link>
+                  <Link to="/orders" className="text-lg font-semibold">
+                    Orders
+                  </Link>
+                  <Link to="/wishlist" className="text-lg font-semibold">
+                    Wishlist
+                  </Link>
+                  <button onClick={logout} className="text-lg font-semibold text-left">
+                    Sign Out
+                  </button>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
+  // Original navbar for other user types
   return (
     <header
       className={` sticky top-0 z-50 w-full border-b  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 `}
@@ -40,8 +167,9 @@ export default function Navbar() {
       <div className="container flex h-16 items-center justify-between px-4 md:px-8">
         <Link to="/" className="flex items-center gap-2 text-xl font-bold text-[#2D2D4C] md:text-2xl group">
           <img src={Logo || "/placeholder.svg"} alt="Logo" className=" h-14 w-30 " />
-          {/* <Home className="h-6 w-6 transition-transform duration-300 group-hover:rotate-[360deg]" /> */}
         </Link>
+
+        {/* Remove this duplicate navigation section for general users: */}
 
         {userToken && (
           <nav className="hidden md:flex items-center space-x-6">
@@ -107,7 +235,21 @@ export default function Navbar() {
                       Brands
                     </Link>
 
-                    {/* Add Project/Product buttons in mobile menu */}
+                    {/* General user mobile menu items */}
+                    {localStorage.getItem("user-type") === "general user" && (
+                      <>
+                        <Link to="/orders" className="text-lg font-semibold">
+                          Orders
+                        </Link>
+                        <Link to="/wishlist" className="text-lg font-semibold">
+                          Wishlist
+                        </Link>
+                        <Link to="/profile" className="text-lg font-semibold">
+                          Profile
+                        </Link>
+                      </>
+                    )}
+
                     {userToken &&
                     (localStorage.getItem("user-type") === "engineer" ||
                       localStorage.getItem("user-type") === "technical worker") ? (
@@ -137,15 +279,12 @@ export default function Navbar() {
                         </Link>
                       </div>
                     ) : null}
-
-                    {/* Cart icon in mobile menu for general users */}
                   </nav>
                 )}
               </SheetContent>
             </Sheet>
           </div>
 
-          {/* Modified to show on all screen sizes by removing "hidden md:flex" */}
           {userToken &&
           (localStorage.getItem("user-type") === "engineer" ||
             localStorage.getItem("user-type") === "technical worker") ? (
@@ -176,9 +315,6 @@ export default function Navbar() {
               </Link>
             </div>
           ) : null}
-
-          {/* Cart Icon - Show only for general users when authenticated */}
-          {userToken && localStorage.getItem("user-type") === "general user" && <SimpleCartIcon size="lg" />}
 
           {userToken && (
             <DropdownMenu>
@@ -246,7 +382,6 @@ function JoinUsButton() {
   const [isOpen, setIsOpen] = useState(false)
   const [userTypes, setUserTypes] = useState<IUserTypes[]>([])
 
-  // get All user types
   useEffect(() => {
     async function getUserTypes() {
       try {

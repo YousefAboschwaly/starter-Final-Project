@@ -25,6 +25,7 @@ interface OrderDetail {
 
 interface OrderDetailsProps {
   order: {
+    orderNumber:string
     id: string
     status: string
     statusColor: string
@@ -68,6 +69,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
   const [loadingReviewStatuses, setLoadingReviewStatuses] = useState(true)
   const [existingReviewData, setExistingReviewData] = useState<ReviewData | undefined>(undefined)
   const [loadingExistingReview, setLoadingExistingReview] = useState(false)
+
+  console.log("orderDetails", order);
 
   const fetchExistingReview = async (productId: number, userId: number): Promise<ReviewData | null> => {
     try {
@@ -229,7 +232,11 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
     >
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <Button variant="ghost" onClick={onBack} className="mb-4 gap-2 hover:bg-gray-100">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="mb-4 gap-2 hover:bg-gray-100"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to orders
         </Button>
@@ -256,14 +263,18 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
         {/* Main Content */}
         <div className="xl:col-span-2 space-y-6 lg:space-y-8">
           {/* Delivery Status */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             <Card
               className={`${
                 order.status === "Delivered"
                   ? "border-green-200 bg-green-50"
                   : order.status === "Cancelled"
-                    ? "border-red-200 bg-red-50"
-                    : "border-blue-200 bg-blue-50"
+                  ? "border-red-200 bg-red-50"
+                  : "border-blue-200 bg-blue-50"
               }`}
             >
               <CardContent className="p-4 lg:p-6">
@@ -273,8 +284,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                       order.status === "Delivered"
                         ? "text-green-600"
                         : order.status === "Cancelled"
-                          ? "text-red-600"
-                          : "text-blue-600"
+                        ? "text-red-600"
+                        : "text-blue-600"
                     }`}
                   />
                   <div>
@@ -283,8 +294,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                         order.status === "Delivered"
                           ? "text-green-800"
                           : order.status === "Cancelled"
-                            ? "text-red-800"
-                            : "text-blue-800"
+                          ? "text-red-800"
+                          : "text-blue-800"
                       }`}
                     >
                       {order.status} on {order.date}
@@ -296,7 +307,11 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
           </motion.div>
 
           {/* Order Items */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
               <motion.h2
                 className="text-xl font-semibold text-gray-800"
@@ -328,14 +343,19 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                         >
                           {detail.product.mainImagePath ? (
                             <img
-                              src={pathUrl + detail.product.mainImagePath || "/placeholder.svg"}
+                              src={
+                                pathUrl + detail.product.mainImagePath ||
+                                "/placeholder.svg"
+                              }
                               alt={detail.product.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 // Fallback to icon if image fails to load
-                                const target = e.target as HTMLImageElement
-                                target.style.display = "none"
-                                target.nextElementSibling?.classList.remove("hidden")
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = "none";
+                                target.nextElementSibling?.classList.remove(
+                                  "hidden"
+                                );
                               }}
                             />
                           ) : (
@@ -363,7 +383,9 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                             {hasReviewed(detail.product.id) && (
                               <div className="flex items-center gap-1">
                                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                <span className="text-sm text-green-600 font-medium">Reviewed</span>
+                                <span className="text-sm text-green-600 font-medium">
+                                  Reviewed
+                                </span>
                               </div>
                             )}
                           </motion.div>
@@ -376,7 +398,11 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                               transition={{ delay: 1.0 + index * 0.1 }}
                             >
                               <span>
-                                Quantity: <span className="text-black text-medium"> {detail.amount}</span>
+                                Quantity:{" "}
+                                <span className="text-black text-medium">
+                                  {" "}
+                                  {detail.amount}
+                                </span>
                               </span>
                               <span className=" text-lg text-black font-semibold">
                                 EGP {(detail.price * detail.amount).toFixed(2)}
@@ -399,7 +425,10 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                                       : "bg-blue-600 hover:bg-blue-700"
                                   }`}
                                   onClick={() => handleAddReviewClick(detail)}
-                                  disabled={loadingReviewStatuses || loadingExistingReview}
+                                  disabled={
+                                    loadingReviewStatuses ||
+                                    loadingExistingReview
+                                  }
                                 >
                                   {loadingReviewStatuses ? (
                                     <>
@@ -407,7 +436,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                                       Checking...
                                     </>
                                   ) : loadingExistingReview &&
-                                    selectedProductForReview?.product.id === detail.product.id ? (
+                                    selectedProductForReview?.product.id ===
+                                      detail.product.id ? (
                                     <>
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                       Loading...
@@ -415,7 +445,9 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                                   ) : (
                                     <>
                                       <Star className="h-4 w-4" />
-                                      {hasReviewed(detail.product.id) ? "Edit Review" : "Add Review"}
+                                      {hasReviewed(detail.product.id)
+                                        ? "Edit Review"
+                                        : "Add Review"}
                                     </>
                                   )}
                                 </Button>
@@ -440,8 +472,12 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
               <Card className="border-gray-300 bg-gray-50">
                 <CardContent className="p-4 lg:p-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-900">Total Order Price:</span>
-                    <span className="text-xl font-bold text-gray-900">EGP {order.price.toFixed(2)}</span>
+                    <span className="text-lg font-semibold text-gray-900">
+                      Total Order Price:
+                    </span>
+                    <span className="text-xl font-bold text-gray-900">
+                      EGP {order.price.toFixed(2)}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -451,22 +487,28 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
 
         {/* Right Sidebar */}
         <div className="space-y-6">
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+          >
             <Card>
               <CardContent className="p-4 lg:p-6">
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Order Number:</p>
-                    <p className="font-medium break-all">{order.id}</p>
+                    <p className="font-medium break-all">{order.orderNumber}</p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">User ID:</p>
-                    <p className="font-medium">{order.userId}</p>
+                    <p className="text-sm text-gray-600 mb-1">Order ID:</p>
+                    <p className="font-medium">{order.id}</p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">Delivery Address:</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Delivery Address:
+                    </p>
                     <p className="font-medium">{order.deliveryAddress}</p>
                   </div>
 
@@ -475,7 +517,10 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                     <p className="font-medium">{order.quantity}</p>
                   </div>
 
-                  <Button variant="link" className="p-0 h-auto text-blue-600 hover:text-blue-800 justify-start">
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto text-blue-600 hover:text-blue-800 justify-start"
+                  >
                     View order/invoice summary
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
@@ -491,9 +536,13 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
         isOpen={showReviewModal}
         onClose={handleCloseReviewModal}
         product={selectedProductForReview}
-        existingReview={selectedProductForReview ? getExistingReview(selectedProductForReview.product.id) : undefined}
+        existingReview={
+          selectedProductForReview
+            ? getExistingReview(selectedProductForReview.product.id)
+            : undefined
+        }
         onReviewSubmitted={handleReviewSubmitted}
       />
     </motion.div>
-  )
+  );
 }

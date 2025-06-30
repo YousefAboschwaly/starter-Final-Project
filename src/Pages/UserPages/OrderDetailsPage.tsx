@@ -46,6 +46,7 @@ export default function OrderDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  console.log(orderData)
   const fetchOrderDetails = useCallback(async (orderId: string) => {
     setLoading(true)
     setError(null)
@@ -109,7 +110,8 @@ export default function OrderDetailsPage() {
 
   // Transform the API data to match the expected format for OrderDetails component
   const transformedOrder = {
-    id: orderData.orderNumber,
+    id: id ?? "",
+    orderNumber: orderData.orderNumber,
     status: "Delivered", // You might want to get this from the order status or orderDetails
     statusColor: "text-green-600", // Adjust based on actual status
     date: new Date().toLocaleDateString("en-US", {
