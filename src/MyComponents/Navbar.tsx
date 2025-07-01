@@ -34,6 +34,8 @@ export default function Navbar() {
     localStorage.removeItem("user-type")
     localStorage.removeItem("user-business")
     localStorage.removeItem("user-business-id")
+
+    
   }
 
   // If user is a general user and authenticated, show the e-commerce style navbar

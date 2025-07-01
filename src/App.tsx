@@ -143,35 +143,67 @@ function App() {
     children: [
       {
         index: true,
-        element: <OrdersPage />,
+        element: (
+          <ProtectedRoute>
+            <OrdersPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "orders",
-        element: <OrdersPage />,
+        element: (
+          <ProtectedRoute>
+            <OrdersPage />
+          </ProtectedRoute>
+        ),
       },
        {
         path: "orders/:id",
-        element: <OrderDetailsPage />,
+        element: (
+          <ProtectedRoute>
+            <OrderDetailsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "wishlist",
-        element: <WishlistPage />,
+        element: (
+          <ProtectedRoute>
+            <WishlistPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "user-profile",
-        element: <ProfilePage />,
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "addresses",
-        element: <AddressesPage />,
+        element: (
+          <ProtectedRoute>
+            <AddressesPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "payments",
-        element: <PaymentsPage />,
+        element: (
+          <ProtectedRoute>
+            <PaymentsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "notifications",
-        element: <NotificationsPage />,
+        element: (
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        ),
       },
     ]},
 

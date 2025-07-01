@@ -54,12 +54,17 @@ export default function OrdersPage() {
       setError(null)
 
       try {
-        const response = await fetch(`${pathUrl}/api/v1/orders/user/${userId}?statusCode=${statusCode}`, {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            'Accept-Language': 'en',
-          },
-        })
+        const response = await fetch(
+          `${pathUrl}/api/v1/orders/user/${localStorage.getItem(
+            "user-id"
+          )}?statusCode=${statusCode}`,
+          {
+            headers: {
+              Authorization: `Bearer ${userToken}`,
+              "Accept-Language": "en",
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
@@ -79,7 +84,7 @@ export default function OrdersPage() {
         setLoading(false)
       }
     },
-    [pathUrl, userId, userToken]
+    [pathUrl, userToken]
   )
 
   // Fetch orders when status changes
