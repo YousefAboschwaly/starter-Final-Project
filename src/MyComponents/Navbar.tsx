@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { UserContext } from "../Contexts/UserContext"
 import axios from "axios"
 import Logo from "/Logo.png"
 import { SimpleCartIcon } from "@/Pages/Cart/CartIcon"
 
 export default function Navbar() {
+  const navigate = useNavigate()
   const userContext = useContext(UserContext)
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
@@ -35,7 +36,8 @@ export default function Navbar() {
     localStorage.removeItem("user-business")
     localStorage.removeItem("user-business-id")
 
-    
+    // Redirect to the login page
+    navigate("/client");
   }
 
   // If user is a general user and authenticated, show the e-commerce style navbar
