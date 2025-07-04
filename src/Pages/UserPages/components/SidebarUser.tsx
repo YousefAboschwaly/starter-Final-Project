@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Package, CreditCard, Heart, User, MapPin, Bell, X, LogOut } from "lucide-react"
-import { useLocation, Link } from "react-router-dom"
+import { useLocation, Link, useNavigate } from "react-router-dom"
+import { UserContext } from "@/Contexts/UserContext"
+import { useContext } from "react"
 
 interface SidebarProps {
   isMobile?: boolean
@@ -12,6 +14,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isMobile = false, isOpen = false, onClose }: SidebarProps) {
+  const navigate = useNavigate()
+   const userContext = useContext(UserContext)
+    if (!userContext) {
+      throw new Error("UserContext must be used within a UserContextProvider")
+    }
+    const {  logout } = userContext
+
+
   const location = useLocation()
 
   const sidebarItems = [
@@ -72,6 +82,8 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
     if (isMobile && onClose) {
       onClose()
     }
+   logout()
+    navigate("/client")
   }
 
   const SidebarContent = () => (
@@ -103,7 +115,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
         >
           <span className="text-sm text-gray-600">Profile Completion</span>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors duration-200">
+            <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors duration-200">
               20%
             </Badge>
           </motion.div>
@@ -116,7 +128,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
           transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
         >
           <motion.div
-            className="bg-yellow-400 h-2 rounded-full"
+            className="bg-purple-400 h-2 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: "20%" }}
             transition={{ delay: 1, duration: 1, ease: "easeOut" }}
@@ -138,7 +150,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
                 variant={isActive(item.path) ? "secondary" : "ghost"}
                 className={`w-full justify-start gap-3 h-12 transition-all duration-200 ${
                   isActive(item.path)
-                    ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 shadow-sm"
+                    ? "bg-purple-100 text-purple-800 hover:bg-purple-200 shadow-sm"
                     : "hover:bg-gray-100 hover:shadow-sm"
                 }`}
               >
@@ -173,7 +185,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
                   variant={isActive(item.path) ? "secondary" : "ghost"}
                   className={`w-full justify-start gap-3 h-12 transition-all duration-200 ${
                     isActive(item.path)
-                      ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 shadow-sm"
+                      ? "bg-purple-100 text-purple-800 hover:bg-purple-200 shadow-sm"
                       : "hover:bg-gray-100 hover:shadow-sm"
                   }`}
                 >
@@ -209,7 +221,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
                   variant={isActive(item.path) ? "secondary" : "ghost"}
                   className={`w-full justify-start gap-3 h-12 transition-all duration-200 ${
                     isActive(item.path)
-                      ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 shadow-sm"
+                      ? "bg-purple-100 text-purple-800 hover:bg-purple-200 shadow-sm"
                       : "hover:bg-gray-100 hover:shadow-sm"
                   }`}
                 >
@@ -307,7 +319,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
           >
             <span className="text-sm text-gray-600">Profile Completion</span>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors duration-200">
+              <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors duration-200">
                 20%
               </Badge>
             </motion.div>
@@ -320,7 +332,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
             transition={{ delay: 0.6, duration: 0.8, ease: "easeOut" }}
           >
             <motion.div
-              className="bg-yellow-400 h-2 rounded-full"
+              className="bg-purple-400 h-2 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: "20%" }}
               transition={{ delay: 1, duration: 1, ease: "easeOut" }}
@@ -342,7 +354,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
                   variant={isActive(item.path) ? "secondary" : "ghost"}
                   className={`w-full justify-start gap-3 h-12 transition-all duration-200 ${
                     isActive(item.path)
-                      ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 shadow-sm"
+                      ? "bg-purple-100 text-purple-800 hover:bg-purple-200 shadow-sm"
                       : "hover:bg-gray-100 hover:shadow-sm"
                   }`}
                 >
@@ -377,7 +389,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
                     variant={isActive(item.path) ? "secondary" : "ghost"}
                     className={`w-full justify-start gap-3 h-12 transition-all duration-200 ${
                       isActive(item.path)
-                        ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 shadow-sm"
+                        ? "bg-purple-100 text-purple-800 hover:bg-purple-200 shadow-sm"
                         : "hover:bg-gray-100 hover:shadow-sm"
                     }`}
                   >
@@ -413,7 +425,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
                     variant={isActive(item.path) ? "secondary" : "ghost"}
                     className={`w-full justify-start gap-3 h-12 transition-all duration-200 ${
                       isActive(item.path)
-                        ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 shadow-sm"
+                        ? "bg-purple-100 text-purple-800 hover:bg-purple-200 shadow-sm"
                         : "hover:bg-gray-100 hover:shadow-sm"
                     }`}
                   >

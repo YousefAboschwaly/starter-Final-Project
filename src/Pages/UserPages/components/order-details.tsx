@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useContext } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, CheckCircle, Headphones, Star, ChevronRight, Loader2 } from "lucide-react"
+import { ArrowLeft, CheckCircle, Headphones, Star, ChevronRight, Loader2, HelpCircle } from "lucide-react"
 import { ReviewModal } from "./review-modal"
 import { UserContext } from "@/Contexts/UserContext"
 import toast from "react-hot-toast"
+import { useParams } from "react-router-dom"
 
 interface Product {
   id: number
@@ -25,7 +26,6 @@ interface OrderDetail {
 
 interface OrderDetailsProps {
   order: {
-    orderNumber:string
     id: string
     status: string
     statusColor: string
@@ -56,6 +56,7 @@ interface ExistingReviewData {
 }
 
 export function OrderDetails({ order, onBack }: OrderDetailsProps) {
+  const {id} = useParams<{id: string}>()
   const userContext = useContext(UserContext)
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
@@ -70,8 +71,6 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
   const [existingReviewData, setExistingReviewData] = useState<ReviewData | undefined>(undefined)
   const [loadingExistingReview, setLoadingExistingReview] = useState(false)
 
-  console.log("orderDetails", order);
-
   const fetchExistingReview = async (productId: number, userId: number): Promise<ReviewData | null> => {
     try {
       const response = await fetch(`${pathUrl}/api/v1/product-ratings/product/${productId}/user/${userId}`, {
@@ -85,10 +84,6 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
         const result = await response.json()
         if (result.success && result.data) {
           const reviewData: ExistingReviewData = result.data
-          console.log(
-            `Existing review data for product ${productId}:`,
-            result
-          );
           return {
             id: reviewData.id,
             statusCode: reviewData.statusCode,
@@ -167,7 +162,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
   }
 
   const checkReviewStatuses = useCallback(async () => {
-    if (!order.orderDetails || order.orderDetails.length === 0) {
+    // Only check review statuses for delivered orders
+    if (order.status !== "Delivered" || !order.orderDetails || order.orderDetails.length === 0) {
       setLoadingReviewStatuses(false)
       return
     }
@@ -188,9 +184,9 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
               },
             },
           )
+          console.log("is it Reviewed ", response)
           if (response.ok) {
             const result = await response.json()
-            console.log("is it Reviewed ", result)
             if (result.success) {
               statuses[detail.product.id] = result.data
             } else {
@@ -212,7 +208,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
     } finally {
       setLoadingReviewStatuses(false)
     }
-  }, [order.orderDetails, order.userId, pathUrl, userToken])
+  }, [order.orderDetails, order.userId, order.status, pathUrl, userToken])
 
   useEffect(() => {
     if (order && order.orderDetails) {
@@ -232,11 +228,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
     >
       {/* Header */}
       <div className="mb-6 lg:mb-8">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="mb-4 gap-2 hover:bg-gray-100"
-        >
+        <Button variant="ghost" onClick={onBack} className="mb-4 gap-2 hover:bg-gray-100">
           <ArrowLeft className="h-4 w-4" />
           Back to orders
         </Button>
@@ -263,18 +255,14 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
         {/* Main Content */}
         <div className="xl:col-span-2 space-y-6 lg:space-y-8">
           {/* Delivery Status */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card
               className={`${
                 order.status === "Delivered"
                   ? "border-green-200 bg-green-50"
                   : order.status === "Cancelled"
-                  ? "border-red-200 bg-red-50"
-                  : "border-blue-200 bg-blue-50"
+                    ? "border-red-200 bg-red-50"
+                    : "border-blue-200 bg-blue-50"
               }`}
             >
               <CardContent className="p-4 lg:p-6">
@@ -284,8 +272,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                       order.status === "Delivered"
                         ? "text-green-600"
                         : order.status === "Cancelled"
-                        ? "text-red-600"
-                        : "text-blue-600"
+                          ? "text-red-600"
+                          : "text-blue-600"
                     }`}
                   />
                   <div>
@@ -294,8 +282,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                         order.status === "Delivered"
                           ? "text-green-800"
                           : order.status === "Cancelled"
-                          ? "text-red-800"
-                          : "text-blue-800"
+                            ? "text-red-800"
+                            : "text-blue-800"
                       }`}
                     >
                       {order.status} on {order.date}
@@ -307,11 +295,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
           </motion.div>
 
           {/* Order Items */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
               <motion.h2
                 className="text-xl font-semibold text-gray-800"
@@ -343,19 +327,14 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                         >
                           {detail.product.mainImagePath ? (
                             <img
-                              src={
-                                pathUrl + detail.product.mainImagePath ||
-                                "/placeholder.svg"
-                              }
+                              src={pathUrl + detail.product.mainImagePath || "/placeholder.svg"}
                               alt={detail.product.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 // Fallback to icon if image fails to load
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = "none";
-                                target.nextElementSibling?.classList.remove(
-                                  "hidden"
-                                );
+                                const target = e.target as HTMLImageElement
+                                target.style.display = "none"
+                                target.nextElementSibling?.classList.remove("hidden")
                               }}
                             />
                           ) : (
@@ -383,9 +362,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                             {hasReviewed(detail.product.id) && (
                               <div className="flex items-center gap-1">
                                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                <span className="text-sm text-green-600 font-medium">
-                                  Reviewed
-                                </span>
+                                <span className="text-sm text-green-600 font-medium">Reviewed</span>
                               </div>
                             )}
                           </motion.div>
@@ -398,18 +375,14 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                               transition={{ delay: 1.0 + index * 0.1 }}
                             >
                               <span>
-                                Quantity:{" "}
-                                <span className="text-black text-medium">
-                                  {" "}
-                                  {detail.amount}
-                                </span>
+                                Quantity: <span className="text-black text-medium"> {detail.amount}</span>
                               </span>
                               <span className=" text-lg text-black font-semibold">
                                 EGP {(detail.price * detail.amount).toFixed(2)}
                               </span>
                             </motion.div>
 
-                            {/* Only show Add Review button for Delivered orders */}
+                            {/* Action Buttons - Only show Add Review for delivered orders */}
                             {order.status === "Delivered" && (
                               <motion.div
                                 initial={{ opacity: 0, x: 20 }}
@@ -425,10 +398,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                                       : "bg-blue-600 hover:bg-blue-700"
                                   }`}
                                   onClick={() => handleAddReviewClick(detail)}
-                                  disabled={
-                                    loadingReviewStatuses ||
-                                    loadingExistingReview
-                                  }
+                                  disabled={loadingReviewStatuses || loadingExistingReview}
                                 >
                                   {loadingReviewStatuses ? (
                                     <>
@@ -436,8 +406,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                                       Checking...
                                     </>
                                   ) : loadingExistingReview &&
-                                    selectedProductForReview?.product.id ===
-                                      detail.product.id ? (
+                                    selectedProductForReview?.product.id === detail.product.id ? (
                                     <>
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                       Loading...
@@ -445,9 +414,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                                   ) : (
                                     <>
                                       <Star className="h-4 w-4" />
-                                      {hasReviewed(detail.product.id)
-                                        ? "Edit Review"
-                                        : "Add Review"}
+                                      {hasReviewed(detail.product.id) ? "Edit Review" : "Add Review"}
                                     </>
                                   )}
                                 </Button>
@@ -472,12 +439,8 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
               <Card className="border-gray-300 bg-gray-50">
                 <CardContent className="p-4 lg:p-6">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-gray-900">
-                      Total Order Price:
-                    </span>
-                    <span className="text-xl font-bold text-gray-900">
-                      EGP {order.price.toFixed(2)}
-                    </span>
+                    <span className="text-lg font-semibold text-gray-900">Total Order Price:</span>
+                    <span className="text-xl font-bold text-gray-900">EGP {order.price.toFixed(2)}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -487,28 +450,22 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
 
         {/* Right Sidebar */}
         <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-          >
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
             <Card>
               <CardContent className="p-4 lg:p-6">
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Order Number:</p>
-                    <p className="font-medium break-all">{order.orderNumber}</p>
+                    <p className="font-medium break-all">{order.id}</p>
                   </div>
 
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Order ID:</p>
-                    <p className="font-medium">{order.id}</p>
+                    <p className="font-medium break-all">{id}</p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Delivery Address:
-                    </p>
+                    <p className="text-sm text-gray-600 mb-1">Delivery Address:</p>
                     <p className="font-medium">{order.deliveryAddress}</p>
                   </div>
 
@@ -517,10 +474,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
                     <p className="font-medium">{order.quantity}</p>
                   </div>
 
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-blue-600 hover:text-blue-800 justify-start"
-                  >
+                  <Button variant="link" className="p-0 h-auto text-blue-600 hover:text-blue-800 justify-start">
                     View order/invoice summary
                     <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
@@ -536,13 +490,46 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
         isOpen={showReviewModal}
         onClose={handleCloseReviewModal}
         product={selectedProductForReview}
-        existingReview={
-          selectedProductForReview
-            ? getExistingReview(selectedProductForReview.product.id)
-            : undefined
-        }
+        existingReview={selectedProductForReview ? getExistingReview(selectedProductForReview.product.id) : undefined}
         onReviewSubmitted={handleReviewSubmitted}
       />
+      {/* Add this before the closing </motion.div> tag */}
+
+      {/* Help Button */}
+      <motion.div
+        className="fixed bottom-6 right-6"
+        initial={{ opacity: 0, scale: 0, rotate: -180 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={{
+          delay: 1.5,
+          duration: 0.6,
+          type: "spring",
+          stiffness: 200,
+          damping: 15,
+        }}
+        whileHover={{
+          scale: 1.1,
+          rotate: 5,
+          transition: { duration: 0.2 },
+        }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <Button
+          className="bg-[#7c6fd4] hover:bg-[#282560]  text-white rounded-full h-12 px-4 lg:px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+          onClick={() => {
+            const phoneNumber = "2001065823087"
+            const message = `Hello! I need help with my order #${order.id}.`
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
+            window.open(whatsappUrl, "_blank")
+          }}
+        >
+          <motion.div animate={{ rotate: 0 }} whileHover={{ rotate: 15 }} transition={{ duration: 0.2 }}>
+            <HelpCircle className="h-5 w-5 mr-2" />
+          </motion.div>
+          <span className="hidden sm:inline">Need Help?</span>
+          <span className="sm:hidden">Help</span>
+        </Button>
+      </motion.div>
     </motion.div>
-  );
+  )
 }

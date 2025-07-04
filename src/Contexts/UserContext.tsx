@@ -12,6 +12,7 @@ interface UserContextType {
   setShowAddProject:(val:boolean)=>void;
   pathUrl:string;
   setPathUrl:(val:string)=>void;
+  logout: () => void;
 }
 
 export const UserContext = createContext<UserContextType | null>(null);
@@ -29,6 +30,21 @@ export default function UserContextProvider({ children }: { children: ReactNode 
   const [showAddProject, setShowAddProject] = useState(false)
   const [pathUrl, setPathUrl] = useState(`https://home4u.gosoftcloud.com`)
 
+
+   function logout() {
+    setUserToken("")
+    setUserId(null)
+    localStorage.removeItem("userToken")
+    localStorage.removeItem("isLoggedIn")
+    localStorage.removeItem("user-id")
+    localStorage.removeItem("user-type")
+    localStorage.removeItem("user-business")
+    localStorage.removeItem("user-business-id")
+
+    // Redirect to the login page
+  }
+
+
   useEffect(() => {
     console.log("Updating localStorage user-id:", userId);
     localStorage.setItem("user-id", JSON.stringify(userId));
@@ -40,7 +56,7 @@ export default function UserContextProvider({ children }: { children: ReactNode 
   }, [userToken]);
 
   return (
-    <UserContext.Provider value={{ userToken, setUserToken, userId, setUserId, isMakeOtp, setIsMakeOtp , showAddProject, setShowAddProject,pathUrl,setPathUrl}}>
+    <UserContext.Provider value={{ userToken, setUserToken, userId, setUserId, isMakeOtp, setIsMakeOtp , showAddProject, setShowAddProject,pathUrl,setPathUrl,logout}}>
       {children}
     </UserContext.Provider>
   );

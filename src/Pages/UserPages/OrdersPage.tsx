@@ -1,14 +1,17 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useContext, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, ChevronRight, HelpCircle, Loader2 } from "lucide-react"
+import { Search, ChevronRight, HelpCircle, Loader2, X } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { UserContext } from "@/Contexts/UserContext"
+import toast from "react-hot-toast"
 
 interface OrderStatus {
   id: number
@@ -32,11 +35,11 @@ interface ApiResponse {
 }
 
 export default function OrdersPage() {
-    const userContext = useContext(UserContext)
-    if (!userContext) {
-      throw new Error("UserContext must be used within a UserContextProvider")
-    }
-    const { userToken, pathUrl,userId } = userContext
+  const userContext = useContext(UserContext)
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider")
+  }
+  const { userToken, pathUrl, userId } = userContext
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedYear, setSelectedYear] = useState("2024")
@@ -45,7 +48,8 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-
+  // Cancel order state
+  const [cancelingOrderId, setCancelingOrderId] = useState<number | null>(null)
 
   // Fetch orders function wrapped in useCallback to avoid recreating on every render
   const fetchOrders = useCallback(
@@ -55,23 +59,21 @@ export default function OrdersPage() {
 
       try {
         const response = await fetch(
-          `${pathUrl}/api/v1/orders/user/${localStorage.getItem(
-            "user-id"
-          )}?statusCode=${statusCode}`,
+          `${pathUrl}/api/v1/orders/user/${localStorage.getItem("user-id")}?statusCode=${statusCode}`,
           {
             headers: {
               Authorization: `Bearer ${userToken}`,
               "Accept-Language": "en",
             },
-          }
-        );
+          },
+        )
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
         const data: ApiResponse = await response.json()
-        console.log(data);
+        console.log(data)
         if (data.success) {
           setOrders(data.data)
         } else {
@@ -84,7 +86,7 @@ export default function OrdersPage() {
         setLoading(false)
       }
     },
-    [pathUrl, userToken]
+    [pathUrl, userToken],
   )
 
   // Fetch orders when status changes
@@ -133,8 +135,65 @@ export default function OrdersPage() {
     },
   }
 
+  // Handle order click - navigate to details
   const handleOrderClick = (orderId: number) => {
-    navigate(`/orders/${orderId}`)
+    const getReadableStatus = (statusCode: string): string => {
+      switch (statusCode) {
+        case "DELIVERED":
+          return "Delivered"
+        case "CANCELED":
+          return "Cancelled"
+        case "PENDING":
+          return "Pending"
+        default:
+          return "Unknown"
+      }
+    }
+
+    const readableStatus = getReadableStatus(selectedStatus)
+
+    navigate(`/orders/${orderId}`, {
+      state: {
+        selectedDropdownStatus: selectedStatus,
+        readableStatus: readableStatus,
+        fromOrdersList: true,
+      },
+    })
+  }
+
+  // Handle cancel order
+  const handleCancelOrder = async (e: React.MouseEvent, orderId: number) => {
+    e.stopPropagation() // Prevent navigation to order details
+
+    setCancelingOrderId(orderId)
+
+    try {
+      const response = await fetch(`${pathUrl}/api/v1/orders/cancel/${orderId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Accept-language": "en",
+        },
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          toast.success("Order canceled successfully!")
+          // Refresh orders list
+          fetchOrders(selectedStatus)
+        } else {
+          throw new Error(result.message || "Failed to cancel order")
+        }
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+    } catch (error) {
+      console.error("Error canceling order:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to cancel order")
+    } finally {
+      setCancelingOrderId(null)
+    }
   }
 
   const getStatusColor = (statusCode: string) => {
@@ -288,20 +347,6 @@ export default function OrdersPage() {
                     <Card className="transition-all duration-300 border-gray-200 hover:border-gray-300">
                       <CardContent className="p-4 lg:p-6">
                         <div className="flex items-start gap-4">
-                          {/* Product Image */}
-                          {/* <motion.div
-                            whileHover={{
-                              scale: 1.1,
-                              rotate: 5,
-                              transition: { duration: 0.3 },
-                            }}
-                            className="flex-shrink-0"
-                          >
-                            <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gray-100 rounded-lg flex items-center justify-center">
-                              <Headphones className="h-8 w-8 lg:h-10 lg:w-10 text-gray-400" />
-                            </div>
-                          </motion.div> */}
-
                           {/* Order Details */}
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
@@ -330,24 +375,64 @@ export default function OrdersPage() {
                               transition={{ delay: index * 0.1 + 0.9, duration: 0.4 }}
                             >
                               <p className="text-black text-md lg:text-base font-medium mb-3">
-                               <span className="text-[#777E90]"> Order Number : </span>{order.orderNumber}
+                                <span className="text-[#777E90]"> Order Number : </span>
+                                {order.orderNumber}
                               </p>
 
                               {/* Quantity and Subtotal in side-by-side layout */}
                               <div className="flex items-center justify-between text-md text-[#777E90]">
-                                <span >Quantity: <span className="text-black">{order.quantity}</span> </span> 
-                                <span>Subtotal: <span className="text-black"> EGP {order.price.toFixed(2)}</span></span>
+                                <span>
+                                  Quantity: <span className="text-black">{order.quantity}</span>{" "}
+                                </span>
+                                <span>
+                                  Subtotal: <span className="text-black"> EGP {order.price.toFixed(2)}</span>
+                                </span>
                               </div>
                             </motion.div>
 
-                            <motion.p
-                              className="text-xs text-gray-500"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: index * 0.1 + 1.0, duration: 0.4 }}
-                            >
-                              Order ID: {order.id}
-                            </motion.p>
+                            {/* Bottom Section with Order ID and Cancel Button */}
+                            <div className="flex justify-between items-center gap-3">
+                              <motion.p
+                                className="text-xs text-gray-500"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: index * 0.1 + 1.0, duration: 0.4 }}
+                              >
+                                Order ID: {order.id}
+                              </motion.p>
+
+                              {/* Cancel Button for Pending Orders */}
+                              {selectedStatus === "PENDING" && (
+                                <motion.div
+                                  className="flex justify-center sm:justify-start"
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.1 + 1.1, duration: 0.4 }}
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="gap-2 w-full sm:w-auto max-w-xs h-10 font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                                    onClick={(e) => handleCancelOrder(e, order.id)}
+                                    disabled={cancelingOrderId === order.id}
+                                  >
+                                    {cancelingOrderId === order.id ? (
+                                      <>
+                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                        <span className="hidden xs:inline">Canceling...</span>
+                                        <span className="xs:hidden">...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <X className="h-8 w-8 text-lg font-semibold" />
+                                        <span className="hidden xs:inline text-lg">Cancel Order</span>
+                                        <span className="xs:hidden text-lg">Cancel</span>
+                                      </>
+                                    )}
+                                  </Button>
+                                </motion.div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Arrow */}
@@ -416,7 +501,15 @@ export default function OrdersPage() {
         }}
         whileTap={{ scale: 0.9 }}
       >
-        <Button className="bg-yellow-400 hover:bg-yellow-500 text-black rounded-full h-12 px-4 lg:px-6 shadow-lg hover:shadow-xl transition-all duration-300">
+ <Button
+          className="bg-[#7c6fd4] hover:bg-[#282560]  text-white rounded-full h-12 px-4 lg:px-6 shadow-lg hover:shadow-xl transition-all duration-300"
+          onClick={() => {
+            const phoneNumber = "2001065823087"
+            const message = `Hello! I need help with my order.`
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
+            window.open(whatsappUrl, "_blank")
+          }}
+        >
           <motion.div animate={{ rotate: 0 }} whileHover={{ rotate: 15 }} transition={{ duration: 0.2 }}>
             <HelpCircle className="h-5 w-5 mr-2" />
           </motion.div>

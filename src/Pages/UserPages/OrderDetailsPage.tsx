@@ -1,6 +1,5 @@
 "use client"
-
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { useState, useEffect, useContext, useCallback } from "react"
 import { OrderDetails } from "./components/order-details"
 import { Loader2 } from "lucide-react"
@@ -26,6 +25,13 @@ interface OrderData {
   deliveryAddress: string
   orderDetails: OrderDetail[]
   totalPrice: number
+  statusCode?: string
+  status?: {
+    code: string
+    name: string
+  }
+  orderStatus?: string
+  orderStatusCode?: string
 }
 
 interface ApiResponse {
@@ -34,54 +40,70 @@ interface ApiResponse {
   data: OrderData
 }
 
+// IMPORTANT: Interface for navigation state
+interface NavigationState {
+  selectedDropdownStatus?: string
+  readableStatus?: string
+  fromOrdersList?: boolean
+}
+
 export default function OrderDetailsPage() {
-      const userContext = useContext(UserContext)
-      if (!userContext) {
-        throw new Error("UserContext must be used within a UserContextProvider")
-      }
-      const { userToken, pathUrl } = userContext
+  const userContext = useContext(UserContext)
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider")
+  }
+  const { userToken, pathUrl } = userContext
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [orderData, setOrderData] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  console.log(orderData)
-  const fetchOrderDetails = useCallback(async (orderId: string) => {
-    setLoading(true)
-    setError(null)
+  // IMPORTANT: Get the navigation state passed from OrdersPage
+  const navigationState = location.state as NavigationState | null
 
-    try {
-      const response = await fetch(`${pathUrl}/api/v1/orders/${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-          "Accept-language":"en"
-        },
-      })
+  const fetchOrderDetails = useCallback(
+    async (orderId: string) => {
+      setLoading(true)
+      setError(null)
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      try {
+        const response = await fetch(`${pathUrl}/api/v1/orders/${orderId}`, {
+          headers: {
+            "Accept-language": "en",
+            Authorization: `Bearer ${userToken}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data: ApiResponse = await response.json()
+
+        if (data.success) {
+          setOrderData(data.data)
+        } else {
+          throw new Error("API returned unsuccessful response")
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch order details")
+      } finally {
+        setLoading(false)
       }
-
-      const data: ApiResponse = await response.json()
-      console.log("Order Details", data);
-      if (data.success) {
-        setOrderData(data.data)
-      } else {
-        throw new Error("API returned unsuccessful response")
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch order details")
-    } finally {
-      setLoading(false)
-    }
-  }, [pathUrl, userToken])
+    },
+    [pathUrl, userToken],
+  )
 
   useEffect(() => {
-    if (id) {
-      fetchOrderDetails(id)
+    const fetchOrder = async () => {
+      if (id) {
+        await fetchOrderDetails(id)
+      }
     }
-  }, [fetchOrderDetails, id])
+    fetchOrder()
+  }, [id, fetchOrderDetails])
 
   if (loading) {
     return (
@@ -108,19 +130,105 @@ export default function OrderDetailsPage() {
     )
   }
 
+  // IMPORTANT: Enhanced function that prioritizes dropdown selection
+  const getOrderStatus = (orderData: OrderData): string => {
+    // PRIORITY 1: Use the dropdown selection if available
+    if (navigationState?.fromOrdersList && navigationState?.readableStatus) {
+      console.log("Using dropdown selection status:", navigationState.readableStatus)
+      return navigationState.readableStatus
+    }
+
+    // PRIORITY 2: Try to determine from API response
+    console.log("Determining order status from API response:", {
+      statusCode: orderData.statusCode,
+      status: orderData.status,
+      orderStatus: orderData.orderStatus,
+      orderStatusCode: orderData.orderStatusCode,
+    })
+
+    const possibleStatusFields = [
+      orderData.statusCode,
+      orderData.orderStatusCode,
+      orderData.orderStatus,
+      orderData.status?.code,
+      orderData.status?.name,
+    ]
+
+    for (const statusField of possibleStatusFields) {
+      if (statusField) {
+        const normalizedStatus = statusField.toString().toUpperCase()
+
+        switch (normalizedStatus) {
+          case "DELIVERED":
+          case "DELIVERY":
+          case "COMPLETE":
+          case "COMPLETED":
+            return "Delivered"
+          case "CANCELED":
+          case "CANCELLED":
+          case "CANCEL":
+            return "Cancelled"
+          case "PENDING":
+          case "PROCESSING":
+          case "ACTIVE":
+            return "Pending"
+        }
+      }
+    }
+
+    // PRIORITY 3: Fallback to order details status
+    if (orderData.orderDetails.length > 0) {
+      const statuses = orderData.orderDetails.map((detail) => detail.statusCode).filter(Boolean)
+
+      if (statuses.length > 0 && statuses.every((status) => status === statuses[0])) {
+        const normalizedStatus = statuses[0]!.toString().toUpperCase()
+
+        switch (normalizedStatus) {
+          case "DELIVERED":
+          case "DELIVERY":
+          case "COMPLETE":
+          case "COMPLETED":
+            return "Delivered"
+          case "CANCELED":
+          case "CANCELLED":
+          case "CANCEL":
+            return "Cancelled"
+          case "PENDING":
+          case "PROCESSING":
+          case "ACTIVE":
+            return "Pending"
+        }
+      }
+    }
+
+    return "Unknown"
+  }
+
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case "Delivered":
+        return "text-green-600"
+      case "Cancelled":
+        return "text-red-600"
+      case "Pending":
+        return "text-blue-600"
+      default:
+        return "text-gray-600"
+    }
+  }
+
   // Transform the API data to match the expected format for OrderDetails component
   const transformedOrder = {
-    id: id ?? "",
-    orderNumber: orderData.orderNumber,
-    status: "Delivered", // You might want to get this from the order status or orderDetails
-    statusColor: "text-green-600", // Adjust based on actual status
+    id: orderData.orderNumber,
+    status: getOrderStatus(orderData), // IMPORTANT: This now uses dropdown selection first
+    statusColor: getStatusColor(getOrderStatus(orderData)),
     date: new Date().toLocaleDateString("en-US", {
       weekday: "long",
       day: "numeric",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
-    }), // You might want to add createdDate to the API response
+    }),
     product: orderData.orderDetails.length > 0 ? orderData.orderDetails[0].product.name : "Product",
     price: orderData.totalPrice,
     quantity: orderData.orderDetails.reduce((total, detail) => total + detail.amount, 0),
@@ -129,5 +237,14 @@ export default function OrderDetailsPage() {
     userId: orderData.userId,
   }
 
-  return <OrderDetails order={transformedOrder} onBack={() => navigate("/orders")}  />
+  // IMPORTANT: Enhanced debug log
+  console.log("=== CRITICAL ORDER STATUS DEBUG ===")
+  console.log("Navigation State:", navigationState)
+  console.log("Dropdown Selection:", navigationState?.selectedDropdownStatus)
+  console.log("Readable Status from Dropdown:", navigationState?.readableStatus)
+  console.log("Final Transformed Status:", transformedOrder.status)
+  console.log("Will Show Review Buttons:", transformedOrder.status === "Delivered")
+  console.log("================================")
+
+  return <OrderDetails order={transformedOrder} onBack={() => navigate("/orders")} />
 }

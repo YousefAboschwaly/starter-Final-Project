@@ -16,29 +16,23 @@ import Logo from "/Logo.png"
 import { SimpleCartIcon } from "@/Pages/Cart/CartIcon"
 
 export default function Navbar() {
-  const navigate = useNavigate()
+    const navigate = useNavigate()
+
   const userContext = useContext(UserContext)
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
   }
-  const { userToken, setUserToken, setUserId, setShowAddProject } = userContext
+  const { userToken,  setShowAddProject , logout } = userContext
 
   const userType = localStorage.getItem("user-type")
   const isGeneralUser = userType === "general user"
 
-  function logout() {
-    setUserToken("")
-    setUserId(null)
-    localStorage.removeItem("userToken")
-    localStorage.removeItem("isLoggedIn")
-    localStorage.removeItem("user-id")
-    localStorage.removeItem("user-type")
-    localStorage.removeItem("user-business")
-    localStorage.removeItem("user-business-id")
-
-    // Redirect to the login page
-    navigate("/client");
+   function handleLogout() {
+    logout()
+    navigate("/client")
+  
   }
+
 
   // If user is a general user and authenticated, show the e-commerce style navbar
   if (userToken && isGeneralUser) {
@@ -124,7 +118,7 @@ export default function Navbar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="p-0">
-                  <button onClick={logout} className="flex w-full items-center gap-2 p-2 text-left">
+                  <button onClick={handleLogout} className="flex w-full items-center gap-2 p-2 text-left">
                     <span>🚪</span>
                     Sign Out
                   </button>
