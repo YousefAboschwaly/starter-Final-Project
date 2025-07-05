@@ -59,6 +59,7 @@
     "react-router-dom": "^6.27.0",
     "react-slick": "^0.30.3",
     "slick-carousel": "^1.8.1",
+    "swiper": "^11.2.10",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.173.0",

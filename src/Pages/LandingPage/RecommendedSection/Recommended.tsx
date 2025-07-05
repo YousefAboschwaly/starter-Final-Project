@@ -2,10 +2,13 @@
 
 import { motion } from "framer-motion"
 import ProductContainer from "./ProductContainer"
+import type { ApiProduct } from "../LandingPage"
 
-export default function Recommended() {
+interface RecommendedProps {
+  products: ApiProduct[]
+}
 
-
+export default function Recommended({ products }: RecommendedProps) {
   return (
     <main className=" mx-auto py-8 w-full ">
       <div className="mb-8">
@@ -19,8 +22,7 @@ export default function Recommended() {
         </motion.h1>
       </div>
 
-    <ProductContainer/>
-      
+      <ProductContainer products={products} />
     </main>
   )
 }

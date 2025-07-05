@@ -172,7 +172,7 @@ export default function BrandSection() {
             key={index}
             onClick={() => setCurrentPage(index)}
             className={`h-2 rounded-full transition-all duration-300 ${
-              currentPage === index ? "w-6 bg-red-600" : "w-2 bg-gray-300"
+              currentPage === index ? "w-6 bg-purple-500" : "w-2 bg-gray-300"
             }`}
             aria-label={`Go to page ${index + 1}`}
           />

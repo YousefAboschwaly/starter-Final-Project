@@ -1,170 +1,140 @@
 "use client"
 
-import { useState, useRef } from "react"
-
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { Link } from "react-router-dom"
+import { useState, useEffect } from "react"
 
-// Categories with beautiful images
-const categories = [
-  {
-    name: "Donate For Gaza",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/donate",
-  },
-  {
-    name: "Installments & Discounts",
-    icon: "/CategoriesImages/act2.avif",
-    href: "/installments",
-  },
-  {
-    name: "Shop Local",
-    icon: "/CategoriesImages/cat3.avif",
-    href: "/local",
-  },
-  {
-    name: "Bestsellers",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/bestsellers",
-  },
-  {
-    name: "Men's Fashion",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/mens",
-  },
-  {
-    name: "Women's Fashion",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/womens",
-  },
-  {
-    name: "Kids' Fashion",
-    icon: "/CategoriesImages/toys.avif",
-    href: "/kids",
-  },
-  {
-    name: "Home & Kitchen",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/home",
-  },
-  {
-    name: "Mobiles",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/mobiles",
-  },
-  {
-    name: "Televisions",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/televisions",
-  },
-  {
-    name: "Appliances",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/appliances",
-  },
-  {
-    name: "Beauty",
-    icon: "/CategoriesImages/furniture.avif",
-    href: "/beauty",
-  },
-]
+// Business type interface
+interface BusinessType {
+  id: number
+  code: string
+  name: string
+}
 
-export default function CategoryNavigation() {
-  const [activePage, setActivePage] = useState(0)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+interface CategoryNavigationProps {
+  businessTypes: BusinessType[]
+}
 
-  const totalPages = Math.ceil(categories.length / 8)
-
-  const scrollRight = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: scrollContainerRef.current.clientWidth,
-        behavior: "smooth",
-      })
-
-      setActivePage((prev) => Math.min(prev + 1, totalPages - 1))
-    }
+// Map business codes to image names (using .jpg extension)
+const getImageForBusinessType = (code: string): string => {
+  const imageMap: { [key: string]: string } = {
+    FURNITURE: "/CategoriesImages/Furniture.jpg",
+    KITCHENS_DRESSINGS: "/CategoriesImages/Kitchens.jpg",
+    ELECTRICAL_TOOLS: "/CategoriesImages/electricalTools.jpg",
+    FURNISHINGS: "/CategoriesImages/Furnish.jpg",
+    PAINT_MATERIALS: "/CategoriesImages/paint.jpg",
   }
+  return imageMap[code] || "/placeholder.svg"
+}
 
-  const scrollLeft = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        left: -scrollContainerRef.current.clientWidth,
-        behavior: "smooth",
-      })
-
-      setActivePage((prev) => Math.max(prev - 1, 0))
+export default function CategoryNavigation({ businessTypes }: CategoryNavigationProps) {
+  const [loadedImages, setLoadedImages] = useState<{[key: string]: boolean}>({})
+  
+  // Preload images
+  useEffect(() => {
+    const preloadImages = async () => {
+      const newLoaded: {[key: string]: boolean} = {}
+      
+      await Promise.all(
+        businessTypes.map(async (category) => {
+          const imgSrc = getImageForBusinessType(category.code)
+          if (imgSrc && !loadedImages[imgSrc]) {
+            try {
+              await new Promise((resolve, reject) => {
+                const img = new Image()
+                img.src = imgSrc
+                img.onload = () => {
+                  newLoaded[imgSrc] = true
+                  resolve(true)
+                }
+                img.onerror = reject
+              })
+            } catch (e) {
+              console.error(`Failed to load image: ${imgSrc}`, e)
+            }
+          }
+        })
+      )
+      
+      setLoadedImages(prev => ({ ...prev, ...newLoaded }))
     }
+    
+    if (businessTypes.length > 0) {
+      preloadImages()
+    }
+  }, [businessTypes, loadedImages])
+
+  if (businessTypes.length === 0) {
+    return (
+      <div className="relative py-12 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Shop by Category</h2>
+            <p className="text-lg text-gray-600">Discover our wide range of products</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-8">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center animate-pulse">
+                <div className="w-40 h-40 md:w-40 md:h-40 bg-gray-200 rounded-full mb-4"></div>
+                <div className="w-20 h-4 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="relative py-6 ">
-      <div className="max-w-[87rem] mx-auto px-4 relative ">
-        <div ref={scrollContainerRef} className="flex overflow-x-auto gap-4 pb-6 scrollbar-hide">
-          {categories.map((category, index) => (
-            <Link key={index} to={category.href} className="flex flex-col items-center min-w-[100px] text-center">
-              <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 mb-2">
-                <img
-                  src={category.icon || "/placeholder.svg"}
-                  alt={category.name}
-                  width={80}
-                  height={80}
-                  className="object-cover"
-                />
-              </div>
-              <span className="text-sm text-gray-800 font-medium">
-                {category.name.includes(" ")
-                  ? category.name.split(" ").map((word, i) => (
-                      <span key={i} className="block leading-tight">
-                        {word}
-                      </span>
-                    ))
-                  : category.name}
-              </span>
-            </Link>
-          ))}
+    <div className="relative py-12 bg-white">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Shop by Category</h2>
+          <p className="text-lg text-gray-600">Discover our wide range of products</p>
         </div>
 
-        {/* Left scroll button */}
-        <button
-          onClick={scrollLeft}
-          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md z-10 transition-all focus:outline-none"
-          aria-label="Scroll left"
-        >
-          <ChevronLeft className="h-5 w-5 text-gray-800" />
-        </button>
+        {/* Categories Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-8 text-center">
+          {businessTypes.map((category) => {
+            const imgSrc = getImageForBusinessType(category.code)
+            const isLoaded = loadedImages[imgSrc]
+            
+            return (
+              <Link 
+                key={category.id} 
+                to="/Ask?type=shop" 
+                className="flex flex-col items-center text-center group"
+                aria-label={`Browse ${category.name} category`}
+              >
+                {/* Category Image */}
+                <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full mb-4 shadow-lg bg-white border-4 border-gray-100">
+                  <div className="absolute inset-0 rounded-full overflow-hidden">
+                    {isLoaded ? (
+                      <img
+                        src={imgSrc}
+                        alt={category.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 will-change-transform"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 animate-pulse rounded-full" />
+                    )}
+                  </div>
+                  
+                  {/* Hover overlay - using pseudo-element instead of transform */}
+                  <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300 pointer-events-none"></div>
+                </div>
 
-        {/* Right scroll button */}
-        <button
-          onClick={scrollRight}
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md z-10 transition-all focus:outline-none"
-          aria-label="Scroll right"
-        >
-          <ChevronRight className="h-5 w-5 text-gray-800" />
-        </button>
-
-        {/* Dots navigation */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex space-x-1">
-          {Array.from({ length: totalPages }).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setActivePage(index)
-                if (scrollContainerRef.current) {
-                  scrollContainerRef.current.scrollTo({
-                    left: index * scrollContainerRef.current.clientWidth,
-                    behavior: "smooth",
-                  })
-                }
-              }}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all",
-                activePage === index ? "w-6 bg-gray-800" : "bg-gray-300",
-              )}
-              aria-label={`Go to category page ${index + 1}`}
-            />
-          ))}
+                {/* Category Name */}
+                <h3 className="text-lg md:text-lg font-semibold text-gray-800 capitalize leading-tight relative">
+                  {category.name}
+                  {/* Underline effect on hover using pseudo-element */}
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 group-hover:w-full transition-all duration-300 ease-out will-change-transform"></span>
+                </h3>
+              </Link>
+            )
+          })}
         </div>
       </div>
     </div>

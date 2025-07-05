@@ -17,7 +17,7 @@ export default function ImageCard({
   imageSrc,
   bgColor = "bg-white",
   badgeText,
-  badgeColor = "bg-yellow-300",
+  badgeColor ,
   fullHeight = false,
   style = "",
 }: ImageCardProps) {
@@ -37,7 +37,7 @@ export default function ImageCard({
                 transition={{ delay: 0.2 }}
                 className="absolute top-2 right-2 z-10"
               >
-                <Badge className={`${badgeColor} border-0 text-black font-normal px-2 py-1 hover:text-yellow-400`}>{badgeText}</Badge>
+                <Badge className={`${badgeColor} bg-purple-500 border-0 text-white font-normal px-2 py-1  hover:bg-purple-600`}>{badgeText}</Badge>
               </motion.div>
             )}
             <img

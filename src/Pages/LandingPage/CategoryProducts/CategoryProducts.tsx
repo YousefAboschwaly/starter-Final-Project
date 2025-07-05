@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { Link } from "react-router-dom"
 
 // Furniture category data structure
 interface CategoryProducts {
@@ -74,9 +75,12 @@ export default function CategoryProducts() {
     <div className=" mx-auto px-2 py-12">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-semibold text-gray-800">Furniture</h2>
-        <button className="border border-gray-800 px-6 py-2 text-gray-800 hover:bg-gray-800 hover:text-white transition-colors duration-300">
-          SHOP ALL
-        </button>
+    <Link
+            to="/Ask?type=shop"
+            className="border border-gray-800 px-6 py-2 text-gray-800 hover:bg-gray-800 hover:text-white transition-colors duration-300"
+          >
+            SHOP ALL
+          </Link>
       </div>
 
       <motion.div

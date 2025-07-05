@@ -4,8 +4,13 @@ import { useState, useEffect } from "react"
 import ProductCard from "./product-card"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
+import type { ApiProduct } from "../LandingPage"
 
-export default function ProductContainer() {
+interface ProductContainerProps {
+  products: ApiProduct[]
+}
+
+export default function ProductContainer({ products }: ProductContainerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -22,143 +27,117 @@ export default function ProductContainer() {
     }
   }, [])
 
-  const products = [
-    {
-      id: 1,
-      title: "JOYROOM 10000 mAh 22.5W LED Display Battery Status Monitoring Power Bank 3-Output",
-      images: ["/ProductImages/prod4.png", "/ProductImages/prod5.png", "/ProductImages/prod6.png"],
-      rating: 4.4,
-      reviews: "1.9K",
-      price: 535,
-      originalPrice: 699,
-      discount: "23%",
-      rank: "#1 in Power Banks",
-      express: true,
-    },
-    {
-      id: 2,
-      title: "Xiaomi Redmi 13C Dual SIM Midnight Black 6GB RAM 128GB 4G",
-      images: ["/ProductImages/prod7.png", "/ProductImages/prod8.png", "/ProductImages/prod9.png"],
-      rating: 4.9,
-      reviews: "",
-      price: 5822,
-      originalPrice: 8888,
-      discount: "34%",
-      rank: "#2 in Smartphones",
-      express: true,
-    },
-    {
-      id: 3,
-      title: "Lipton Black Tea 500g",
-      images: ["/ProductImages/prod10.png", "/ProductImages/prod11.png", "/ProductImages/prod12.png"],
-      rating: 4.5,
-      reviews: "1.9K",
-      price: 89.95,
-      originalPrice: 120,
-      discount: "25%",
-      rank: "#1 in Leaf & Dust Tea",
-      express: true,
-    },
-    {
-      id: 4,
-      title: "Xiaomi Redmi 13C Dual SIM Navy Blue 6GB RAM 128GB 4G",
-      images: ["/ProductImages/prod13.png", "/ProductImages/prod10.png", "/ProductImages/prod14.png"],
-      rating: 4.4,
-      reviews: "312",
-      price: 5822,
-      originalPrice: 8888,
-      discount: "34%",
-      rank: "#1 in Smartphones",
-      sellingFast: true,
-      express: true,
-    },
-    {
-      id: 5,
-      title: "Oraimo Watch 5 Bluetooth Call Smart Watch 2.01inch HD Display Fitness Watch, 300 mAh, Scratch Resistant",
-      images: ["/ProductImages/prod15.png"," /ProductImages/prod6.png", "/ProductImages/prod7.png"],
-      rating: 4.2,
-      reviews: "1.8K",
-      price: 979,
-      originalPrice: 1399,
-      discount: "30%",
-      rank: "#1 in Smartwatches",
-      express: true,
-    },
-    {
-      id: 6,
-      title: "Anker Anker 333 Ultra-Durable Cable USB-C to USB-C Cable ( 3.3 ft Braided ) 100W USB C PD Fast Charging",
-      images: ["/ProductImages/prod6.png", "/ProductImages/prod7.png", "/ProductImages/prod15.png"],
-      rating: 4.7,
-      reviews: "1.5K",
-      price: 146,
-      originalPrice: null,
-      discount: null,
-      rank: "#1 in Cables",
-      recentlySold: "2200+ sold recently",
-      express: true,
-    },
-  ]
+  // Handle empty products array
+  if (!products || products.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-gray-500 text-lg">No products available</p>
+      </div>
+    )
+  }
 
   const visibleProducts = isMobile ? 1 : 5
+
+  // If we have fewer products than visible slots, show all products
+  if (products.length <= visibleProducts) {
+    return (
+      <div className="overflow-hidden">
+        <div className="flex gap-4 justify-center">
+          {products.map((product) => (
+            <div key={product.id} className="flex-shrink-0" style={{ width: isMobile ? "100%" : "20%" }}>
+              <ProductCard product={product} />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Calculate proper boundaries for sliding
   const maxIndex = products.length - visibleProducts
 
   const nextSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex >= maxIndex ? 0 : prevIndex + 1))
+    setCurrentIndex((prevIndex) => {
+      if (prevIndex >= maxIndex) {
+        return 0 // Go back to start
+      }
+      return prevIndex + 1
+    })
   }
 
   const prevSlide = () => {
-    setCurrentIndex((prevIndex) => (prevIndex <= 0 ? maxIndex : prevIndex - 1))
+    setCurrentIndex((prevIndex) => {
+      if (prevIndex <= 0) {
+        return maxIndex // Go to end
+      }
+      return prevIndex - 1
+    })
   }
 
   return (
-
-
-      <div className="relative">
-        <motion.div
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
+    <div className="relative">
+      {/* Left Arrow - Always visible */}
+      <motion.div
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <button
+          onClick={prevSlide}
+          className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full shadow-md transition-colors"
+          aria-label="Previous products"
         >
-          <button
-            onClick={prevSlide}
-            className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full shadow-md transition-colors"
-            aria-label="Previous products"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-        </motion.div>
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      </motion.div>
 
-        <div className="overflow-hidden">
-          <motion.div
-            className="flex transition-all duration-500 ease-in-out"
-            style={{
-              transform: `translateX(-${currentIndex * (100 / visibleProducts)}%)`,
-              width: `${(products.length / visibleProducts) * 100}%`,
-            }}
-          >
-            {products.map((product) => (
-              <div key={product.id} className="px-2" style={{ width: `${(100 / products.length) * visibleProducts}%` }}>
-                <ProductCard product={product} />
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
+      <div className="overflow-hidden mx-12">
         <motion.div
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10"
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
+          className="flex transition-transform duration-500 ease-in-out"
+          style={{
+            transform: `translateX(-${(currentIndex * 100) / visibleProducts}%)`,
+          }}
         >
-          <button
-            onClick={nextSlide}
-            className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full shadow-md transition-colors"
-            aria-label="Next products"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
+          {products.map((product) => (
+            <div key={product.id} className="flex-shrink-0 px-2" style={{ width: `${100 / visibleProducts}%` }}>
+              <ProductCard product={product} />
+            </div>
+          ))}
         </motion.div>
       </div>
+
+      {/* Right Arrow - Always visible */}
+      <motion.div
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10"
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <button
+          onClick={nextSlide}
+          className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full shadow-md transition-colors"
+          aria-label="Next products"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      </motion.div>
+
+      {/* Optional: Add dots indicator */}
+      {products.length > visibleProducts && (
+        <div className="flex justify-center mt-4 space-x-2">
+          {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                currentIndex === index ? "w-6 bg-purple-500" : "w-2 bg-gray-300"
+              }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
