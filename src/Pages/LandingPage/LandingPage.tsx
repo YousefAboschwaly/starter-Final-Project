@@ -58,6 +58,75 @@ export interface BusinessConfigResponse {
   }
 }
 
+// Engineer interfaces
+export interface EngineerType {
+  id: number
+  code: string
+  name: string
+  nameAr: string
+  nameEn: string
+}
+
+export interface EngineerService {
+  id: number
+  code: string
+  name: string
+  nameAr: string
+  nameEn: string
+}
+
+export interface UserType {
+  id: number
+  code: string
+  name: string
+}
+
+export interface Governorate {
+  id: number
+  code: string
+  name: string
+}
+
+export interface City {
+  id: number
+  code: string
+  name: string
+}
+
+export interface EngineerUser {
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  personalPhoto: string | null
+  coverPhoto: string | null
+  userType: UserType
+  governorate: Governorate
+  city: City
+  engineer: Engineer | null
+  technicalWorker: unknown
+  engineeringOffice: unknown
+  enabled: boolean
+  business: unknown
+}
+
+export interface Engineer {
+  id: number
+  statusCode: number
+  createdDate: string
+  modifiedDate: string
+  user: EngineerUser
+  type: EngineerType
+  yearsOfExperience: number
+  engineerServ: EngineerService[]
+  bio: string
+  facebookLink: string | null
+  linkedinLink: string | null
+  behanceLink: string | null
+  averageRate: number
+}
+
 export default function LandingPage() {
   const userContext = useContext(UserContext)
   if (!userContext) {
@@ -77,9 +146,10 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null)
   const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([])
   const [businessTypeCategories, setBusinessTypeCategories] = useState<BusinessTypeCategory[]>([])
+  const [topEngineers, setTopEngineers] = useState<Engineer[]>([])
   console.log(userToken)
 
-  // Simplified API fetching - all 4 APIs together
+  // Simplified API fetching - all 5 APIs together
   useEffect(() => {
     const fetchAllData = async () => {
       if (!pathUrl || !userToken) return
@@ -88,33 +158,40 @@ export default function LandingPage() {
         setLoading(true)
         setError(null)
 
-        // Fetch all 4 APIs together
-        const [businessConfigRes, highestRatedRes, topBestSellerRes, recommendedRes] = await Promise.allSettled([
-          fetch(`${pathUrl}/api/v1/business-config`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-          fetch(`${pathUrl}/api/v1/products/highest-rated`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-          fetch(`${pathUrl}/api/v1/products/top-best-seller`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-          fetch(`${pathUrl}/api/v1/products/recommended-for-you?userId=${userId || ""}`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
-          }),
-        ])
+        // Fetch all 5 APIs together
+        const [businessConfigRes, highestRatedRes, topBestSellerRes, recommendedRes, topEngineersRes] =
+          await Promise.allSettled([
+            fetch(`${pathUrl}/api/v1/business-config`, {
+              headers: {
+                "Accept-language": "en",
+                Authorization: `Bearer ${userToken}`,
+              },
+            }),
+            fetch(`${pathUrl}/api/v1/products/highest-rated`, {
+              headers: {
+                "Accept-language": "en",
+                Authorization: `Bearer ${userToken}`,
+              },
+            }),
+            fetch(`${pathUrl}/api/v1/products/top-best-seller`, {
+              headers: {
+                "Accept-language": "en",
+                Authorization: `Bearer ${userToken}`,
+              },
+            }),
+            fetch(`${pathUrl}/api/v1/products/recommended-for-you?userId=${userId || ""}`, {
+              headers: {
+                "Accept-language": "en",
+                Authorization: `Bearer ${userToken}`,
+              },
+            }),
+            fetch(`${pathUrl}/api/v1/engineers/top-engineers`, {
+              headers: {
+                "Accept-language": "en",
+                Authorization: `Bearer ${userToken}`,
+              },
+            }),
+          ])
 
         // Handle business config
         let businessTypesData: BusinessType[] = []
@@ -183,11 +260,25 @@ export default function LandingPage() {
           }
         }
 
+        // Handle top engineers data
+        let engineersData: Engineer[] = []
+        if (topEngineersRes.status === "fulfilled" && topEngineersRes.value.ok) {
+          try {
+            const data = await topEngineersRes.value.json()
+            console.log("Top Engineers:", data)
+            engineersData = data.data || data || []
+          } catch (e) {
+            console.warn("Failed to parse top engineers:", e)
+          }
+        }
+
         setProductsData({
           highestRated,
           topBestSeller,
           recommendedForYou,
         })
+
+        setTopEngineers(engineersData)
 
         console.log("All APIs fetched:", {
           businessTypes: businessTypesData.length,
@@ -195,6 +286,7 @@ export default function LandingPage() {
           highestRated: highestRated.length,
           topBestSeller: topBestSeller.length,
           recommendedForYou: recommendedForYou.length,
+          topEngineers: engineersData.length,
         })
       } catch (err) {
         console.error("Error fetching data:", err)
@@ -262,7 +354,7 @@ export default function LandingPage() {
     <main className="min-h-screen bg-gray-100">
       <TopSect businessTypes={businessTypes} businessTypeCategories={businessTypeCategories} />
       <MidSect />
-      <ProductsSection productsData={productsData} />
+      <ProductsSection productsData={productsData} topEngineers={topEngineers} />
       <Toaster
         position="top-right"
         toastOptions={{
