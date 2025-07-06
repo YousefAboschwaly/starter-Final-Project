@@ -27,13 +27,13 @@ const getImageForBusinessType = (code: string): string => {
 }
 
 export default function CategoryNavigation({ businessTypes }: CategoryNavigationProps) {
-  const [loadedImages, setLoadedImages] = useState<{[key: string]: boolean}>({})
-  
+  const [loadedImages, setLoadedImages] = useState<{ [key: string]: boolean }>({})
+
   // Preload images
   useEffect(() => {
     const preloadImages = async () => {
-      const newLoaded: {[key: string]: boolean} = {}
-      
+      const newLoaded: { [key: string]: boolean } = {}
+
       await Promise.all(
         businessTypes.map(async (category) => {
           const imgSrc = getImageForBusinessType(category.code)
@@ -52,16 +52,24 @@ export default function CategoryNavigation({ businessTypes }: CategoryNavigation
               console.error(`Failed to load image: ${imgSrc}`, e)
             }
           }
-        })
+        }),
       )
-      
-      setLoadedImages(prev => ({ ...prev, ...newLoaded }))
+
+      setLoadedImages((prev) => ({ ...prev, ...newLoaded }))
     }
-    
+
     if (businessTypes.length > 0) {
       preloadImages()
     }
   }, [businessTypes, loadedImages])
+
+  // Generate link with businessType filter parameters
+  const generateCategoryLink = (businessType: BusinessType) => {
+    const searchParams = new URLSearchParams()
+    searchParams.set("businessTypeId", businessType.id.toString())
+    searchParams.set("businessTypeName", businessType.name)
+    return `/Ask?type=shop&${searchParams.toString()}`
+  }
 
   if (businessTypes.length === 0) {
     return (
@@ -98,11 +106,11 @@ export default function CategoryNavigation({ businessTypes }: CategoryNavigation
           {businessTypes.map((category) => {
             const imgSrc = getImageForBusinessType(category.code)
             const isLoaded = loadedImages[imgSrc]
-            
+
             return (
-              <Link 
-                key={category.id} 
-                to="/Ask?type=shop" 
+              <Link
+                key={category.id}
+                to={generateCategoryLink(category)}
                 className="flex flex-col items-center text-center group"
                 aria-label={`Browse ${category.name} category`}
               >
@@ -111,7 +119,7 @@ export default function CategoryNavigation({ businessTypes }: CategoryNavigation
                   <div className="absolute inset-0 rounded-full overflow-hidden">
                     {isLoaded ? (
                       <img
-                        src={imgSrc}
+                        src={imgSrc || "/placeholder.svg"}
                         alt={category.name}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 will-change-transform"
                         loading="lazy"
@@ -121,7 +129,7 @@ export default function CategoryNavigation({ businessTypes }: CategoryNavigation
                       <div className="w-full h-full bg-gray-200 animate-pulse rounded-full" />
                     )}
                   </div>
-                  
+
                   {/* Hover overlay - using pseudo-element instead of transform */}
                   <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300 pointer-events-none"></div>
                 </div>

@@ -1,194 +1,218 @@
-"use client";
+"use client"
 
-import { useState, useMemo, useEffect, useCallback, useContext } from "react";
-import { Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import axios from "axios";
+import { useState, useMemo, useEffect, useCallback, useContext } from "react"
+import { useSearchParams } from "react-router-dom"
+import { Filter } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import axios from "axios"
 
 // Import all the separated components
-import { SearchBar } from "./SearchBar";
-import { FilterSidebar } from "./FilterSidebar";
-import { ProductCard } from "./ProductCard";
-import { Pagination } from "./Pagination";
-import { LoadingSpinner } from "./LoadingSpinner";
-import { ActiveFilters } from "./ActiveFilters";
-import { EmptyState } from "./EmptyState";
-import { UserContext } from "@/Contexts/UserContext";
-import { Toaster } from "react-hot-toast";
+import { SearchBar } from "./SearchBar"
+import { FilterSidebar } from "./FilterSidebar"
+import { ProductCard } from "./ProductCard"
+import { Pagination } from "./Pagination"
+import { LoadingSpinner } from "./LoadingSpinner"
+import { ActiveFilters } from "./ActiveFilters"
+import { EmptyState } from "./EmptyState"
+import { UserContext } from "@/Contexts/UserContext"
+import { Toaster } from "react-hot-toast"
 
 // Types for API data
 interface Color {
-  id: number;
-  code: string;
-  name: string;
-  hexColor: string;
+  id: number
+  code: string
+  name: string
+  hexColor: string
 }
 
 interface Material {
-  id: number;
-  code: string;
-  name: string;
+  id: number
+  code: string
+  name: string
 }
 
 interface BusinessType {
-  id: number;
-  code: string;
-  name: string;
+  id: number
+  code: string
+  name: string
 }
 
 interface BusinessTypeCategory {
-  id: number;
-  code: string;
-  name: string;
-  businessType: BusinessType;
+  id: number
+  code: string
+  name: string
+  businessType: BusinessType
 }
 
 interface Product {
-  id: number;
-  name: string;
-  price: number;
-  imagePath: string;
-  rate: number;
+  id: number
+  name: string
+  price: number
+  imagePath: string
+  rate: number
 }
 
 export default function ShopNow() {
-  const userContext = useContext(UserContext);
+  const userContext = useContext(UserContext)
+  const [searchParams] = useSearchParams()
+
   if (!userContext) {
-    throw new Error("UserContext must be used within a UserContextProvider");
+    throw new Error("UserContext must be used within a UserContextProvider")
   }
-  const { userToken, pathUrl } = userContext;
+  const { userToken, pathUrl } = userContext
 
   // Filter states
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [selectedColorIds, setSelectedColorIds] = useState<number[]>([]);
-  const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([]);
-  const [selectedBusinessTypeIds, setSelectedBusinessTypeIds] = useState<
-    number[]
-  >([]);
-  const [selectedBusinessCategoryIds, setSelectedBusinessCategoryIds] =
-    useState<number[]>([]);
-  const [searchName, setSearchName] = useState("");
+  const [minPrice, setMinPrice] = useState("")
+  const [maxPrice, setMaxPrice] = useState("")
+  const [selectedColorIds, setSelectedColorIds] = useState<number[]>([])
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<number[]>([])
+  const [selectedBusinessTypeIds, setSelectedBusinessTypeIds] = useState<number[]>([])
+  const [selectedBusinessCategoryIds, setSelectedBusinessCategoryIds] = useState<number[]>([])
+  const [searchName, setSearchName] = useState("")
 
   // UI states
-  const [wishlist, setWishlist] = useState<number[]>([]);
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [wishlist, setWishlist] = useState<number[]>([])
+  const [isFiltering, setIsFiltering] = useState(false)
 
   // Pagination states
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
 
   // API data states
-  const [colors, setColors] = useState<Color[]>([]);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([]);
-  const [businessTypeCategories, setBusinessTypeCategories] = useState<
-    BusinessTypeCategory[]
-  >([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [colors, setColors] = useState<Color[]>([])
+  const [materials, setMaterials] = useState<Material[]>([])
+  const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([])
+  const [businessTypeCategories, setBusinessTypeCategories] = useState<BusinessTypeCategory[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true)
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+
+  // Handle URL parameters for pre-selected filters
+  useEffect(() => {
+    const businessTypeId = searchParams.get("businessTypeId")
+    const businessCategoryId = searchParams.get("businessCategoryId")
+
+    console.log("URL Parameters:", { businessTypeId, businessCategoryId })
+
+    if (businessTypeId) {
+      const typeId = Number.parseInt(businessTypeId)
+      setSelectedBusinessTypeIds([typeId])
+      console.log("Set business type ID:", typeId)
+    }
+
+    if (businessCategoryId) {
+      const categoryId = Number.parseInt(businessCategoryId)
+      setSelectedBusinessCategoryIds([categoryId])
+      console.log("Set business category ID:", categoryId)
+    }
+  }, [searchParams])
+
+  // Add another useEffect to ensure filters are applied after config is loaded
+  useEffect(() => {
+    if (!isLoadingConfig && businessTypes.length > 0 && businessTypeCategories.length > 0) {
+      const businessTypeId = searchParams.get("businessTypeId")
+      const businessCategoryId = searchParams.get("businessCategoryId")
+
+      if (businessTypeId && selectedBusinessTypeIds.length === 0) {
+        const typeId = Number.parseInt(businessTypeId)
+        setSelectedBusinessTypeIds([typeId])
+      }
+
+      if (businessCategoryId && selectedBusinessCategoryIds.length === 0) {
+        const categoryId = Number.parseInt(businessCategoryId)
+        setSelectedBusinessCategoryIds([categoryId])
+      }
+    }
+  }, [
+    isLoadingConfig,
+    businessTypes,
+    businessTypeCategories,
+    searchParams,
+    selectedBusinessTypeIds.length,
+    selectedBusinessCategoryIds.length,
+  ])
 
   // Fetch configuration data from API
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        setIsLoadingConfig(true);
+        setIsLoadingConfig(true)
         const { data } = await axios.get(`${pathUrl}/api/v1/business-config`, {
           headers: {
             "Accept-Language": "en",
             Authorization: `Bearer ${userToken}`,
           },
-        });
-        console.log("Config data:", data);
+        })
+        console.log("Config data:", data)
 
         if (data && data.success) {
-          setColors(data.data.colors || []);
-          setMaterials(data.data.productMaterial || []);
-          setBusinessTypes(data.data.businessTypes || []);
-          setBusinessTypeCategories(data.data.businessTypeCategories || []);
+          setColors(data.data.colors || [])
+          setMaterials(data.data.productMaterial || [])
+          setBusinessTypes(data.data.businessTypes || [])
+          setBusinessTypeCategories(data.data.businessTypeCategories || [])
         }
       } catch (error) {
-        console.error("Error fetching configuration:", error);
+        console.error("Error fetching configuration:", error)
         // Fallback to empty arrays if API fails
-        setColors([]);
-        setMaterials([]);
-        setBusinessTypes([]);
-        setBusinessTypeCategories([]);
+        setColors([])
+        setMaterials([])
+        setBusinessTypes([])
+        setBusinessTypeCategories([])
       } finally {
-        setIsLoadingConfig(false);
+        setIsLoadingConfig(false)
       }
-    };
+    }
 
-    fetchConfig();
-  }, [pathUrl, userToken]);
+    fetchConfig()
+  }, [pathUrl, userToken])
 
   // Fetch products from API with filters
   const fetchProducts = useCallback(
     async (pageNumber = 0) => {
       try {
-        setIsLoadingProducts(true);
+        setIsLoadingProducts(true)
         const requestBody = {
           pageNumber: pageNumber,
           pageSize: 12,
           searchCriteria: {
             name: searchName || "",
-            materialIds:
-              selectedMaterialIds.length > 0 ? selectedMaterialIds : null,
+            materialIds: selectedMaterialIds.length > 0 ? selectedMaterialIds : null,
             colorIds: selectedColorIds.length > 0 ? selectedColorIds : null,
-            minPrice:
-              minPrice && minPrice !== "" ? Number.parseInt(minPrice) : null,
+            minPrice: minPrice && minPrice !== "" ? Number.parseInt(minPrice) : null,
             maxPrice: maxPrice !== "" ? Number.parseInt(maxPrice) : null,
-            businessTypeId:
-              selectedBusinessTypeIds.length > 0
-                ? selectedBusinessTypeIds[0]
-                : null,
-            businessTypeCategoryId:
-              selectedBusinessCategoryIds.length > 0
-                ? selectedBusinessCategoryIds[0]
-                : null,
+            businessTypeId: selectedBusinessTypeIds.length > 0 ? selectedBusinessTypeIds[0] : null,
+            businessTypeCategoryId: selectedBusinessCategoryIds.length > 0 ? selectedBusinessCategoryIds[0] : null,
           },
-        };
+        }
 
-        console.log("Fetching products with request body:", requestBody);
+        console.log("Fetching products with request body:", requestBody)
 
-        const { data } = await axios.post(
-          `${pathUrl}/api/v1/products/shop-now`,
-          requestBody,
-          {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-              "Content-Type": "application/json",
-              "Accept-Language": "en",
-              "Content-Language": "en",
-            },
-          }
-        );
+        const { data } = await axios.post(`${pathUrl}/api/v1/products/shop-now`, requestBody, {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+            "Content-Type": "application/json",
+            "Accept-Language": "en",
+            "Content-Language": "en",
+          },
+        })
 
-        console.log("Products data:", data);
+        console.log("Products data:", data)
 
         if (data && data.success) {
-          setProducts(data.data.content || []);
-          setTotalPages(data.data.totalPages || 1);
+          setProducts(data.data.content || [])
+          setTotalPages(data.data.totalPages || 1)
         } else {
-          setProducts([]);
-          setTotalPages(1);
+          setProducts([])
+          setTotalPages(1)
         }
       } catch (error) {
-        console.error("Error fetching products:", error);
-        setProducts([]);
-        setTotalPages(1);
+        console.error("Error fetching products:", error)
+        setProducts([])
+        setTotalPages(1)
       } finally {
-        setIsLoadingProducts(false);
+        setIsLoadingProducts(false)
       }
     },
     [
@@ -201,123 +225,102 @@ export default function ShopNow() {
       minPrice,
       maxPrice,
       searchName,
-    ]
-  );
+    ],
+  )
 
   // Get available business categories based on selected business types
   const availableBusinessCategories = useMemo(() => {
     if (selectedBusinessTypeIds.length === 0) {
-      return businessTypeCategories;
+      return businessTypeCategories
     }
-    return businessTypeCategories.filter((category) =>
-      selectedBusinessTypeIds.includes(category.businessType.id)
-    );
-  }, [selectedBusinessTypeIds, businessTypeCategories]);
+    return businessTypeCategories.filter((category) => selectedBusinessTypeIds.includes(category.businessType.id))
+  }, [selectedBusinessTypeIds, businessTypeCategories])
 
   // Clear business categories when business types change
   useEffect(() => {
     setSelectedBusinessCategoryIds((prev) =>
-      prev.filter((categoryId) =>
-        availableBusinessCategories.some(
-          (available) => available.id === categoryId
-        )
-      )
-    );
-  }, [availableBusinessCategories]);
+      prev.filter((categoryId) => availableBusinessCategories.some((available) => available.id === categoryId)),
+    )
+  }, [availableBusinessCategories])
 
   // Fetch products when filters change
   useEffect(() => {
     if (!isLoadingConfig) {
-      setCurrentPage(0);
-      fetchProducts(0);
+      setCurrentPage(0)
+      fetchProducts(0)
     }
-  }, [fetchProducts, isLoadingConfig]);
+  }, [fetchProducts, isLoadingConfig])
 
   // Loading effect for filtering
   useEffect(() => {
-    setIsFiltering(true);
-    const timer = setTimeout(() => setIsFiltering(false), 300);
-    return () => clearTimeout(timer);
-  }, [isLoadingProducts]);
+    setIsFiltering(true)
+    const timer = setTimeout(() => setIsFiltering(false), 300)
+    return () => clearTimeout(timer)
+  }, [isLoadingProducts])
 
   // Handler functions
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    fetchProducts(page);
-  };
+    setCurrentPage(page)
+    fetchProducts(page)
+  }
 
   const handlePriceFilter = useCallback(() => {
-    setCurrentPage(0);
-    fetchProducts(0);
-  }, [fetchProducts]);
+    setCurrentPage(0)
+    fetchProducts(0)
+  }, [fetchProducts])
 
   const handleColorChange = useCallback((colorId: number, checked: boolean) => {
     if (checked) {
-      setSelectedColorIds((prev) => [...prev, colorId]);
+      setSelectedColorIds((prev) => [...prev, colorId])
     } else {
-      setSelectedColorIds((prev) => prev.filter((id) => id !== colorId));
+      setSelectedColorIds((prev) => prev.filter((id) => id !== colorId))
     }
-  }, []);
+  }, [])
 
-  const handleMaterialChange = useCallback(
-    (materialId: number, checked: boolean) => {
-      if (checked) {
-        setSelectedMaterialIds((prev) => [...prev, materialId]);
-      } else {
-        setSelectedMaterialIds((prev) =>
-          prev.filter((id) => id !== materialId)
-        );
-      }
-    },
-    []
-  );
+  const handleMaterialChange = useCallback((materialId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedMaterialIds((prev) => [...prev, materialId])
+    } else {
+      setSelectedMaterialIds((prev) => prev.filter((id) => id !== materialId))
+    }
+  }, [])
 
-  const handleBusinessTypeChange = useCallback(
-    (businessTypeId: number, checked: boolean) => {
-      if (checked) {
-        setSelectedBusinessTypeIds((prev) => [...prev, businessTypeId]);
-      } else {
-        setSelectedBusinessTypeIds((prev) =>
-          prev.filter((id) => id !== businessTypeId)
-        );
-      }
-    },
-    []
-  );
+  const handleBusinessTypeChange = useCallback((businessTypeId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedBusinessTypeIds((prev) => [...prev, businessTypeId])
+    } else {
+      setSelectedBusinessTypeIds((prev) => prev.filter((id) => id !== businessTypeId))
+    }
+  }, [])
 
-  const handleBusinessCategoryChange = useCallback(
-    (businessCategoryId: number, checked: boolean) => {
-      if (checked) {
-        setSelectedBusinessCategoryIds((prev) => [...prev, businessCategoryId]);
-      } else {
-        setSelectedBusinessCategoryIds((prev) =>
-          prev.filter((id) => id !== businessCategoryId)
-        );
-      }
-    },
-    []
-  );
+  const handleBusinessCategoryChange = useCallback((businessCategoryId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedBusinessCategoryIds((prev) => [...prev, businessCategoryId])
+    } else {
+      setSelectedBusinessCategoryIds((prev) => prev.filter((id) => id !== businessCategoryId))
+    }
+  }, [])
 
   const toggleWishlist = useCallback((productId: number) => {
     setWishlist((prev) => {
       if (prev.includes(productId)) {
-        return prev.filter((id) => id !== productId);
+        return prev.filter((id) => id !== productId)
       } else {
-        return [...prev, productId];
+        return [...prev, productId]
       }
-    });
-  }, []);
+    })
+  }, [])
 
   const clearFilters = useCallback(() => {
-    setMinPrice("");
-    setMaxPrice("");
-    setSelectedColorIds([]);
-    setSelectedMaterialIds([]);
-    setSelectedBusinessTypeIds([]);
-    setSelectedBusinessCategoryIds([]);
-    setSearchName("");
-    setCurrentPage(0);
-  }, []);
+    setMinPrice("")
+    setMaxPrice("")
+    setSelectedColorIds([])
+    setSelectedMaterialIds([])
+    setSelectedBusinessTypeIds([])
+    setSelectedBusinessCategoryIds([])
+    setSearchName("")
+    setCurrentPage(0)
+  }, [])
 
   const activeFiltersCount =
     selectedColorIds.length +
@@ -325,14 +328,14 @@ export default function ShopNow() {
     selectedBusinessTypeIds.length +
     selectedBusinessCategoryIds.length +
     (minPrice !== "" || maxPrice !== "" ? 1 : 0) +
-    (searchName !== "" ? 1 : 0);
+    (searchName !== "" ? 1 : 0)
 
   if (isLoadingConfig) {
     return (
       <div className="container mx-auto px-4 py-8">
         <LoadingSpinner message="Loading configuration..." />
       </div>
-    );
+    )
   }
 
   return (
@@ -357,7 +360,7 @@ export default function ShopNow() {
             <SheetTrigger asChild>
               <Button
                 variant="outline"
-                className="md:hidden hover:scale-105 transition-transform duration-200 shadow-lg"
+                className="md:hidden hover:scale-105 transition-transform duration-200 shadow-lg bg-transparent"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
@@ -374,9 +377,7 @@ export default function ShopNow() {
                   <Filter className="w-5 h-5" />
                   Filters
                 </SheetTitle>
-                <SheetDescription>
-                  Filter products by various criteria
-                </SheetDescription>
+                <SheetDescription>Filter products by various criteria</SheetDescription>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto p-6">
                 <FilterSidebar
@@ -449,17 +450,13 @@ export default function ShopNow() {
             {/* Content Area */}
             <div className="relative min-h-[500px]">
               {/* Loading overlay */}
-              {(isFiltering || isLoadingProducts) && (
-                <LoadingSpinner message="Loading products..." isOverlay />
-              )}
+              {(isFiltering || isLoadingProducts) && <LoadingSpinner message="Loading products..." isOverlay />}
 
               {/* Products Grid or No Products Message */}
               {products.length > 0 ? (
                 <div
                   className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all duration-500 ${
-                    isFiltering || isLoadingProducts
-                      ? "opacity-30 scale-95"
-                      : "opacity-100 scale-100"
+                    isFiltering || isLoadingProducts ? "opacity-30 scale-95" : "opacity-100 scale-100"
                   }`}
                 >
                   {products.map((product, index) => (
@@ -480,11 +477,7 @@ export default function ShopNow() {
 
             {/* Pagination */}
             {products.length > 0 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
             )}
           </div>
         </div>
@@ -496,8 +489,7 @@ export default function ShopNow() {
           style: {
             background: "#fff",
             color: "#333",
-            boxShadow:
-              "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
             border: "1px solid #e5e7eb",
             borderRadius: "8px",
             padding: "12px 16px",
@@ -528,5 +520,5 @@ export default function ShopNow() {
         }}
       />
     </div>
-  );
+  )
 }
