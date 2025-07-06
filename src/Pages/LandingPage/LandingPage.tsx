@@ -40,8 +40,22 @@ export interface BusinessType {
   name: string
 }
 
+export interface BusinessTypeCategory {
+  id: number
+  code: string
+  name: string
+  businessType: {
+    id: number
+    code: string
+    name: string
+  }
+}
+
 export interface BusinessConfigResponse {
-  businessTypes: BusinessType[]
+  data: {
+    businessTypes: BusinessType[]
+    businessTypeCategories: BusinessTypeCategory[]
+  }
 }
 
 export default function LandingPage() {
@@ -62,6 +76,7 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([])
+  const [businessTypeCategories, setBusinessTypeCategories] = useState<BusinessTypeCategory[]>([])
   console.log(userToken)
 
   // Simplified API fetching - all 4 APIs together
@@ -103,10 +118,19 @@ export default function LandingPage() {
 
         // Handle business config
         let businessTypesData: BusinessType[] = []
+        let businessTypeCategoriesData: BusinessTypeCategory[] = []
+
         if (businessConfigRes.status === "fulfilled" && businessConfigRes.value.ok) {
           try {
             const businessConfig: BusinessConfigResponse = await businessConfigRes.value.json()
-            businessTypesData = businessConfig.businessTypes || []
+            console.log("Business config response:", businessConfig)
+            businessTypesData = businessConfig.data.businessTypes || []
+            businessTypeCategoriesData = businessConfig.data.businessTypeCategories || []
+
+            console.log("Business config response:", {
+              businessTypes: businessTypesData,
+              businessTypeCategories: businessTypeCategoriesData,
+            })
           } catch (e) {
             console.warn("Failed to parse business config:", e)
           }
@@ -122,7 +146,9 @@ export default function LandingPage() {
             { id: 5, code: "PAINT_MATERIALS", name: "paint materials" },
           ]
         }
+
         setBusinessTypes(businessTypesData)
+        setBusinessTypeCategories(businessTypeCategoriesData)
 
         // Handle products data
         let highestRated: ApiProduct[] = []
@@ -150,7 +176,7 @@ export default function LandingPage() {
         if (recommendedRes.status === "fulfilled" && recommendedRes.value.ok) {
           try {
             const data = await recommendedRes.value.json()
-            console.log("Recommended:", data);
+            console.log("Recommended:", data)
             recommendedForYou = data.data || data || []
           } catch (e) {
             console.warn("Failed to parse recommended:", e)
@@ -165,6 +191,7 @@ export default function LandingPage() {
 
         console.log("All APIs fetched:", {
           businessTypes: businessTypesData.length,
+          businessTypeCategories: businessTypeCategoriesData.length,
           highestRated: highestRated.length,
           topBestSeller: topBestSeller.length,
           recommendedForYou: recommendedForYou.length,
@@ -181,6 +208,7 @@ export default function LandingPage() {
           { id: 4, code: "FURNISHINGS", name: "Furnishings" },
           { id: 5, code: "PAINT_MATERIALS", name: "paint materials" },
         ])
+        setBusinessTypeCategories([])
       } finally {
         setLoading(false)
       }
@@ -232,7 +260,7 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-gray-100">
-      <TopSect businessTypes={businessTypes} />
+      <TopSect businessTypes={businessTypes} businessTypeCategories={businessTypeCategories} />
       <MidSect />
       <ProductsSection productsData={productsData} />
       <Toaster

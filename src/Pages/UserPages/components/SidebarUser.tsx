@@ -82,7 +82,10 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
     if (isMobile && onClose) {
       onClose()
     }
-   logout()
+
+  }
+  function handleLogout(){
+       logout()
     navigate("/client")
   }
 
@@ -246,7 +249,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 h-12 hover:bg-red-50 hover:text-red-600 hover:shadow-sm transition-all duration-200"
-            onClick={handleLinkClick}
+            onClick={handleLogout}
           >
             <motion.div whileHover={{ rotate: 5 }} transition={{ duration: 0.2 }}>
               <LogOut className="h-5 w-5" />
@@ -453,7 +456,7 @@ export default function Sidebar({ isMobile = false, isOpen = false, onClose }: S
             <Button
               variant="ghost"
               className="w-full justify-start gap-3 h-12 hover:bg-red-50 hover:text-red-600 hover:shadow-sm transition-all duration-200"
-              onClick={handleLinkClick}
+              onClick={handleLogout}
             >
               <motion.div whileHover={{ rotate: 5 }} transition={{ duration: 0.2 }}>
                 <LogOut className="h-5 w-5" />

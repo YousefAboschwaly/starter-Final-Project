@@ -97,14 +97,14 @@ export default function HeroBanner() {
   const currentSlide = bannerSlides[activeSlide]
 
   return (
-    <div className="w-full relative">
+    <div className="w-full relative ">
       <div
         className="relative w-full h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[85vh] xl:h-[90vh] overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
         {/* Background images with perfect coverage */}
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center ">
           {bannerSlides.map((slide, index) => (
             <div
               key={slide.id}
