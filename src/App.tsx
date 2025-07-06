@@ -31,9 +31,9 @@ import ProfilePage from "./Pages/UserPages/ProfilePage.tsx";
 import AddressesPage from "./Pages/UserPages/AddressesPage.tsx";
 import PaymentsPage from "./Pages/UserPages/PaymentsPage.tsx";
 import NotificationsPage from "./Pages/UserPages/NotificationsPage.tsx";
-import UsrLayout from './Pages/UserPages/components/Layout';
+import UsrLayout from "./Pages/UserPages/components/Layout";
 import OrderDetailsPage from "./Pages/UserPages/OrderDetailsPage.tsx";
-
+import { FilterProvider } from "./Contexts/FilterContext.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -137,75 +137,76 @@ function App() {
             </ProtectedRoute>
           ),
         },
-         {
-    path: "/",
-    element: <UsrLayout />,
-    children: [
-      {
-        index: true,
-        element: (
-          <ProtectedRoute>
-            <OrdersPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "orders",
-        element: (
-          <ProtectedRoute>
-            <OrdersPage />
-          </ProtectedRoute>
-        ),
-      },
-       {
-        path: "orders/:id",
-        element: (
-          <ProtectedRoute>
-            <OrderDetailsPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "wishlist",
-        element: (
-          <ProtectedRoute>
-            <WishlistPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "user-profile",
-        element: (
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "addresses",
-        element: (
-          <ProtectedRoute>
-            <AddressesPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "payments",
-        element: (
-          <ProtectedRoute>
-            <PaymentsPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "notifications",
-        element: (
-          <ProtectedRoute>
-            <NotificationsPage />
-          </ProtectedRoute>
-        ),
-      },
-    ]},
+        {
+          path: "/",
+          element: <UsrLayout />,
+          children: [
+            {
+              index: true,
+              element: (
+                <ProtectedRoute>
+                  <OrdersPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "orders",
+              element: (
+                <ProtectedRoute>
+                  <OrdersPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "orders/:id",
+              element: (
+                <ProtectedRoute>
+                  <OrderDetailsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "wishlist",
+              element: (
+                <ProtectedRoute>
+                  <WishlistPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "user-profile",
+              element: (
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "addresses",
+              element: (
+                <ProtectedRoute>
+                  <AddressesPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "payments",
+              element: (
+                <ProtectedRoute>
+                  <PaymentsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "notifications",
+              element: (
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              ),
+            },
+          ],
+        },
 
         {
           path: "client",
@@ -229,7 +230,9 @@ function App() {
 
       <UserContextProvider>
         <CartProvider>
-          <RouterProvider router={routes} />
+          <FilterProvider>
+            <RouterProvider router={routes} />
+          </FilterProvider>
         </CartProvider>
       </UserContextProvider>
     </QueryClientProvider>

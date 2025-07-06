@@ -2,6 +2,7 @@
 
 import { Link } from "react-router-dom"
 import { useState, useEffect } from "react"
+import { useFilterContext } from "@/Contexts/FilterContext"
 
 // Business type interface
 interface BusinessType {
@@ -14,7 +15,7 @@ interface CategoryNavigationProps {
   businessTypes: BusinessType[]
 }
 
-// Map business codes to image names (using .jpg extension)
+// Map business codes to image names
 const getImageForBusinessType = (code: string): string => {
   const imageMap: { [key: string]: string } = {
     FURNITURE: "/CategoriesImages/Furniture.jpg",
@@ -28,6 +29,7 @@ const getImageForBusinessType = (code: string): string => {
 
 export default function CategoryNavigation({ businessTypes }: CategoryNavigationProps) {
   const [loadedImages, setLoadedImages] = useState<{ [key: string]: boolean }>({})
+  const { setBusinessTypeFilter } = useFilterContext()
 
   // Preload images
   useEffect(() => {
@@ -63,12 +65,9 @@ export default function CategoryNavigation({ businessTypes }: CategoryNavigation
     }
   }, [businessTypes, loadedImages])
 
-  // Generate link with businessType filter parameters
-  const generateCategoryLink = (businessType: BusinessType) => {
-    const searchParams = new URLSearchParams()
-    searchParams.set("businessTypeId", businessType.id.toString())
-    searchParams.set("businessTypeName", businessType.name)
-    return `/Ask?type=shop&${searchParams.toString()}`
+  // Handle category click using context
+  const handleCategoryClick = (businessType: BusinessType) => {
+    setBusinessTypeFilter(businessType)
   }
 
   if (businessTypes.length === 0) {
@@ -110,7 +109,8 @@ export default function CategoryNavigation({ businessTypes }: CategoryNavigation
             return (
               <Link
                 key={category.id}
-                to={generateCategoryLink(category)}
+                to="/Ask?type=shop"
+                onClick={() => handleCategoryClick(category)}
                 className="flex flex-col items-center text-center group"
                 aria-label={`Browse ${category.name} category`}
               >
@@ -130,14 +130,14 @@ export default function CategoryNavigation({ businessTypes }: CategoryNavigation
                     )}
                   </div>
 
-                  {/* Hover overlay - using pseudo-element instead of transform */}
+                  {/* Hover overlay */}
                   <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity duration-300 pointer-events-none"></div>
                 </div>
 
                 {/* Category Name */}
                 <h3 className="text-lg md:text-lg font-semibold text-gray-800 capitalize leading-tight relative">
                   {category.name}
-                  {/* Underline effect on hover using pseudo-element */}
+                  {/* Underline effect on hover */}
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 group-hover:w-full transition-all duration-300 ease-out will-change-transform"></span>
                 </h3>
               </Link>

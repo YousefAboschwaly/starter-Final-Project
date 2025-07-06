@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback, useContext } from "react"
-import { useSearchParams } from "react-router-dom"
 import { Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import axios from "axios"
 
-// Import all the separated components
+// Import components
 import { SearchBar } from "./SearchBar"
 import { FilterSidebar } from "./FilterSidebar"
 import { ProductCard } from "./ProductCard"
@@ -18,8 +17,9 @@ import { ActiveFilters } from "./ActiveFilters"
 import { EmptyState } from "./EmptyState"
 import { UserContext } from "@/Contexts/UserContext"
 import { Toaster } from "react-hot-toast"
+import { useFilterContext } from "@/Contexts/FilterContext"
 
-// Types for API data
+// Types
 interface Color {
   id: number
   code: string
@@ -56,7 +56,7 @@ interface Product {
 
 export default function ShopNow() {
   const userContext = useContext(UserContext)
-  const [searchParams] = useSearchParams()
+  const { appliedFilters, clearAppliedFilters, clearSpecificFilter } = useFilterContext()
 
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
@@ -75,8 +75,6 @@ export default function ShopNow() {
   // UI states
   const [wishlist, setWishlist] = useState<number[]>([])
   const [isFiltering, setIsFiltering] = useState(false)
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
 
@@ -89,52 +87,7 @@ export default function ShopNow() {
   const [isLoadingConfig, setIsLoadingConfig] = useState(true)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
 
-  // Handle URL parameters for pre-selected filters
-  useEffect(() => {
-    const businessTypeId = searchParams.get("businessTypeId")
-    const businessCategoryId = searchParams.get("businessCategoryId")
-
-    console.log("URL Parameters:", { businessTypeId, businessCategoryId })
-
-    if (businessTypeId) {
-      const typeId = Number.parseInt(businessTypeId)
-      setSelectedBusinessTypeIds([typeId])
-      console.log("Set business type ID:", typeId)
-    }
-
-    if (businessCategoryId) {
-      const categoryId = Number.parseInt(businessCategoryId)
-      setSelectedBusinessCategoryIds([categoryId])
-      console.log("Set business category ID:", categoryId)
-    }
-  }, [searchParams])
-
-  // Add another useEffect to ensure filters are applied after config is loaded
-  useEffect(() => {
-    if (!isLoadingConfig && businessTypes.length > 0 && businessTypeCategories.length > 0) {
-      const businessTypeId = searchParams.get("businessTypeId")
-      const businessCategoryId = searchParams.get("businessCategoryId")
-
-      if (businessTypeId && selectedBusinessTypeIds.length === 0) {
-        const typeId = Number.parseInt(businessTypeId)
-        setSelectedBusinessTypeIds([typeId])
-      }
-
-      if (businessCategoryId && selectedBusinessCategoryIds.length === 0) {
-        const categoryId = Number.parseInt(businessCategoryId)
-        setSelectedBusinessCategoryIds([categoryId])
-      }
-    }
-  }, [
-    isLoadingConfig,
-    businessTypes,
-    businessTypeCategories,
-    searchParams,
-    selectedBusinessTypeIds.length,
-    selectedBusinessCategoryIds.length,
-  ])
-
-  // Fetch configuration data from API
+  // Fetch configuration data
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -145,7 +98,6 @@ export default function ShopNow() {
             Authorization: `Bearer ${userToken}`,
           },
         })
-        console.log("Config data:", data)
 
         if (data && data.success) {
           setColors(data.data.colors || [])
@@ -155,7 +107,6 @@ export default function ShopNow() {
         }
       } catch (error) {
         console.error("Error fetching configuration:", error)
-        // Fallback to empty arrays if API fails
         setColors([])
         setMaterials([])
         setBusinessTypes([])
@@ -168,11 +119,27 @@ export default function ShopNow() {
     fetchConfig()
   }, [pathUrl, userToken])
 
-  // Fetch products from API with filters
+  // Fetch products with combined filters
   const fetchProducts = useCallback(
     async (pageNumber = 0) => {
       try {
         setIsLoadingProducts(true)
+
+        // Combine user selections with applied filters from context
+        const finalBusinessTypeIds =
+          selectedBusinessTypeIds.length > 0
+            ? selectedBusinessTypeIds
+            : appliedFilters.businessType
+              ? [appliedFilters.businessType.id]
+              : []
+
+        const finalBusinessCategoryIds =
+          selectedBusinessCategoryIds.length > 0
+            ? selectedBusinessCategoryIds
+            : appliedFilters.businessCategory
+              ? [appliedFilters.businessCategory.id]
+              : []
+
         const requestBody = {
           pageNumber: pageNumber,
           pageSize: 12,
@@ -182,12 +149,10 @@ export default function ShopNow() {
             colorIds: selectedColorIds.length > 0 ? selectedColorIds : null,
             minPrice: minPrice && minPrice !== "" ? Number.parseInt(minPrice) : null,
             maxPrice: maxPrice !== "" ? Number.parseInt(maxPrice) : null,
-            businessTypeId: selectedBusinessTypeIds.length > 0 ? selectedBusinessTypeIds[0] : null,
-            businessTypeCategoryId: selectedBusinessCategoryIds.length > 0 ? selectedBusinessCategoryIds[0] : null,
+            businessTypeId: finalBusinessTypeIds.length > 0 ? finalBusinessTypeIds[0] : null,
+            businessTypeCategoryId: finalBusinessCategoryIds.length > 0 ? finalBusinessCategoryIds[0] : null,
           },
         }
-
-        console.log("Fetching products with request body:", requestBody)
 
         const { data } = await axios.post(`${pathUrl}/api/v1/products/shop-now`, requestBody, {
           headers: {
@@ -197,8 +162,6 @@ export default function ShopNow() {
             "Content-Language": "en",
           },
         })
-
-        console.log("Products data:", data)
 
         if (data && data.success) {
           setProducts(data.data.content || [])
@@ -225,23 +188,24 @@ export default function ShopNow() {
       minPrice,
       maxPrice,
       searchName,
+      appliedFilters,
     ],
   )
 
-  // Get available business categories based on selected business types
+  // Get available business categories
   const availableBusinessCategories = useMemo(() => {
-    if (selectedBusinessTypeIds.length === 0) {
+    const allSelectedTypes = [
+      ...selectedBusinessTypeIds,
+      ...(appliedFilters.businessType && !selectedBusinessTypeIds.includes(appliedFilters.businessType.id)
+        ? [appliedFilters.businessType.id]
+        : []),
+    ]
+
+    if (allSelectedTypes.length === 0) {
       return businessTypeCategories
     }
-    return businessTypeCategories.filter((category) => selectedBusinessTypeIds.includes(category.businessType.id))
-  }, [selectedBusinessTypeIds, businessTypeCategories])
-
-  // Clear business categories when business types change
-  useEffect(() => {
-    setSelectedBusinessCategoryIds((prev) =>
-      prev.filter((categoryId) => availableBusinessCategories.some((available) => available.id === categoryId)),
-    )
-  }, [availableBusinessCategories])
+    return businessTypeCategories.filter((category) => allSelectedTypes.includes(category.businessType.id))
+  }, [selectedBusinessTypeIds, businessTypeCategories, appliedFilters.businessType])
 
   // Fetch products when filters change
   useEffect(() => {
@@ -251,7 +215,7 @@ export default function ShopNow() {
     }
   }, [fetchProducts, isLoadingConfig])
 
-  // Loading effect for filtering
+  // Loading effect
   useEffect(() => {
     setIsFiltering(true)
     const timer = setTimeout(() => setIsFiltering(false), 300)
@@ -285,21 +249,39 @@ export default function ShopNow() {
     }
   }, [])
 
-  const handleBusinessTypeChange = useCallback((businessTypeId: number, checked: boolean) => {
-    if (checked) {
-      setSelectedBusinessTypeIds((prev) => [...prev, businessTypeId])
-    } else {
-      setSelectedBusinessTypeIds((prev) => prev.filter((id) => id !== businessTypeId))
-    }
-  }, [])
+  const handleBusinessTypeChange = useCallback(
+    (businessTypeId: number, checked: boolean) => {
+      // If unchecking an applied filter, clear it from context
+      if (!checked && appliedFilters.businessType && appliedFilters.businessType.id === businessTypeId) {
+        clearSpecificFilter("businessType")
+        return
+      }
 
-  const handleBusinessCategoryChange = useCallback((businessCategoryId: number, checked: boolean) => {
-    if (checked) {
-      setSelectedBusinessCategoryIds((prev) => [...prev, businessCategoryId])
-    } else {
-      setSelectedBusinessCategoryIds((prev) => prev.filter((id) => id !== businessCategoryId))
-    }
-  }, [])
+      if (checked) {
+        setSelectedBusinessTypeIds((prev) => [...prev, businessTypeId])
+      } else {
+        setSelectedBusinessTypeIds((prev) => prev.filter((id) => id !== businessTypeId))
+      }
+    },
+    [appliedFilters.businessType, clearSpecificFilter],
+  )
+
+  const handleBusinessCategoryChange = useCallback(
+    (businessCategoryId: number, checked: boolean) => {
+      // If unchecking an applied filter, clear it from context
+      if (!checked && appliedFilters.businessCategory && appliedFilters.businessCategory.id === businessCategoryId) {
+        clearSpecificFilter("businessCategory")
+        return
+      }
+
+      if (checked) {
+        setSelectedBusinessCategoryIds((prev) => [...prev, businessCategoryId])
+      } else {
+        setSelectedBusinessCategoryIds((prev) => prev.filter((id) => id !== businessCategoryId))
+      }
+    },
+    [appliedFilters.businessCategory, clearSpecificFilter],
+  )
 
   const toggleWishlist = useCallback((productId: number) => {
     setWishlist((prev) => {
@@ -311,7 +293,7 @@ export default function ShopNow() {
     })
   }, [])
 
-  const clearFilters = useCallback(() => {
+  const clearAllFilters = useCallback(() => {
     setMinPrice("")
     setMaxPrice("")
     setSelectedColorIds([])
@@ -320,7 +302,8 @@ export default function ShopNow() {
     setSelectedBusinessCategoryIds([])
     setSearchName("")
     setCurrentPage(0)
-  }, [])
+    clearAppliedFilters()
+  }, [clearAppliedFilters])
 
   const activeFiltersCount =
     selectedColorIds.length +
@@ -339,33 +322,28 @@ export default function ShopNow() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-blue-50/30  ">
-      <div className="container mx-auto px-4 py-8 ">
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+      <div className="container mx-auto px-4 py-8">
         {/* Search Bar */}
         <SearchBar searchName={searchName} onSearchChange={setSearchName} />
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
               Products
             </h1>
-            <p className="text-muted-foreground animate-in slide-in-from-left-2 duration-500 text-lg">
-              Showing {products.length} products
-            </p>
+            <p className="text-muted-foreground text-lg">Showing {products.length} products</p>
           </div>
 
           {/* Mobile Filter Button */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                className="md:hidden hover:scale-105 transition-transform duration-200 shadow-lg bg-transparent"
-              >
+              <Button variant="outline" className="md:hidden bg-transparent">
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
                 {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="ml-2 animate-pulse">
+                  <Badge variant="secondary" className="ml-2">
                     {activeFiltersCount}
                   </Badge>
                 )}
@@ -398,9 +376,10 @@ export default function ShopNow() {
                   onMaterialChange={handleMaterialChange}
                   onBusinessTypeChange={handleBusinessTypeChange}
                   onBusinessCategoryChange={handleBusinessCategoryChange}
-                  onClearFilters={clearFilters}
+                  onClearFilters={clearAllFilters}
                   activeFiltersCount={activeFiltersCount}
                   idPrefix="mobile"
+                  appliedFilters={appliedFilters}
                 />
               </div>
             </SheetContent>
@@ -408,7 +387,7 @@ export default function ShopNow() {
         </div>
 
         <div className="flex gap-8">
-          {/* Fixed Desktop Sidebar */}
+          {/* Desktop Sidebar */}
           <div className="hidden md:block w-80 shrink-0">
             <div className="sticky top-4">
               <FilterSidebar
@@ -429,9 +408,10 @@ export default function ShopNow() {
                 onMaterialChange={handleMaterialChange}
                 onBusinessTypeChange={handleBusinessTypeChange}
                 onBusinessCategoryChange={handleBusinessCategoryChange}
-                onClearFilters={clearFilters}
+                onClearFilters={clearAllFilters}
                 activeFiltersCount={activeFiltersCount}
                 idPrefix="desktop"
+                appliedFilters={appliedFilters}
               />
             </div>
           </div>
@@ -445,14 +425,15 @@ export default function ShopNow() {
               colors={colors}
               onClearSearch={() => setSearchName("")}
               onClearColor={(colorId) => handleColorChange(colorId, false)}
+              onClearAllFilters={clearAllFilters}
+              hasUrlFilters={false}
+              appliedFilters={appliedFilters}
             />
 
             {/* Content Area */}
             <div className="relative min-h-[500px]">
-              {/* Loading overlay */}
               {(isFiltering || isLoadingProducts) && <LoadingSpinner message="Loading products..." isOverlay />}
 
-              {/* Products Grid or No Products Message */}
               {products.length > 0 ? (
                 <div
                   className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 transition-all duration-500 ${
@@ -471,7 +452,7 @@ export default function ShopNow() {
                   ))}
                 </div>
               ) : !isLoadingProducts ? (
-                <EmptyState onClearFilters={clearFilters} />
+                <EmptyState onClearFilters={clearAllFilters} />
               ) : null}
             </div>
 
@@ -482,43 +463,7 @@ export default function ShopNow() {
           </div>
         </div>
       </div>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: "#fff",
-            color: "#333",
-            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-            border: "1px solid #e5e7eb",
-            borderRadius: "8px",
-            padding: "12px 16px",
-          },
-          success: {
-            style: {
-              background: "#D1FAE5",
-              border: "1px solid #10B981",
-              color: "#065F46",
-            },
-            iconTheme: {
-              primary: "#10B981",
-              secondary: "#D1FAE5",
-            },
-          },
-          error: {
-            style: {
-              background: "#FEE2E2",
-              border: "1px solid #EF4444",
-              color: "#7F1D1D",
-            },
-            iconTheme: {
-              primary: "#EF4444",
-              secondary: "#FEE2E2",
-            },
-            duration: 5000,
-          },
-        }}
-      />
+      <Toaster />
     </div>
   )
 }

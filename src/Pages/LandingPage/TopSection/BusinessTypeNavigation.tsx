@@ -1,5 +1,6 @@
 "use client"
 
+import { useFilterContext } from "@/Contexts/FilterContext"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -28,27 +29,35 @@ interface BusinessTypeNavigationProps {
 export default function BusinessTypeNavigation({ businessTypes, businessTypeCategories }: BusinessTypeNavigationProps) {
   const [hoveredBusinessType, setHoveredBusinessType] = useState<number | null>(null)
   const navigate = useNavigate()
+  const { setBusinessTypeFilter, setBusinessCategoryFilter } = useFilterContext()
 
   if (businessTypes.length === 0) {
     return null
   }
 
-  // Navigate to shop with business type filter
+  // Navigate to shop with business type filter using context
   const handleBusinessTypeClick = (businessType: BusinessType) => {
-    const searchParams = new URLSearchParams()
-    searchParams.set("businessTypeId", businessType.id.toString())
-    searchParams.set("businessTypeName", businessType.name)
-    navigate(`/Ask?type=shop&${searchParams.toString()}`)
+    setBusinessTypeFilter(businessType)
+    navigate("/Ask?type=shop")
   }
 
-  // Navigate to shop with business type and category filters
+  // Navigate to shop with business type and category filters using context
   const handleCategoryClick = (category: BusinessTypeCategory) => {
-    const searchParams = new URLSearchParams()
-    searchParams.set("businessTypeId", category.businessType.id.toString())
-    searchParams.set("businessTypeName", category.businessType.name)
-    searchParams.set("businessCategoryId", category.id.toString())
-    searchParams.set("businessCategoryName", category.name)
-    navigate(`/Ask?type=shop&${searchParams.toString()}`)
+    const businessType: BusinessType = {
+      id: category.businessType.id,
+      code: category.businessType.code,
+      name: category.businessType.name,
+    }
+
+    const businessCategory = {
+      id: category.id,
+      code: category.code,
+      name: category.name,
+      businessType: businessType,
+    }
+
+    setBusinessCategoryFilter(businessType, businessCategory)
+    navigate("/Ask?type=shop")
   }
 
   // Get categories for a specific business type
@@ -93,7 +102,7 @@ export default function BusinessTypeNavigation({ businessTypes, businessTypeCate
       {/* Dropdown Section */}
       {hoveredBusinessType && (
         <>
-          {/* Background Blur Overlay - Only covers content below navigation */}
+          {/* Background Blur Overlay */}
           <div
             className="fixed left-0 right-0 bottom-0 bg-black bg-opacity-30 backdrop-blur-sm z-40"
             style={{ top: "var(--nav-height, 120px)" }}
