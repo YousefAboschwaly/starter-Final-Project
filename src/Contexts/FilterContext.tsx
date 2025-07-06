@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 
 // Types
 interface BusinessType {
@@ -69,26 +69,26 @@ export function FilterProvider({ children }: FilterProviderProps) {
     }
   }, [appliedFilters])
 
-  const setBusinessTypeFilter = (businessType: BusinessType) => {
+  const setBusinessTypeFilter = useCallback((businessType: BusinessType) => {
     setAppliedFilters({
       businessType,
       source: "navigation",
     })
-  }
+  }, [])
 
-  const setBusinessCategoryFilter = (businessType: BusinessType, category: BusinessTypeCategory) => {
+  const setBusinessCategoryFilter = useCallback((businessType: BusinessType, category: BusinessTypeCategory) => {
     setAppliedFilters({
       businessType,
       businessCategory: category,
       source: "navigation",
     })
-  }
+  }, [])
 
-  const clearAppliedFilters = () => {
+  const clearAppliedFilters = useCallback(() => {
     setAppliedFilters({})
-  }
+  }, [])
 
-  const clearSpecificFilter = (filterType: "businessType" | "businessCategory") => {
+  const clearSpecificFilter = useCallback((filterType: "businessType" | "businessCategory") => {
     setAppliedFilters((prev) => {
       const newFilters = { ...prev }
       if (filterType === "businessType") {
@@ -99,7 +99,8 @@ export function FilterProvider({ children }: FilterProviderProps) {
       }
       return newFilters
     })
-  }
+  }, [])
+  
 
   const hasAppliedFilters = Object.keys(appliedFilters).length > 0
 

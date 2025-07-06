@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback, useContext } from "react"
+import { useState, useMemo, useEffect, useCallback, useContext, useRef } from "react"
 import { Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,8 +16,8 @@ import { LoadingSpinner } from "./LoadingSpinner"
 import { ActiveFilters } from "./ActiveFilters"
 import { EmptyState } from "./EmptyState"
 import { UserContext } from "@/Contexts/UserContext"
-import { Toaster } from "react-hot-toast"
 import { useFilterContext } from "@/Contexts/FilterContext"
+import { Toaster } from "react-hot-toast"
 
 // Types
 interface Color {
@@ -58,6 +58,10 @@ export default function ShopNow() {
   const userContext = useContext(UserContext)
   const { appliedFilters, clearAppliedFilters, clearSpecificFilter } = useFilterContext()
 
+  // Ref to track if component is actually being used (not just mounting/remounting)
+  const hasInteractedRef = useRef(false)
+  const mountTimeRef = useRef(Date.now())
+
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
   }
@@ -86,6 +90,57 @@ export default function ShopNow() {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoadingConfig, setIsLoadingConfig] = useState(true)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+
+  // Mark component as "interacted with" after a short delay to avoid Strict Mode issues
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      hasInteractedRef.current = true
+    }, 1000) // Wait 1 second before considering the component "active"
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Clear filters only when truly leaving the page (not on Strict Mode remount)
+  useEffect(() => {
+    const mountTime = mountTimeRef.current
+    return () => {
+      // Only clear if component has been active for more than 2 seconds
+      // This prevents clearing on Strict Mode remounts
+      const timeAlive = Date.now() - mountTime
+      if (hasInteractedRef.current && timeAlive > 2000) {
+        clearAppliedFilters()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Clear filters when user navigates away using browser events
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Only clear if component has been active
+      if (hasInteractedRef.current) {
+        clearAppliedFilters()
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      // Only clear if component has been active and page is hidden
+      if (hasInteractedRef.current && document.visibilityState === "hidden") {
+        clearAppliedFilters()
+      }
+    }
+
+    // Add event listeners
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch configuration data
   useEffect(() => {

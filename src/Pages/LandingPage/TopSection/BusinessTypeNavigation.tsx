@@ -112,7 +112,7 @@ export default function BusinessTypeNavigation({ businessTypes, businessTypeCate
 
           <div className="absolute top-full left-0 right-0 z-50">
             {/* Dropdown Content */}
-            <div className="bg-white border border-gray-200 shadow-xl relative z-50">
+            <div className="container rounded-b-lg bg-white border border-gray-200 shadow-xl relative z-50">
               <div className="max-w-7xl mx-auto p-8">
                 {(() => {
                   const relatedCategories = getCategoriesForBusinessType(hoveredBusinessType)
