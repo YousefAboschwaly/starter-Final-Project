@@ -150,6 +150,7 @@ export default function LandingPage() {
         if (recommendedRes.status === "fulfilled" && recommendedRes.value.ok) {
           try {
             const data = await recommendedRes.value.json()
+            console.log("Recommended:", data);
             recommendedForYou = data.data || data || []
           } catch (e) {
             console.warn("Failed to parse recommended:", e)

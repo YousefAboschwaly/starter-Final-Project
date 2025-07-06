@@ -8,6 +8,7 @@ interface ProductsSectionProps {
 }
 
 export default function ProductsSection({ productsData }: ProductsSectionProps) {
+  console.log(productsData)
   return (
     <div className=" mx-auto py-8 px-4 max-w-[86rem] bg-white">
       <Recommended products={productsData.recommendedForYou} />

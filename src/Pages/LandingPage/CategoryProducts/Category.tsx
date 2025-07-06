@@ -32,7 +32,7 @@ export default function Category({
 
         <div className="flex justify-between items-center my-8">
           <h2 className="text-3xl font-semibold text-gray-800">
-            The Highest Rated Products
+             Highest Rated 
           </h2>
           <Link
             to="/Ask?type=shop"
