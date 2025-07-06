@@ -63,46 +63,24 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null)
   const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([])
   console.log(userToken)
-  // Fetch data from APIs
+
+  // Simplified API fetching - all 4 APIs together
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAllData = async () => {
+      if (!pathUrl || !userToken) return
+
       try {
         setLoading(true)
         setError(null)
 
-        // Try to fetch business config, but provide fallback if it fails
-        let businessTypesData: BusinessType[] = []
-        try {
-          const businessConfigRes = await fetch(`${pathUrl}/api/v1/business-config`, {
+        // Fetch all 4 APIs together
+        const [businessConfigRes, highestRatedRes, topBestSellerRes, recommendedRes] = await Promise.allSettled([
+          fetch(`${pathUrl}/api/v1/business-config`, {
             headers: {
               "Accept-language": "en",
               Authorization: `Bearer ${userToken}`,
             },
-          })
-
-          if (businessConfigRes.ok) {
-            const businessConfig: BusinessConfigResponse = await businessConfigRes.json()
-            businessTypesData = businessConfig.businessTypes || []
-          }
-        } catch (businessConfigError) {
-          console.warn("Business config API failed, using fallback data:", businessConfigError)
-        }
-
-        // If API failed or returned empty data, use fallback categories
-        if (businessTypesData.length === 0) {
-          businessTypesData = [
-            { id: 1, code: "FURNITURE", name: "furniture" },
-            { id: 2, code: "KITCHENS_DRESSINGS", name: "kitchens and dressing" },
-            { id: 3, code: "ELECTRICAL_TOOLS", name: "electrical tools" },
-            { id: 4, code: "FURNISHINGS", name: "Furnishings" },
-            { id: 5, code: "PAINT_MATERIALS", name: "paint materials" },
-          ]
-        }
-
-        setBusinessTypes(businessTypesData)
-
-        // Continue with product API calls...
-        const [highestRatedRes, topBestSellerRes, recommendedRes] = await Promise.all([
+          }),
           fetch(`${pathUrl}/api/v1/products/highest-rated`, {
             headers: {
               "Accept-language": "en",
@@ -115,7 +93,7 @@ export default function LandingPage() {
               Authorization: `Bearer ${userToken}`,
             },
           }),
-          fetch(`${pathUrl}/api/v1/products/recommended-for-you?userId=${userId}`, {
+          fetch(`${pathUrl}/api/v1/products/recommended-for-you?userId=${userId || ""}`, {
             headers: {
               "Accept-language": "en",
               Authorization: `Bearer ${userToken}`,
@@ -123,48 +101,92 @@ export default function LandingPage() {
           }),
         ])
 
-        // Check if all requests were successful
-        if (!highestRatedRes.ok || !topBestSellerRes.ok || !recommendedRes.ok) {
-          throw new Error("Failed to fetch products data")
+        // Handle business config
+        let businessTypesData: BusinessType[] = []
+        if (businessConfigRes.status === "fulfilled" && businessConfigRes.value.ok) {
+          try {
+            const businessConfig: BusinessConfigResponse = await businessConfigRes.value.json()
+            businessTypesData = businessConfig.businessTypes || []
+          } catch (e) {
+            console.warn("Failed to parse business config:", e)
+          }
         }
 
-        // Parse JSON responses
-        const [highestRated, topBestSeller, recommendedForYou] = await Promise.all([
-          highestRatedRes.json(),
-          topBestSellerRes.json(),
-          recommendedRes.json(),
-        ])
-
-        console.log("API Responses:", { highestRated, topBestSeller, recommendedForYou })
-
-        setProductsData({
-          highestRated: highestRated.data || highestRated,
-          topBestSeller: topBestSeller.data || topBestSeller,
-          recommendedForYou: recommendedForYou.data || recommendedForYou,
-        })
-      } catch (err) {
-        console.error("Error fetching data:", err)
-        setError(err instanceof Error ? err.message : "Failed to fetch data")
-
-        // Even if products fail, still set fallback business types
-        if (businessTypes.length === 0) {
-          setBusinessTypes([
+        // Use fallback if no business types
+        if (businessTypesData.length === 0) {
+          businessTypesData = [
             { id: 1, code: "FURNITURE", name: "furniture" },
             { id: 2, code: "KITCHENS_DRESSINGS", name: "kitchens and dressing" },
             { id: 3, code: "ELECTRICAL_TOOLS", name: "electrical tools" },
             { id: 4, code: "FURNISHINGS", name: "Furnishings" },
             { id: 5, code: "PAINT_MATERIALS", name: "paint materials" },
-          ])
+          ]
         }
+        setBusinessTypes(businessTypesData)
+
+        // Handle products data
+        let highestRated: ApiProduct[] = []
+        let topBestSeller: ApiProduct[] = []
+        let recommendedForYou: ApiProduct[] = []
+
+        if (highestRatedRes.status === "fulfilled" && highestRatedRes.value.ok) {
+          try {
+            const data = await highestRatedRes.value.json()
+            highestRated = data.data || data || []
+          } catch (e) {
+            console.warn("Failed to parse highest rated:", e)
+          }
+        }
+
+        if (topBestSellerRes.status === "fulfilled" && topBestSellerRes.value.ok) {
+          try {
+            const data = await topBestSellerRes.value.json()
+            topBestSeller = data.data || data || []
+          } catch (e) {
+            console.warn("Failed to parse top best seller:", e)
+          }
+        }
+
+        if (recommendedRes.status === "fulfilled" && recommendedRes.value.ok) {
+          try {
+            const data = await recommendedRes.value.json()
+            recommendedForYou = data.data || data || []
+          } catch (e) {
+            console.warn("Failed to parse recommended:", e)
+          }
+        }
+
+        setProductsData({
+          highestRated,
+          topBestSeller,
+          recommendedForYou,
+        })
+
+        console.log("All APIs fetched:", {
+          businessTypes: businessTypesData.length,
+          highestRated: highestRated.length,
+          topBestSeller: topBestSeller.length,
+          recommendedForYou: recommendedForYou.length,
+        })
+      } catch (err) {
+        console.error("Error fetching data:", err)
+        setError(err instanceof Error ? err.message : "Failed to fetch data")
+
+        // Set fallback business types even on error
+        setBusinessTypes([
+          { id: 1, code: "FURNITURE", name: "furniture" },
+          { id: 2, code: "KITCHENS_DRESSINGS", name: "kitchens and dressing" },
+          { id: 3, code: "ELECTRICAL_TOOLS", name: "electrical tools" },
+          { id: 4, code: "FURNISHINGS", name: "Furnishings" },
+          { id: 5, code: "PAINT_MATERIALS", name: "paint materials" },
+        ])
       } finally {
         setLoading(false)
       }
     }
 
-    if (pathUrl && userToken) {
-      fetchData()
-    }
-  }, [businessTypes.length, pathUrl, userId, userToken])
+    fetchAllData()
+  }, [pathUrl, userId, userToken])
 
   // Handle login alert
   useEffect(() => {
@@ -209,18 +231,17 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-gray-100">
-      <TopSect businessTypes={businessTypes}/>
-      <MidSect  />
+      <TopSect businessTypes={businessTypes} />
+      <MidSect />
       <ProductsSection productsData={productsData} />
-            <Toaster
+      <Toaster
         position="top-right"
         toastOptions={{
           duration: 3000,
           style: {
             background: "#fff",
             color: "#333",
-            boxShadow:
-              "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
             border: "1px solid #e5e7eb",
             borderRadius: "8px",
             padding: "12px 16px",
