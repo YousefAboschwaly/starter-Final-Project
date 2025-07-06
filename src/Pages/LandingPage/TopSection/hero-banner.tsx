@@ -49,7 +49,7 @@ const bannerSlides = [
   },
   {
     id: 6,
-    image: "/bannerImages/RevonateHome.png", // Renovate Home
+    image: "/bannerImages/RevonateHome.jpg", // Renovate Home
     title: "",
     highlightedTitle: "",
     buttonLink: "/Ask?type=home-renovate",
@@ -99,7 +99,7 @@ export default function HeroBanner() {
   return (
     <div className="w-full relative ">
       <div
-        className="relative w-full h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[85vh] xl:h-[90vh] overflow-hidden"
+        className="relative xl:w-[1150px] h-[60vh] mx-auto sm:h-[70vh] md:h-[80vh] lg:h-[85vh] xl:h-[450px] overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -114,12 +114,12 @@ export default function HeroBanner() {
               )}
             >
               {/* PRESERVED SECTION - DO NOT CHANGE */}
-              <Link to={currentSlide.buttonLink} className="relative w-[95%] h-[90%] mx-auto rounded-2xl overflow-hidden">
+              <Link to={currentSlide.buttonLink} className="relative w-full h-full mx-auto rounded-2xl overflow-hidden">
               
                 <img
                   src={slide.image || "/placeholder.svg"}
                   alt={`${slide.title} ${slide.highlightedTitle}`}
-                  className={`w-full h-full  ${slide.image === "/bannerImages/AskWorker.jpg" ? " " : ""}`}
+                  className={`w-full h-full  `}
                 />
                 {/* Enhanced gradient overlay for better text readability */}
                               {/* END PRESERVED SECTION */}
