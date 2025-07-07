@@ -37,7 +37,7 @@ export function SimpleCartIcon({ className = "", size = "md" }: SimpleCartIconPr
   return (
     <Link to="/cart">
       <span className={`relative inline-block cursor-pointer  w- ${className}`}>
-        <ShoppingCart className={`${config.icon} text-gray-700 hover:text-blue-600 transition-colors`} />
+        <ShoppingCart className={`${config.icon} text-white hover:text-blue-600 transition-colors`} />
 
         {totalItems > 0 && (
           <span
@@ -69,7 +69,7 @@ export function MinimalCartIcon({ className = "" }: { className?: string }) {
     <Link to="/cart" className={`relative ${className}`}>
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="relative">
         <div className="w-12 h-12 rounded-full bg-white shadow-lg border border-gray-100 flex items-center justify-center hover:shadow-xl transition-shadow duration-300">
-          <ShoppingCart className="w-6 h-6 text-gray-700" />
+          <ShoppingCart className="w-6 h-6 text-white" />
         </div>
 
         {totalItems > 0 && (
@@ -108,7 +108,7 @@ export function GlassCartIcon({ className = "" }: { className?: string }) {
           hover:shadow-xl
         "
         >
-          <ShoppingCart className="w-7 h-7 text-gray-700 group-hover:text-blue-600 transition-colors duration-300" />
+          <ShoppingCart className="w-7 h-7 text-white group-hover:text-blue-600 transition-colors duration-300" />
         </div>
 
         <AnimatePresence>
@@ -160,7 +160,7 @@ export function CleanCartIcon({ className = "" }: { className?: string }) {
           group-hover:scale-105
         "
         >
-          <ShoppingCart className="w-6 h-6 text-gray-600 group-hover:text-blue-600 transition-colors duration-200" />
+          <ShoppingCart className="w-6 h-6 text-white group-hover:text-blue-600 transition-colors duration-200" />
         </div>
 
         {totalItems > 0 && (

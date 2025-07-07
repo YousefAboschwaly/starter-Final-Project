@@ -26,10 +26,10 @@ interface TopSectProps {
 
 export default function TopSect({ businessTypes, businessTypeCategories }: TopSectProps) {
   return (
-    <div className="bg-white">
+    <div className="bg-white mx-10">
       <BusinessTypeNavigation businessTypes={businessTypes} businessTypeCategories={businessTypeCategories} />
       <HeroBanner />
-      <CategoryNavigation businessTypes={businessTypes} />
+      <CategoryNavigation businessTypeCategories={businessTypeCategories} />
     </div>
   )
 }

@@ -99,7 +99,7 @@ export default function HeroBanner() {
   return (
     <div className="w-full relative ">
       <div
-        className="relative xl:w-[1150px] h-[60vh] mx-auto sm:h-[70vh] md:h-[80vh] lg:h-[85vh] xl:h-[450px] overflow-hidden"
+        className="relative  w-full h-[250px] xs:h-[180px] sm:h-[250px] md:h-[300px] lg:h-[320px] xl:h-[380px] max-w-[1440px] mx-auto overflow-hidden"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -114,7 +114,7 @@ export default function HeroBanner() {
               )}
             >
               {/* PRESERVED SECTION - DO NOT CHANGE */}
-              <Link to={currentSlide.buttonLink} className="relative w-full h-full mx-auto rounded-2xl overflow-hidden">
+              <Link to={currentSlide.buttonLink} className="relative w-full h-full mx-auto overflow-hidden">
               
                 <img
                   src={slide.image || "/placeholder.svg"}
@@ -133,9 +133,9 @@ export default function HeroBanner() {
         </div>
 
         {/* Text content positioned on the left with blue background like in your image */}
-        <div className="absolute left-8 sm:left-12 md:left-16 lg:left-20 top-8 sm:top-12 md:top-20 z-30 p-4 sm:p-6 md:p-8">
+        <div className="absolute left-4   top-1   z-30 p-4 sm:p-3 md:p-4">
           <div className="max-w-md sm:max-w-lg md:max-w-xl">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-white mb-2 sm:mb-3 md:mb-4 leading-tight tracking-tight">
+            <h1 className="text-lg sm:text-xl md:text-3xl lg:text-4xl  font-black text-white mb-2 sm:mb-2 md:mb-4 leading-tight tracking-tight">
               <span className="block">
                 {currentSlide.title} {currentSlide.highlightedTitle}
               </span>
@@ -152,7 +152,7 @@ export default function HeroBanner() {
         {/* Improved navigation arrows positioned better */}
         <button
           onClick={prevSlide}
-          className="absolute left-[2.8%] top-1/2 -translate-y-1/2 z-40 bg-white/80 hover:bg-white rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
+          className="absolute left-[2.8%] top-1/2 -translate-y-1/2 z-40 bg-white/80 hover:bg-white rounded-full w-8 h-8 sm:w-[30px] sm:h-[30px] md:w-[50px] md:h-[50px] flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
           aria-label="Previous slide"
         >
           <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-800" />
@@ -160,7 +160,7 @@ export default function HeroBanner() {
 
         <button
           onClick={nextSlide}
-          className="absolute right-[2.8%] top-1/2 -translate-y-1/2 z-40 bg-white/80 hover:bg-white rounded-full w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
+          className="absolute right-[2.8%] top-1/2 -translate-y-1/2 z-40 bg-white/80 hover:bg-white rounded-full w-8 h-8 sm:w-[30px] sm:h-[30px] md:w-[50px] md:h-[50px] flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
           aria-label="Next slide"
         >
           <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-800" />

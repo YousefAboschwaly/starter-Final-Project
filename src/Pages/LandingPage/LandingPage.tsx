@@ -351,7 +351,7 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-[#f7f7fa]">
       <TopSect businessTypes={businessTypes} businessTypeCategories={businessTypeCategories} />
       <MidSect />
       <ProductsSection productsData={productsData} topEngineers={topEngineers} />
