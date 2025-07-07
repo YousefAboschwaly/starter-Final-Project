@@ -65,7 +65,7 @@ export default function MidSect() {
         </div>
 
         {/* Updated responsive grid: 4 on lg, 3 on md, 2 on smaller screens */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-8 mb-8">
           {services.map((service, index) => (
             <Link key={index} to={service?.link}>
               <div
