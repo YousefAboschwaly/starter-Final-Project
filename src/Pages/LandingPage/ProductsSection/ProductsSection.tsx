@@ -12,7 +12,7 @@ interface ProductsSectionProps {
 export default function ProductsSection({ productsData, topEngineers }: ProductsSectionProps) {
   console.log(productsData)
   return (
-    <div className="mx-auto py-8 px-4 max-w-[86rem] bg-white">
+    <div className="max-w-[88.5rem] mx-auto px-4 py-8  bg-white">
       <Recommended products={productsData.recommendedForYou} />
       <BrandSection />
       <Category highestRatedProducts={productsData.highestRated} topBestSellerProducts={productsData.topBestSeller} />

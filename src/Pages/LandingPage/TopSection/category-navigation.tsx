@@ -104,19 +104,40 @@ const getColorFromName = (name: string) => {
 
 export default function CategoryNavigation({ businessTypeCategories }: CategoryNavigationProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isMobile, setIsMobile] = useState(false)
+  const [screenSize, setScreenSize] = useState<"small" | "medium" | "large">("medium")
   const { setBusinessCategoryFilter } = useFilterContext()
 
+  // Function to get visible categories based on screen size
+  const getVisibleCategories = (size: "small" | "medium" | "large") => {
+    switch (size) {
+      case "small": // sm to md (< 768px)
+        return 5
+      case "medium": // md to xl (768px - 1279px)
+        return 7
+      case "large": // xl and above (≥ 1280px)
+        return 10
+      default:
+        return 7
+    }
+  }
+
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+    const checkScreenSize = () => {
+      const width = window.innerWidth
+      if (width < 768) {
+        setScreenSize("small")
+      } else if (width < 1280) {
+        setScreenSize("medium")
+      } else {
+        setScreenSize("large")
+      }
     }
 
-    checkIfMobile()
-    window.addEventListener("resize", checkIfMobile)
+    checkScreenSize()
+    window.addEventListener("resize", checkScreenSize)
 
     return () => {
-      window.removeEventListener("resize", checkIfMobile)
+      window.removeEventListener("resize", checkScreenSize)
     }
   }, [])
 
@@ -124,6 +145,8 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
   const handleCategoryClick = (category: BusinessTypeCategory) => {
     setBusinessCategoryFilter(category.businessType, category)
   }
+
+  const visibleCategories = getVisibleCategories(screenSize)
 
   // Handle empty categories
   if (!businessTypeCategories || businessTypeCategories.length === 0) {
@@ -135,7 +158,7 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
             <p className="text-lg text-gray-600">Discover our wide range of products</p>
           </div>
           <div className="flex justify-center space-x-4">
-            {[...Array(10)].map((_, i) => (
+            {[...Array(visibleCategories)].map((_, i) => (
               <div key={i} className="flex flex-col items-center animate-pulse">
                 <div className="w-20 h-20 bg-gray-200 rounded-full mb-2"></div>
                 <div className="w-16 h-3 bg-gray-200 rounded"></div>
@@ -147,15 +170,11 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
     )
   }
 
-  const visibleCategories = isMobile ? 3 : 10
-
   // If we have fewer categories than visible slots, show all categories
   if (businessTypeCategories.length <= visibleCategories) {
     return (
-      <div className="relative py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-
-
+      <div className="relative pt-2 pb-6 bg-white">
+        <div className="px-2">
           {/* Categories */}
           <div className="flex justify-center gap-4">
             {businessTypeCategories.map((category) => {
@@ -170,7 +189,7 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
                   aria-label={`Browse ${category.name} category`}
                 >
                   {/* Category Image */}
-                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full mb-2 shadow-md bg-white border-2 border-gray-100">
+                  <div className="relative w-20 h-20 md:w-28 md:h-28 rounded-full mb-2 shadow-md bg-white border-2 border-gray-100">
                     <div className="absolute inset-0 rounded-full overflow-hidden">
                       <img
                         src={imgSrc || "/placeholder.svg"}
@@ -215,7 +234,7 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
     )
   }
 
-  // Calculate proper boundaries for sliding (same logic as EngineersContainer)
+  // Calculate proper boundaries for sliding
   const maxIndex = businessTypeCategories.length - visibleCategories
 
   const nextSlide = () => {
@@ -239,9 +258,7 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
   return (
     <div className="relative pt-2 pb-6 bg-white">
       <div className="px-2">
-
-
-        {/* Slider Container - Same structure as EngineersContainer */}
+        {/* Slider Container */}
         <div className="relative">
           {/* Left Arrow - Always visible */}
           <motion.div
@@ -259,7 +276,7 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
             </button>
           </motion.div>
 
-          <div className="overflow-hidden ">
+          <div className="overflow-hidden">
             <motion.div
               className="flex transition-transform duration-500 ease-in-out"
               style={{
@@ -342,7 +359,7 @@ export default function CategoryNavigation({ businessTypeCategories }: CategoryN
           </motion.div>
         </div>
 
-        {/* Optional: Add dots indicator */}
+        {/* Dots indicator */}
         {businessTypeCategories.length > visibleCategories && (
           <div className="flex justify-center mt-7 space-x-2">
             {Array.from({ length: maxIndex + 1 }).map((_, index) => (

@@ -34,6 +34,7 @@ import NotificationsPage from "./Pages/UserPages/NotificationsPage.tsx";
 import UsrLayout from "./Pages/UserPages/components/Layout";
 import OrderDetailsPage from "./Pages/UserPages/OrderDetailsPage.tsx";
 import { FilterProvider } from "./Contexts/FilterContext.tsx";
+import EngineerDetails from "./Pages/LandingPage/TopEngineers/EngineerDetails.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -134,6 +135,14 @@ function App() {
           element: (
             <ProtectedRoute>
               <OrderSuccess />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "engineers/:id",
+          element: (
+            <ProtectedRoute>
+              <EngineerDetails />
             </ProtectedRoute>
           ),
         },

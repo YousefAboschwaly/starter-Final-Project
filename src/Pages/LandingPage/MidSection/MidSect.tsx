@@ -53,7 +53,7 @@ export default function MidSect() {
   }, [])
 
   return (
-    <main className="max-w-[87rem] mx-auto px-4 py-8">
+    <main className="max-w-[90rem] mx-auto px-4 py-8">
       <div
         className={`mb-16 transition-all duration-1000 delay-200 ${
           isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
