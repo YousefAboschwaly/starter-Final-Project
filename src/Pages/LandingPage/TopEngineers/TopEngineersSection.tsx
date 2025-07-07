@@ -1,8 +1,8 @@
 "use client"
 
-import { Link } from "react-router-dom"
 import EngineersContainer from "./EngineersContainer"
 import type { Engineer } from "../LandingPage"
+import { motion } from 'framer-motion';
 
 interface TopEngineersSectionProps {
   engineers: Engineer[]
@@ -16,17 +16,19 @@ export default function TopEngineersSection({ engineers }: TopEngineersSectionPr
 
   return (
     <div className="mx-auto py-8 w-full">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-semibold text-gray-800">Top Engineers</h2>
-        <Link
-          to="/Ask?type=engineer"
-          className="border border-gray-800 px-6 py-2 text-gray-800 hover:bg-gray-800 hover:text-white transition-colors duration-300"
+      <div className="mb-8">
+        <motion.h1
+          className="text-4xl md:text-5xl font-bold text-center"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
-          VIEW ALL
-        </Link>
+          <span className="text-black">TOP</span>{" "}
+          <span className="text-red-600">ENGINEERS</span>
+        </motion.h1>
       </div>
 
       <EngineersContainer engineers={engineers} />
     </div>
-  )
+  );
 }

@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import {
   Star,
   MapPin,
+
   MessageCircle,
   Phone,
   Mail,
@@ -26,8 +27,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { UserContext } from "@/Contexts/UserContext"
 
-// Engineer data structure based on your API
-interface EngineerType {
+// Technical Worker data structure based on your API
+interface WorkerType {
   id: number
   code: string
   name: string
@@ -35,7 +36,7 @@ interface EngineerType {
   nameEn: string
 }
 
-interface EngineerService {
+interface WorkerService {
   id: number
   code: string
   name: string
@@ -61,29 +62,29 @@ interface City {
   name: string
 }
 
-interface EngineerUser {
+interface WorkerUser {
   id: number
   firstName: string
   lastName: string
   email: string
-  phone: string
+  phone: string | null
   personalPhoto: string | null
   coverPhoto: string | null
   userType: UserType
-  governorate: Governorate
-  city: City
+  governorate: Governorate | null
+  city: City | null
   enabled: boolean
 }
 
-interface EngineerData {
+interface TechnicalWorkerData {
   id: number
   statusCode: number
   createdDate: string
   modifiedDate: string
-  user: EngineerUser
-  type: EngineerType
+  user: WorkerUser
+  type: WorkerType
   yearsOfExperience: number
-  engineerServ: EngineerService[]
+  workerServs: WorkerService[]
   bio: string
   facebookLink: string | null
   linkedinLink: string | null
@@ -116,7 +117,7 @@ const scaleIn = {
   animate: { opacity: 1, scale: 1 },
 }
 
-export default function EngineerDetails() {
+export default function TechnicalWorkerDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const userContext = useContext(UserContext)
@@ -126,18 +127,18 @@ export default function EngineerDetails() {
   }
   const { pathUrl, userToken } = userContext
 
-  const [engineer, setEngineer] = useState<EngineerData | null>(null)
+  const [worker, setWorker] = useState<TechnicalWorkerData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-console.log(engineer)
-  // Fetch engineer details
+
+  // Fetch technical worker details
   useEffect(() => {
-    const fetchEngineerDetails = async () => {
+    const fetchWorkerDetails = async () => {
       if (!id || !pathUrl || !userToken) return
 
       try {
         setLoading(true)
-        const response = await fetch(`${pathUrl}/api/v1/engineers/${id}`, {
+        const response = await fetch(`${pathUrl}/api/v1/technical-workers/${id}`, {
           headers: {
             "Accept-Language": "en",
             Authorization: `Bearer ${userToken}`,
@@ -145,36 +146,36 @@ console.log(engineer)
         })
 
         if (!response.ok) {
-          throw new Error("Failed to fetch engineer details")
+          throw new Error("Failed to fetch technical worker details")
         }
 
         const data = await response.json()
-        setEngineer(data.data || data)
+        setWorker(data.data || data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch engineer details")
+        setError(err instanceof Error ? err.message : "Failed to fetch technical worker details")
       } finally {
         setLoading(false)
       }
     }
 
-    fetchEngineerDetails()
+    fetchWorkerDetails()
   }, [id, pathUrl, userToken])
 
 
 
   const handleContact = () => {
-    console.log("Contact engineer:", engineer?.id)
+    console.log("Contact technical worker:", worker?.id)
   }
 
   const handleCall = () => {
-    if (engineer?.user?.phone) {
-      window.open(`tel:${engineer.user.phone}`)
+    if (worker?.user?.phone) {
+      window.open(`tel:${worker.user.phone}`)
     }
   }
 
   const handleEmail = () => {
-    if (engineer?.user?.email) {
-      window.open(`mailto:${engineer.user.email}`)
+    if (worker?.user?.email) {
+      window.open(`mailto:${worker.user.email}`)
     }
   }
 
@@ -186,20 +187,20 @@ console.log(engineer)
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading engineer details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading technical worker details...</p>
         </motion.div>
       </div>
     )
   }
 
-  if (error || !engineer) {
+  if (error || !worker) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Engineer Not Found</h2>
-          <p className="text-gray-600 mb-6">{error || "The engineer you're looking for doesn't exist."}</p>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Technical Worker Not Found</h2>
+          <p className="text-gray-600 mb-6">{error || "The technical worker you're looking for doesn't exist."}</p>
           <Button onClick={() => navigate(-1)} variant="outline">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Go Back
@@ -209,9 +210,9 @@ console.log(engineer)
     )
   }
 
-  const fullName = `${engineer.user.firstName} ${engineer.user.lastName}`
-  const profileImage = engineer.user.personalPhoto
-    ? `${pathUrl}${engineer.user.personalPhoto}`
+  const fullName = `${worker.user.firstName} ${worker.user.lastName}`
+  const profileImage = worker.user.personalPhoto
+    ? `${pathUrl}${worker.user.personalPhoto}`
     : "/placeholder.svg?height=200&width=200"
 
   const formatDate = (dateString: string) => {
@@ -223,25 +224,12 @@ console.log(engineer)
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gray-50"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Back Button - Only back button, no header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <Button
-              onClick={() => navigate(-1)}
-              variant="ghost"
-              size="sm"
-              className="hover:bg-gray-100"
-            >
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <Button onClick={() => navigate(-1)} variant="ghost" size="sm" className="hover:bg-gray-100">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -250,32 +238,23 @@ console.log(engineer)
           {/* Main Content - Better proportions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Profile Card - Smaller and more compact (1/3 width on large screens) */}
-            <motion.div
-              variants={fadeInUp}
-              initial="initial"
-              animate="animate"
-              className="lg:col-span-1"
-            >
+            <motion.div variants={fadeInUp} initial="initial" animate="animate" className="lg:col-span-1">
               <Card className="shadow-lg border-0 bg-white ">
-                <CardContent className="p-8 text-center h-full flex flex-col ">
+                <CardContent className="p-8 text-center  flex flex-col">
+
+
                   {/* Profile Image - More reasonable size */}
-                  <motion.div
-                    variants={scaleIn}
-                    className="relative inline-block mb-6"
-                  >
+                  <motion.div variants={scaleIn} className="relative inline-block mb-6">
                     <Avatar className="w-36 h-36 mx-auto border-4 border-gray-100 shadow-lg">
-                      <AvatarImage
-                        src={profileImage || "/placeholder.svg"}
-                        alt={fullName}
-                      />
-                      <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                        {engineer.user.firstName[0]}
-                        {engineer.user.lastName[0]}
+                      <AvatarImage src={profileImage || "/placeholder.svg"} alt={fullName} />
+                      <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-blue-500 to-teal-600 text-white">
+                        {worker.user.firstName[0]}
+                        {worker.user.lastName[0]}
                       </AvatarFallback>
                     </Avatar>
 
                     {/* Status Badge */}
-                    {engineer.user.enabled && (
+                    {worker.user.enabled && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
@@ -293,12 +272,8 @@ console.log(engineer)
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <h1 className="text-2xl font-bold text-gray-800 mb-3">
-                      {fullName}
-                    </h1>
-                    <p className="text-blue-600 font-medium mb-4 text-base">
-                      {engineer.type.name}
-                    </p>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-3">{fullName}</h1>
+                    <p className="text-green-600 font-medium mb-4 text-base">{worker.type.name}</p>
 
                     {/* Rating - Larger */}
                     <div className="flex items-center justify-center mb-6">
@@ -307,38 +282,31 @@ console.log(engineer)
                           <Star
                             key={i}
                             className={`h-6 w-6 ${
-                              i < Math.floor(engineer.averageRate)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
+                              i < Math.floor(worker.averageRate) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                             }`}
                           />
                         ))}
                       </div>
                       <span className="ml-3 text-lg text-gray-600">
-                        {engineer.averageRate > 0
-                          ? engineer.averageRate.toFixed(1)
-                          : "New"}
+                        {worker.averageRate > 0 ? worker.averageRate.toFixed(1) : "New"}
                       </span>
                     </div>
 
                     {/* Location - Larger */}
-
-                    <div className="flex items-center justify-center text-gray-600 text-lg mb-4">
-                      <MapPin className="h-5 w-5 mr-2" />
-                      <span>
-                        {[
-                          engineer.user.city?.name,
-                          engineer.user.governorate?.name,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "Location not specified"}
-                      </span>
-                    </div>
+                    
+                      <div className="flex items-center justify-center text-gray-600 text-lg mb-4">
+                        <MapPin className="h-5 w-5 mr-2" />
+                        <span>
+                          {[worker.user.city?.name, worker.user.governorate?.name].filter(Boolean).join(", ") ||
+                            "Location not specified"}
+                        </span>
+                      </div>
+                   
 
                     {/* Experience - Larger */}
                     <div className="flex items-center justify-center text-gray-600 text-lg mb-8">
                       <Briefcase className="h-5 w-5 mr-2" />
-                      <span>{engineer.yearsOfExperience} years experience</span>
+                      <span>{worker.yearsOfExperience} years experience</span>
                     </div>
                   </motion.div>
 
@@ -367,6 +335,7 @@ console.log(engineer)
                         whileTap={{ scale: 0.98 }}
                         onClick={handleCall}
                         className="bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center"
+                        disabled={!worker.user.phone}
                       >
                         <Phone className="h-4 w-4 mr-2" />
                         Call
@@ -385,9 +354,7 @@ console.log(engineer)
                   </motion.div>
 
                   {/* Social Links - Larger */}
-                  {(engineer.facebookLink ||
-                    engineer.linkedinLink ||
-                    engineer.behanceLink) && (
+                  {(worker.facebookLink || worker.linkedinLink || worker.behanceLink) && (
                     <>
                       <Separator className="my-8" />
                       <motion.div
@@ -395,15 +362,13 @@ console.log(engineer)
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.7 }}
                       >
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                          Connect
-                        </h3>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">Connect</h3>
                         <div className="flex justify-center space-x-4">
-                          {engineer.facebookLink && (
+                          {worker.facebookLink && (
                             <motion.a
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              href={engineer.facebookLink}
+                              href={worker.facebookLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors"
@@ -411,11 +376,11 @@ console.log(engineer)
                               <Facebook className="h-6 w-6" />
                             </motion.a>
                           )}
-                          {engineer.linkedinLink && (
+                          {worker.linkedinLink && (
                             <motion.a
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              href={engineer.linkedinLink}
+                              href={worker.linkedinLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="w-10 h-10 bg-blue-700 rounded-full flex items-center justify-center text-white hover:bg-blue-800 transition-colors"
@@ -423,11 +388,11 @@ console.log(engineer)
                               <Linkedin className="h-6 w-6" />
                             </motion.a>
                           )}
-                          {engineer.behanceLink && (
+                          {worker.behanceLink && (
                             <motion.a
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              href={engineer.behanceLink}
+                              href={worker.behanceLink}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white hover:bg-purple-700 transition-colors"
@@ -456,13 +421,12 @@ console.log(engineer)
                   <CardHeader>
                     <CardTitle className="flex items-center text-xl">
                       <User className="h-6 w-6 mr-3 text-blue-600" />
-                      About {engineer.user.firstName}
+                      About {worker.user.firstName}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 leading-relaxed text-lg">
-                      {engineer.bio ||
-                        "Professional engineer with expertise in various technical domains."}
+                      {worker.bio || "Professional technical worker with expertise in various technical domains."}
                     </p>
                   </CardContent>
                 </Card>
@@ -474,23 +438,21 @@ console.log(engineer)
                   <CardHeader>
                     <CardTitle className="flex items-center text-xl">
                       <Briefcase className="h-6 w-6 mr-3 text-blue-600" />
-                      Services & Expertise ({engineer.engineerServ.length})
+                      Services & Expertise ({worker.workerServs.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {engineer.engineerServ.map((service, index) => (
+                      {worker.workerServs.map((service, index) => (
                         <motion.div
                           key={service.id}
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: index * 0.1 }}
                           whileHover={{ scale: 1.02 }}
-                          className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all"
+                          className="p-4 bg-gradient-to-br from-blue-50 to-emerald-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all"
                         >
-                          <h4 className="font-semibold text-gray-800 ">
-                            {service.name}
-                          </h4>
+                          <h4 className="font-semibold text-gray-800 ">{service.name}</h4>
                         </motion.div>
                       ))}
                     </div>
@@ -507,47 +469,34 @@ console.log(engineer)
                       Professional Information
                     </CardTitle>
                   </CardHeader>
+
+                  
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-600 font-medium">
-                            Engineer Type:
-                          </span>
+                          <span className="text-gray-600 font-medium">Worker Type:</span>
                           <Award className="h-5 w-5 text-green-600" />
                         </div>
-                        <span className="font-bold text-green-700">
-                          {engineer.type.name}
-                        </span>
+                        <span className="font-bold text-green-700">{worker.type.name}</span>
                       </div>
 
                       <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-200">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-600 font-medium">
-                            Experience:
-                          </span>
+                          <span className="text-gray-600 font-medium">Experience:</span>
                           <Briefcase className="h-5 w-5 text-blue-600" />
                         </div>
-                        <span className="font-bold text-blue-700">
-                          {engineer.yearsOfExperience} years
-                        </span>
+                        <span className="font-bold text-blue-700">{worker.yearsOfExperience} years</span>
                       </div>
                     </div>
 
                     <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 font-medium">
-                          Status:
-                        </span>
+                        <span className="text-gray-600 font-medium">Status:</span>
                         <CheckCircle className="h-5 w-5 text-purple-600" />
                       </div>
-                      <Badge
-                        variant={
-                          engineer.user.enabled ? "default" : "secondary"
-                        }
-                        className="font-bold"
-                      >
-                        {engineer.user.enabled ? "Active" : "Inactive"}
+                      <Badge variant={worker.user.enabled ? "default" : "secondary"} className="font-bold">
+                        {worker.user.enabled ? "Active" : "Inactive"}
                       </Badge>
                     </div>
 
@@ -560,20 +509,12 @@ console.log(engineer)
                       </h4>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Joined:
-                          </span>
-                          <span className="font-semibold">
-                            {formatDate(engineer.createdDate)}
-                          </span>
+                          <span className="text-gray-600 font-medium">Joined:</span>
+                          <span className="font-semibold">{formatDate(worker.createdDate)}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Last Updated:
-                          </span>
-                          <span className="font-semibold">
-                            {formatDate(engineer.modifiedDate)}
-                          </span>
+                          <span className="text-gray-600 font-medium">Last Updated:</span>
+                          <span className="font-semibold">{formatDate(worker.modifiedDate)}</span>
                         </div>
                       </div>
                     </div>
@@ -585,20 +526,12 @@ console.log(engineer)
                       </h4>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Email:
-                          </span>
-                          <span className="font-semibold text-sm">
-                            {engineer.user.email}
-                          </span>
+                          <span className="text-gray-600 font-medium">Email:</span>
+                          <span className="font-semibold text-sm">{worker.user.email}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Phone:
-                          </span>
-                          <span className="font-semibold">
-                            {engineer.user.phone || "Not provided"}
-                          </span>
+                          <span className="text-gray-600 font-medium">Phone:</span>
+                          <span className="font-semibold">{worker.user.phone || "Not provided"}</span>
                         </div>
                       </div>
                     </div>
@@ -610,5 +543,5 @@ console.log(engineer)
         </div>
       </div>
     </motion.div>
-  );
+  )
 }

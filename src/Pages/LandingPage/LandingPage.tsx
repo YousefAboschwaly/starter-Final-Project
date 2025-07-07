@@ -105,7 +105,7 @@ export interface EngineerUser {
   governorate: Governorate
   city: City
   engineer: Engineer | null
-  technicalWorker: unknown
+  technicalWorker: TechnicalWorker | null
   engineeringOffice: unknown
   enabled: boolean
   business: unknown
@@ -120,6 +120,35 @@ export interface Engineer {
   type: EngineerType
   yearsOfExperience: number
   engineerServ: EngineerService[]
+  bio: string
+  facebookLink: string | null
+  linkedinLink: string | null
+  behanceLink: string | null
+  averageRate: number
+}
+
+// Add this interface after the Engineer interface
+export interface TechnicalWorker {
+  id: number
+  statusCode: number
+  createdDate: string
+  modifiedDate: string
+  user: EngineerUser // Reuse the same user interface
+  type: {
+    id: number
+    code: string
+    name: string
+    nameAr: string
+    nameEn: string
+  }
+  yearsOfExperience: number
+  workerServs: {
+    id: number
+    code: string
+    name: string
+    nameAr: string
+    nameEn: string
+  }[]
   bio: string
   facebookLink: string | null
   linkedinLink: string | null
@@ -147,7 +176,12 @@ export default function LandingPage() {
   const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([])
   const [businessTypeCategories, setBusinessTypeCategories] = useState<BusinessTypeCategory[]>([])
   const [topEngineers, setTopEngineers] = useState<Engineer[]>([])
+  const [topTechnicalWorkers, setTopTechnicalWorkers] = useState<TechnicalWorker[]>([])
   console.log(userToken)
+
+useEffect(() => {
+  window.scrollTo({ top: 0, behavior: "smooth" }); // or "auto"
+}, []);
 
   // Simplified API fetching - all 5 APIs together
   useEffect(() => {
@@ -159,39 +193,51 @@ export default function LandingPage() {
         setError(null)
 
         // Fetch all 5 APIs together
-        const [businessConfigRes, highestRatedRes, topBestSellerRes, recommendedRes, topEngineersRes] =
-          await Promise.allSettled([
-            fetch(`${pathUrl}/api/v1/business-config`, {
-              headers: {
-                "Accept-language": "en",
-                Authorization: `Bearer ${userToken}`,
-              },
-            }),
-            fetch(`${pathUrl}/api/v1/products/highest-rated`, {
-              headers: {
-                "Accept-language": "en",
-                Authorization: `Bearer ${userToken}`,
-              },
-            }),
-            fetch(`${pathUrl}/api/v1/products/top-best-seller`, {
-              headers: {
-                "Accept-language": "en",
-                Authorization: `Bearer ${userToken}`,
-              },
-            }),
-            fetch(`${pathUrl}/api/v1/products/recommended-for-you?userId=${userId || ""}`, {
-              headers: {
-                "Accept-language": "en",
-                Authorization: `Bearer ${userToken}`,
-              },
-            }),
-            fetch(`${pathUrl}/api/v1/engineers/top-engineers`, {
-              headers: {
-                "Accept-language": "en",
-                Authorization: `Bearer ${userToken}`,
-              },
-            }),
-          ])
+        const [
+          businessConfigRes,
+          highestRatedRes,
+          topBestSellerRes,
+          recommendedRes,
+          topEngineersRes,
+          topTechnicalWorkersRes,
+        ] = await Promise.allSettled([
+          fetch(`${pathUrl}/api/v1/business-config`, {
+            headers: {
+              "Accept-language": "en",
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+          fetch(`${pathUrl}/api/v1/products/highest-rated`, {
+            headers: {
+              "Accept-language": "en",
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+          fetch(`${pathUrl}/api/v1/products/top-best-seller`, {
+            headers: {
+              "Accept-language": "en",
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+          fetch(`${pathUrl}/api/v1/products/recommended-for-you?userId=${userId || ""}`, {
+            headers: {
+              "Accept-language": "en",
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+          fetch(`${pathUrl}/api/v1/engineers/top-engineers`, {
+            headers: {
+              "Accept-language": "en",
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+          fetch(`${pathUrl}/api/v1/technical-workers/top-workers`, {
+            headers: {
+              "Accept-language": "en",
+              Authorization: `Bearer ${userToken}`,
+            },
+          }),
+        ])
 
         // Handle business config
         let businessTypesData: BusinessType[] = []
@@ -272,6 +318,17 @@ export default function LandingPage() {
           }
         }
 
+        let technicalWorkersData: TechnicalWorker[] = []
+        if (topTechnicalWorkersRes.status === "fulfilled" && topTechnicalWorkersRes.value.ok) {
+          try {
+            const data = await topTechnicalWorkersRes.value.json()
+            console.log("Top Technical Workers:", data)
+            technicalWorkersData = data.data || data || []
+          } catch (e) {
+            console.warn("Failed to parse top technical workers:", e)
+          }
+        }
+
         setProductsData({
           highestRated,
           topBestSeller,
@@ -279,6 +336,7 @@ export default function LandingPage() {
         })
 
         setTopEngineers(engineersData)
+        setTopTechnicalWorkers(technicalWorkersData)
 
         console.log("All APIs fetched:", {
           businessTypes: businessTypesData.length,
@@ -287,6 +345,7 @@ export default function LandingPage() {
           topBestSeller: topBestSeller.length,
           recommendedForYou: recommendedForYou.length,
           topEngineers: engineersData.length,
+          topTechnicalWorkers: technicalWorkersData.length,
         })
       } catch (err) {
         console.error("Error fetching data:", err)
@@ -351,10 +410,14 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f7fa]">
+    <main className="min-h-screen bg-gray-100">
       <TopSect businessTypes={businessTypes} businessTypeCategories={businessTypeCategories} />
       <MidSect />
-      <ProductsSection productsData={productsData} topEngineers={topEngineers} />
+      <ProductsSection
+        productsData={productsData}
+        topEngineers={topEngineers}
+        topTechnicalWorkers={topTechnicalWorkers}
+      />
       <Toaster
         position="top-right"
         toastOptions={{

@@ -35,6 +35,7 @@ import UsrLayout from "./Pages/UserPages/components/Layout";
 import OrderDetailsPage from "./Pages/UserPages/OrderDetailsPage.tsx";
 import { FilterProvider } from "./Contexts/FilterContext.tsx";
 import EngineerDetails from "./Pages/LandingPage/TopEngineers/EngineerDetails.tsx";
+import TechnicalWorkerDetails from "./Pages/LandingPage/TopWorkers/TechnicalWorkerDetails.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -143,6 +144,14 @@ function App() {
           element: (
             <ProtectedRoute>
               <EngineerDetails />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "technical-workers/:id",
+          element: (
+            <ProtectedRoute>
+              <TechnicalWorkerDetails />
             </ProtectedRoute>
           ),
         },
