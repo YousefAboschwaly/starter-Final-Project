@@ -9,7 +9,7 @@ interface SearchBarProps {
 
 export const SearchBar = ({ searchName, onSearchChange }: SearchBarProps) => {
   return (
-    <div className="mb-12 flex justify-center animate-in fade-in slide-in-from-top-2 duration-700">
+    <div className=" flex justify-center animate-in fade-in slide-in-from-top-2 duration-700">
       <div className="relative w-full max-w-2xl">
         <div className="relative group">
           {/* Animated background gradient */}

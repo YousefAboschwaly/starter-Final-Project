@@ -383,7 +383,7 @@ export default function ShopNow() {
         <SearchBar searchName={searchName} onSearchChange={setSearchName} />
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
               Products
