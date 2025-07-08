@@ -1,4 +1,3 @@
-import BusinessTypeNavigation from "./BusinessTypeNavigation"
 import CategoryNavigation from "./category-navigation"
 import HeroBanner from "./hero-banner"
 
@@ -24,10 +23,9 @@ interface TopSectProps {
   businessTypeCategories: BusinessTypeCategory[]
 }
 
-export default function TopSect({ businessTypes, businessTypeCategories }: TopSectProps) {
+export default function TopSect({  businessTypeCategories }: TopSectProps) {
   return (
     <div className="bg-white   lg:mx-10">
-      <BusinessTypeNavigation businessTypes={businessTypes} businessTypeCategories={businessTypeCategories} />
       <HeroBanner />
       <CategoryNavigation businessTypeCategories={businessTypeCategories} />
     </div>

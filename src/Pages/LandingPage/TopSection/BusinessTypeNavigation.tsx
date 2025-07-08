@@ -80,7 +80,7 @@ export default function BusinessTypeNavigation({ businessTypes, businessTypeCate
   return (
     <div className="relative hidden md:block" onMouseLeave={() => setHoveredBusinessType(null)}>
       {/* Business Type Navigation */}
-      <div className="bg-[#fcfbf4]  border-b  shadow-sm relative z-40">
+      <div className="bg-white  border-b  shadow-sm relative z-40">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center space-x-8 px-4 ">
             {businessTypes.map((businessType) => (
