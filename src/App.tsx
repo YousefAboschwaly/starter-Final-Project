@@ -36,6 +36,7 @@ import OrderDetailsPage from "./Pages/UserPages/OrderDetailsPage.tsx";
 import { FilterProvider } from "./Contexts/FilterContext.tsx";
 import EngineerDetails from "./Pages/LandingPage/TopEngineers/EngineerDetails.tsx";
 import TechnicalWorkerDetails from "./Pages/LandingPage/TopWorkers/TechnicalWorkerDetails.tsx";
+import Asks from "./Pages/AllAsks/Asks.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -112,6 +113,14 @@ function App() {
           element: (
             <ProtectedRoute>
               <Ask />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "All-Asks",
+          element: (
+            <ProtectedRoute>
+              <Asks />
             </ProtectedRoute>
           ),
         },
