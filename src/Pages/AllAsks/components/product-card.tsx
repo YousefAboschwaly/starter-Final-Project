@@ -144,7 +144,11 @@ export function ProductCard({ product }: ProductCardProps) {
                   .toLowerCase()
                   .replace(/_/g, " ")
                   .replace(/\b\w/g, (char) => char.toUpperCase())}
-              {product.user.governorate ? "," : null} {product.governorate?.name}
+              {product.user.governorate ? "," : null} {product?.governorate?.name ||
+                product.user.governorate.code
+                  .toLowerCase()
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (char) => char.toUpperCase())}
             </p>
           </div>
         </div>

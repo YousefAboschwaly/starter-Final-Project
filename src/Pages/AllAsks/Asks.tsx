@@ -8,6 +8,7 @@ import { ActiveFilters } from "./components/active-filters"
 import { Pagination } from "./components/pagination"
 import { ProductCard } from "./components/product-card"
 import { CategoryNavigation } from "./components/category-navigation"
+import { MyAsksPage } from "./components/my-asks-page"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -38,7 +39,28 @@ const getBusinessTypeFromService = (serviceType: string): string => {
   }
 }
 
+// Map service types to URL paths for My Asks
+const getMyAsksUrlPath = (serviceType: string): string => {
+  switch (serviceType) {
+    case "engineer":
+      return "MyAsks/AskEngineer"
+    case "worker":
+      return "MyAsks/AskWorker"
+    case "request-design":
+      return "MyAsks/RequestDesign"
+    case "home-renovate":
+      return "MyAsks/RenovateHome"
+    case "custom-package":
+      return "MyAsks/CustomPackage"
+    default:
+      return "MyAsks/AskEngineer"
+  }
+}
+
 export default function ProductsPage() {
+  // Page state
+  const [showMyAsks, setShowMyAsks] = useState(false)
+
   // Search and service type state
   const [searchName, setSearchName] = useState("")
   const [selectedServiceType, setSelectedServiceType] = useState<string>("engineer") // Default to engineer
@@ -139,7 +161,7 @@ export default function ProductsPage() {
   // Get business type code for API call
   const businessTypeCode = getBusinessTypeFromService(selectedServiceType)
 
-  // Fetch products based on selected service type and filters
+  // Fetch products based on selected service type and filters (only when not showing My Asks)
   const {
     data: productsData,
     isLoading: isProductsLoading,
@@ -171,9 +193,27 @@ export default function ProductsPage() {
     setSelectedCityId(null)
   }, [selectedGovernorateId])
 
+  // Update URL when on main page (All-Asks)
+  useEffect(() => {
+    if (!showMyAsks) {
+      // Update the URL to /All-Asks when on the main browsing page
+      window.history.pushState({}, "", "/All-Asks")
+    }
+  }, [showMyAsks])
+
+  // Update URL when showing My Asks
+  useEffect(() => {
+    if (showMyAsks) {
+      const myAsksPath = getMyAsksUrlPath(selectedServiceType)
+      // Update the URL without causing a page reload
+      window.history.pushState({}, "", `/${myAsksPath}`)
+    }
+  }, [showMyAsks, selectedServiceType])
+
   // Handler functions - all single value selection
   const handleServiceTypeChange = (serviceType: string) => {
     setSelectedServiceType(serviceType)
+    setShowMyAsks(false) // Reset to browse mode when changing service type
     // Clear all filters when service type changes
     setMinPrice("")
     setMaxPrice("")
@@ -190,6 +230,16 @@ export default function ProductsPage() {
     setSelectedCustomPackageId(null)
     setSelectedCompoundValue(null)
     setCurrentPage(0)
+  }
+
+  const handleMyAsksClick = (serviceType: string) => {
+    setSelectedServiceType(serviceType)
+    setShowMyAsks(true)
+  }
+
+  const handleBackToBrowse = () => {
+    setShowMyAsks(false)
+    // Don't change selectedServiceType here - keep it as is to maintain active category
   }
 
   const handleUnitTypeChange = (unitTypeId: number, checked: boolean) => {
@@ -282,6 +332,11 @@ export default function ProductsPage() {
     id: 1,
     code: businessTypeCode,
     name: selectedServiceType,
+  }
+
+  // If showing My Asks, render the My Asks page
+  if (showMyAsks) {
+    return <MyAsksPage selectedServiceType={selectedServiceType} onBack={handleBackToBrowse} />
   }
 
   return (
@@ -428,7 +483,12 @@ export default function ProductsPage() {
           <div className="flex-1 min-w-0 min-h-[600px]">
             {/* Category Navigation */}
             <div className="mb-6">
-              <CategoryNavigation onCategoryChange={handleServiceTypeChange} />
+              <CategoryNavigation
+                onCategoryChange={handleServiceTypeChange}
+                onMyAsksClick={handleMyAsksClick}
+                showMyAsksButton={true}
+                activeServiceType={selectedServiceType}
+              />
             </div>
 
             {/* Content Area */}
