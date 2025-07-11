@@ -33,6 +33,7 @@ export default function Navbar() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
 
+
   const userContext = useContext(UserContext)
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
@@ -144,7 +145,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-2">
               <Button
                 className="text-white border border-white/30 font-bold bg-transparent hover:bg-white/10 transition-all duration-300 ease-in-out"
-                onClick={() => setShowAddProject(true)}
+                onClick={() => {navigate('/profile');setShowAddProject(true)}}
               >
                 Add Project
               </Button>
@@ -237,12 +238,13 @@ export default function Navbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="p-0">
-                <button     onClick={() => {
-            const phoneNumber = "2001065823087"
-            const message = `Hello! I need help`
-            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
-            window.open(whatsappUrl, "_blank")
-          }}
+                <button
+                  onClick={() => {
+                    const phoneNumber = "2001065823087"
+                    const message = `Hello! I need help`
+                    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
+                    window.open(whatsappUrl, "_blank")
+                  }}
                   className="flex w-full items-center gap-3 p-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 rounded-md mx-1"
                 >
                   <HelpCircle className="h-4 w-4 text-purple-500" />
@@ -323,6 +325,8 @@ export default function Navbar() {
           </Sheet>
         </div>
       </div>
+
+  
     </header>
   )
 }

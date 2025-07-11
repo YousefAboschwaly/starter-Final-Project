@@ -5,7 +5,6 @@ import { useContext } from "react"
 import axios from "axios"
 import { UserContext } from "../Contexts/UserContext"
 
-
 // Base interfaces for all business config data types
 export interface Color {
   id: number
@@ -99,8 +98,8 @@ export interface UseBusinessConfigReturn {
   error: Error | null
   isSuccess: boolean
   refetch: () => void
+  isFetching: boolean
 }
-
 
 export function useBusinessConfig(): UseBusinessConfigReturn {
   const userContext = useContext(UserContext)
@@ -109,27 +108,47 @@ export function useBusinessConfig(): UseBusinessConfigReturn {
     throw new Error("UserContext must be used within a UserContextProvider")
   }
 
-  const { pathUrl , userToken } = userContext
+  const { pathUrl, userToken } = userContext
 
   // React Query for fetching business config
-  const { data, isLoading, isError, error, isSuccess, refetch } = useQuery<BusinessConfigResponse, Error>(
-    ["business-config"],
+  const { data, isLoading, isError, error, isSuccess, refetch, isFetching } = useQuery<BusinessConfigResponse, Error>(
+    ["business-config", userToken], // Include userToken in query key
     async () => {
+      if (!userToken) {
+        throw new Error("No authentication token available")
+      }
+
+      console.log("Fetching business config with token:", userToken ? "Present" : "Missing")
+
       const response = await axios.get(`${pathUrl}/api/v1/business-config`, {
         headers: {
-          "Authorization": `Bearer ${userToken}`,
+          Authorization: `Bearer ${userToken}`,
           "Accept-Language": "en",
           "Content-Type": "application/json",
         },
       })
+
+      console.log("Business config response:", response.data)
       return response.data
     },
     {
+      enabled: !!userToken, // Only run query when userToken exists
       staleTime: 5 * 60 * 1000, // 5 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    }
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches
+      refetchOnMount: true,
+      onSuccess: (data) => {
+        console.log("Business config loaded successfully:", {
+          businessTypes: data?.data?.businessTypes?.length || 0,
+          categories: data?.data?.businessTypeCategories?.length || 0,
+        })
+      },
+      onError: (error) => {
+        console.error("Business config fetch error:", error)
+      },
+    },
   )
 
   // Extract data with fallbacks
@@ -163,5 +182,6 @@ export function useBusinessConfig(): UseBusinessConfigReturn {
     error,
     isSuccess,
     refetch,
+    isFetching,
   }
 }

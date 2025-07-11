@@ -39,6 +39,7 @@ import ProductsPage from "./Pages/AllAsks/Asks.tsx";
 import { MyAsksPage } from "./Pages/AllAsks/components/my-asks-page.tsx";
 import { AskDetailsPage } from "./Pages/AllAsks/components/ask-details-page.tsx";
 import { useState } from "react";
+import Ask from "./Pages/Ask/Ask.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -109,6 +110,14 @@ function App() {
           element: (
             <ProtectedRoute>
               <ProductList />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "Ask",
+          element: (
+            <ProtectedRoute>
+              <Ask />
             </ProtectedRoute>
           ),
         },
