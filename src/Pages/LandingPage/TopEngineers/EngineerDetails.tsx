@@ -129,7 +129,7 @@ export default function EngineerDetails() {
   const [engineer, setEngineer] = useState<EngineerData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-console.log(engineer)
+
   // Fetch engineer details
   useEffect(() => {
     const fetchEngineerDetails = async () => {
@@ -160,27 +160,84 @@ console.log(engineer)
     fetchEngineerDetails()
   }, [id, pathUrl, userToken])
 
+  const handleSendMessage = () => {
+    if (engineer?.user?.email) {
+      const subject = `Inquiry about ${engineer.type.name} services`
+      const body = `Hello ${engineer.user.firstName},
 
+I am interested in your ${engineer.type.name} services. I found your profile and would like to discuss a potential project.
 
-  const handleContact = () => {
-    console.log("Contact engineer:", engineer?.id)
+Please let me know your availability for a consultation.
+
+Best regards`
+
+      const mailtoLink = `mailto:${engineer.user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      window.open(mailtoLink, "_blank")
+    } else {
+      alert("Email address not available for this engineer.")
+    }
   }
 
   const handleCall = () => {
     if (engineer?.user?.phone) {
-      window.open(`tel:${engineer.user.phone}`)
+      // Clean the phone number (remove spaces, dashes, etc.)
+      const cleanPhone = engineer.user.phone.replace(/[\s\-$$$$]/g, "")
+
+      // Check if it's a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+      if (isMobile) {
+        // On mobile devices, use tel: protocol
+        window.location.href = `tel:${cleanPhone}`
+      } else {
+        // On desktop, show the phone number and offer to copy it
+        if (navigator.clipboard) {
+          navigator.clipboard
+            .writeText(cleanPhone)
+            .then(() => {
+              alert(
+                `Phone number copied to clipboard: ${engineer.user.phone}\n\nYou can now paste it into your phone app or calling software.`,
+              )
+            })
+            .catch(() => {
+              alert(
+                `Engineer's phone number: ${engineer.user.phone}\n\nPlease use your phone or calling software to dial this number.`,
+              )
+            })
+        } else {
+          alert(
+            `Engineer's phone number: ${engineer.user.phone}\n\nPlease use your phone or calling software to dial this number.`,
+          )
+        }
+      }
+    } else {
+      alert("Phone number not available for this engineer.")
     }
   }
 
   const handleEmail = () => {
     if (engineer?.user?.email) {
-      window.open(`mailto:${engineer.user.email}`)
+      const subject = `Professional Inquiry - ${engineer.type.name}`
+      const body = `Dear ${engineer.user.firstName} ${engineer.user.lastName},
+
+I hope this email finds you well. I am reaching out regarding your professional services as a ${engineer.type.name}.
+
+I would appreciate the opportunity to discuss my project requirements with you.
+
+Thank you for your time.
+
+Best regards`
+
+      const mailtoLink = `mailto:${engineer.user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      window.open(mailtoLink, "_blank")
+    } else {
+      alert("Email address not available for this engineer.")
     }
   }
 
   useEffect(() => {
-  window.scrollTo({ top: 0, behavior: "smooth" }); // or "auto"
-}, []);
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [])
 
   if (loading) {
     return (
@@ -223,25 +280,12 @@ console.log(engineer)
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gray-50"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Back Button - Only back button, no header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <Button
-              onClick={() => navigate(-1)}
-              variant="ghost"
-              size="sm"
-              className="hover:bg-gray-100"
-            >
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <Button onClick={() => navigate(-1)} variant="ghost" size="sm" className="hover:bg-gray-100">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -250,24 +294,13 @@ console.log(engineer)
           {/* Main Content - Better proportions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Profile Card - Smaller and more compact (1/3 width on large screens) */}
-            <motion.div
-              variants={fadeInUp}
-              initial="initial"
-              animate="animate"
-              className="lg:col-span-1"
-            >
+            <motion.div variants={fadeInUp} initial="initial" animate="animate" className="lg:col-span-1">
               <Card className="shadow-lg border-0 bg-white ">
                 <CardContent className="p-8 text-center h-full flex flex-col ">
                   {/* Profile Image - More reasonable size */}
-                  <motion.div
-                    variants={scaleIn}
-                    className="relative inline-block mb-6"
-                  >
+                  <motion.div variants={scaleIn} className="relative inline-block mb-6">
                     <Avatar className="w-36 h-36 mx-auto border-4 border-gray-100 shadow-lg">
-                      <AvatarImage
-                        src={profileImage || "/placeholder.svg"}
-                        alt={fullName}
-                      />
+                      <AvatarImage src={profileImage || "/placeholder.svg"} alt={fullName} />
                       <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                         {engineer.user.firstName[0]}
                         {engineer.user.lastName[0]}
@@ -293,12 +326,8 @@ console.log(engineer)
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <h1 className="text-2xl font-bold text-gray-800 mb-3">
-                      {fullName}
-                    </h1>
-                    <p className="text-blue-600 font-medium mb-4 text-base">
-                      {engineer.type.name}
-                    </p>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-3">{fullName}</h1>
+                    <p className="text-blue-600 font-medium mb-4 text-base">{engineer.type.name}</p>
 
                     {/* Rating - Larger */}
                     <div className="flex items-center justify-center mb-6">
@@ -307,31 +336,22 @@ console.log(engineer)
                           <Star
                             key={i}
                             className={`h-6 w-6 ${
-                              i < Math.floor(engineer.averageRate)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
+                              i < Math.floor(engineer.averageRate) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
                             }`}
                           />
                         ))}
                       </div>
                       <span className="ml-3 text-lg text-gray-600">
-                        {engineer.averageRate > 0
-                          ? engineer.averageRate.toFixed(1)
-                          : "New"}
+                        {engineer.averageRate > 0 ? engineer.averageRate.toFixed(1) : "New"}
                       </span>
                     </div>
 
                     {/* Location - Larger */}
-
                     <div className="flex items-center justify-center text-gray-600 text-lg mb-4">
                       <MapPin className="h-5 w-5 mr-2" />
                       <span>
-                        {[
-                          engineer.user.city?.name,
-                          engineer.user.governorate?.name,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "Location not specified"}
+                        {[engineer.user.city?.name, engineer.user.governorate?.name].filter(Boolean).join(", ") ||
+                          "Location not specified"}
                       </span>
                     </div>
 
@@ -354,7 +374,7 @@ console.log(engineer)
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={handleContact}
+                      onClick={handleSendMessage}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center text-base"
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
@@ -385,9 +405,7 @@ console.log(engineer)
                   </motion.div>
 
                   {/* Social Links - Larger */}
-                  {(engineer.facebookLink ||
-                    engineer.linkedinLink ||
-                    engineer.behanceLink) && (
+                  {(engineer.facebookLink || engineer.linkedinLink || engineer.behanceLink) && (
                     <>
                       <Separator className="my-8" />
                       <motion.div
@@ -395,9 +413,7 @@ console.log(engineer)
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.7 }}
                       >
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                          Connect
-                        </h3>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-4">Connect</h3>
                         <div className="flex justify-center space-x-4">
                           {engineer.facebookLink && (
                             <motion.a
@@ -461,8 +477,7 @@ console.log(engineer)
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 leading-relaxed text-lg">
-                      {engineer.bio ||
-                        "Professional engineer with expertise in various technical domains."}
+                      {engineer.bio || "Professional engineer with expertise in various technical domains."}
                     </p>
                   </CardContent>
                 </Card>
@@ -488,9 +503,7 @@ console.log(engineer)
                           whileHover={{ scale: 1.02 }}
                           className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:border-blue-300 hover:shadow-md transition-all"
                         >
-                          <h4 className="font-semibold text-gray-800 ">
-                            {service.name}
-                          </h4>
+                          <h4 className="font-semibold text-gray-800 ">{service.name}</h4>
                         </motion.div>
                       ))}
                     </div>
@@ -511,42 +524,27 @@ console.log(engineer)
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-600 font-medium">
-                            Engineer Type:
-                          </span>
+                          <span className="text-gray-600 font-medium">Engineer Type:</span>
                           <Award className="h-5 w-5 text-green-600" />
                         </div>
-                        <span className="font-bold text-green-700">
-                          {engineer.type.name}
-                        </span>
+                        <span className="font-bold text-green-700">{engineer.type.name}</span>
                       </div>
 
                       <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-200">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-gray-600 font-medium">
-                            Experience:
-                          </span>
+                          <span className="text-gray-600 font-medium">Experience:</span>
                           <Briefcase className="h-5 w-5 text-blue-600" />
                         </div>
-                        <span className="font-bold text-blue-700">
-                          {engineer.yearsOfExperience} years
-                        </span>
+                        <span className="font-bold text-blue-700">{engineer.yearsOfExperience} years</span>
                       </div>
                     </div>
 
                     <div className="bg-gradient-to-br from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-600 font-medium">
-                          Status:
-                        </span>
+                        <span className="text-gray-600 font-medium">Status:</span>
                         <CheckCircle className="h-5 w-5 text-purple-600" />
                       </div>
-                      <Badge
-                        variant={
-                          engineer.user.enabled ? "default" : "secondary"
-                        }
-                        className="font-bold"
-                      >
+                      <Badge variant={engineer.user.enabled ? "default" : "secondary"} className="font-bold">
                         {engineer.user.enabled ? "Active" : "Inactive"}
                       </Badge>
                     </div>
@@ -560,20 +558,12 @@ console.log(engineer)
                       </h4>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Joined:
-                          </span>
-                          <span className="font-semibold">
-                            {formatDate(engineer.createdDate)}
-                          </span>
+                          <span className="text-gray-600 font-medium">Joined:</span>
+                          <span className="font-semibold">{formatDate(engineer.createdDate)}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Last Updated:
-                          </span>
-                          <span className="font-semibold">
-                            {formatDate(engineer.modifiedDate)}
-                          </span>
+                          <span className="text-gray-600 font-medium">Last Updated:</span>
+                          <span className="font-semibold">{formatDate(engineer.modifiedDate)}</span>
                         </div>
                       </div>
                     </div>
@@ -585,20 +575,12 @@ console.log(engineer)
                       </h4>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Email:
-                          </span>
-                          <span className="font-semibold text-sm">
-                            {engineer.user.email}
-                          </span>
+                          <span className="text-gray-600 font-medium">Email:</span>
+                          <span className="font-semibold text-sm">{engineer.user.email}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                          <span className="text-gray-600 font-medium">
-                            Phone:
-                          </span>
-                          <span className="font-semibold">
-                            {engineer.user.phone || "Not provided"}
-                          </span>
+                          <span className="text-gray-600 font-medium">Phone:</span>
+                          <span className="font-semibold">{engineer.user.phone || "Not provided"}</span>
                         </div>
                       </div>
                     </div>
@@ -610,5 +592,5 @@ console.log(engineer)
         </div>
       </div>
     </motion.div>
-  );
+  )
 }

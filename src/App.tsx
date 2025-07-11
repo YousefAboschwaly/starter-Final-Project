@@ -192,46 +192,14 @@ function App() {
         /* Ask Details pages */
 
         {
-          path: "/worker/:askId",
+          path: "/:askType/:askId",
           element: (
             <ProtectedRoute>
               <AskDetailsPage />
             </ProtectedRoute>
           ),
         },
-        {
-          path: "/engineer/:askId",
-          element: (
-            <ProtectedRoute>
-              <AskDetailsPage />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "/request-design/:askId",
-          element: (
-            <ProtectedRoute>
-              <AskDetailsPage />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "/home-renovate/:askId",
-          element: (
-            <ProtectedRoute>
-              <AskDetailsPage />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: "/custom-package/:askId",
-          element: (
-            <ProtectedRoute>
-              <AskDetailsPage />
-            </ProtectedRoute>
-          ),
-        },
-
+  
         {
           path: "products/:id",
           element: (

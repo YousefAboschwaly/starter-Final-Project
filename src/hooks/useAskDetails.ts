@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useContext } from "react"
 import axios from "axios"
 import { UserContext } from "../Contexts/UserContext"
+import type { IBusinessType } from "@/interfaces"
 
 // Base interfaces for common fields
 export interface BaseUser {
@@ -29,7 +30,7 @@ export interface BaseUser {
     code: string
     name: string
   } | null
-  business: any | null
+  business: IBusinessType | null
   personalPhoto: string | null
 }
 
@@ -126,7 +127,7 @@ export interface AskEngineerDetails {
   governorate: BaseGovernorate
   urgencyLevel: UrgencyLevel
   deadline: string
-  photos: any[]
+  photos: string[]
   user: BaseUser
   requestCount: number
   askStatus: string
@@ -245,6 +246,7 @@ export interface AskDetailsResponse {
 }
 
 export function useAskDetails(askType: string, askId: string | number, enabled = true) {
+  console.log("useAskDetails called with type:", askType, "and ID:", askId)
   const userContext = useContext(UserContext)
 
   if (!userContext) {
@@ -254,42 +256,121 @@ export function useAskDetails(askType: string, askId: string | number, enabled =
   const { pathUrl, userToken } = userContext
 
   // Determine API endpoint based on ask type
-  const getApiEndpoint = (type: string, id: string | number) => {
-    switch (type.toLowerCase()) {
+  const getApiEndpoint = (type: string, id: string | number): string | null => {
+    const normalizedType = type.toLowerCase().trim()
+
+    console.log("Getting API endpoint for type:", normalizedType, "ID:", id)
+
+    switch (normalizedType) {
       case "worker":
+      case "ask-worker":
         return `/api/v1/ask-worker/${id}`
       case "engineer":
+      case "ask-engineer":
         return `/api/v1/ask-engineer/${id}`
       case "request-design":
+      case "requestdesign":
         return `/api/v1/request-design/${id}`
       case "home-renovate":
+      case "homerenovate":
+      case "home_renovate":
         return `/api/v1/home-renovate/${id}`
       case "custom-package":
+      case "custompackage":
+      case "custom_package":
         return `/api/v1/select-custom-package/${id}`
       default:
-        return `/api/v1/ask-engineer/${id}` // Default fallback
+        console.error("Unknown ask type:", type)
+        return null
     }
   }
 
   return useQuery<AskDetailsResponse, Error>(
     ["ask-details", askType, askId],
     async () => {
+      // Validate all required parameters
+      if (!askType) {
+        throw new Error("Ask type is required")
+      }
+
+      if (!askId) {
+        throw new Error("Ask ID is required")
+      }
+
+      if (!pathUrl) {
+        throw new Error("Path URL is not available")
+      }
+
+      if (!userToken) {
+        throw new Error("User token is not available")
+      }
+
       const endpoint = getApiEndpoint(askType, askId)
 
-      const response = await axios.get(`${pathUrl}${endpoint}`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-          "Accept-Language": "en",
-          "Content-Type": "application/json",
-        },
+      if (!endpoint) {
+        throw new Error(
+          `Invalid ask type: ${askType}. Supported types: worker, engineer, request-design, home-renovate, custom-package`,
+        )
+      }
+
+      const fullUrl = `${pathUrl}${endpoint}`
+
+      console.log("Making request to:", fullUrl)
+      console.log("With headers:", {
+        Authorization: `Bearer ${userToken ? "***" : "MISSING"}`,
+        "Accept-Language": "en",
       })
-      return response.data
+
+      try {
+        const response = await axios.get(fullUrl, {
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+            "Accept-Language": "en",
+            "Content-Type": "application/json",
+          },
+          timeout: 10000, // 10 second timeout
+        })
+
+        console.log("Response received:", response.status, response.data)
+        return response.data
+      } catch (error) {
+        console.error("Request failed:", error)
+
+        if (axios.isAxiosError(error)) {
+          if (error.code === "ERR_NETWORK") {
+            throw new Error(
+              `Network error: Unable to connect to ${fullUrl}. Please check your internet connection and server status.`,
+            )
+          } else if (error.response) {
+            throw new Error(`Server error: ${error.response.status} - ${error.response.statusText}`)
+          } else if (error.request) {
+            throw new Error("No response received from server. Please check your network connection.")
+          }
+        }
+
+        throw error
+      }
     },
     {
-      enabled: enabled && !!askId,
+      enabled: enabled && !!askId && !!askType && !!pathUrl && !!userToken,
       staleTime: 5 * 60 * 1000, // 5 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
-      retry: 2,
+      retry: (failureCount, error) => {
+        // Don't retry on certain errors
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 404 || error.response?.status === 403) {
+            return false
+          }
+        }
+        return failureCount < 2
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      onError: (error) => {
+        console.error("useAskDetails query error:", error)
+      },
+      onSuccess: (data) => {
+        console.log("useAskDetails query success:", data)
+      },
     },
   )
 }

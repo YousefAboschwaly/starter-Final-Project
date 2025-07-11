@@ -88,6 +88,7 @@ const isCustomPackageDetails = (data: AskDetails): data is CustomPackageDetails 
 
 export function AskDetailsPage() {
   const { askType, askId } = useParams<{ askType: string; askId: string }>()
+  console.log("AskDetailsPage called with type:", askType, "and ID:", askId)
   const navigate = useNavigate()
   const location = useLocation()
   const userContext = useContext(UserContext)
@@ -122,6 +123,64 @@ export function AskDetailsPage() {
     } else {
       // Go to All-Asks
       navigate("/All-Asks")
+    }
+  }
+
+  // Enhanced contact functions
+  const handleCall = (phoneNumber: string | null) => {
+    if (phoneNumber) {
+      // Clean the phone number (remove spaces, dashes, etc.)
+      const cleanPhone = phoneNumber.replace(/[\s\-$$$$]/g, "")
+
+      // Check if it's a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+      if (isMobile) {
+        // On mobile devices, use tel: protocol
+        window.location.href = `tel:${cleanPhone}`
+      } else {
+        // On desktop, show the phone number and offer to copy it
+        if (navigator.clipboard) {
+          navigator.clipboard
+            .writeText(cleanPhone)
+            .then(() => {
+              alert(
+                `Phone number copied to clipboard: ${phoneNumber}\n\nYou can now paste it into your phone app or calling software.`,
+              )
+            })
+            .catch(() => {
+              alert(
+                `Client's phone number: ${phoneNumber}\n\nPlease use your phone or calling software to dial this number.`,
+              )
+            })
+        } else {
+          alert(
+            `Client's phone number: ${phoneNumber}\n\nPlease use your phone or calling software to dial this number.`,
+          )
+        }
+      }
+    } else {
+      alert("Phone number not available.")
+    }
+  }
+
+  const handleSendMessage = (email: string | null, username: string | null, askType: string | undefined) => {
+    if (email) {
+      const subject = `Regarding your ${askType || "service"} request`
+      const body = `Hello ${username || "Client"},
+
+I saw your ${askType || "service"} request and I'm interested in helping you with your project.
+
+I would like to discuss the details and provide you with a quote for the work.
+
+Please let me know when would be a good time to talk.
+
+Best regards`
+
+      const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      window.open(mailtoLink, "_blank")
+    } else {
+      alert("Email address not available.")
     }
   }
 
@@ -273,11 +332,24 @@ export function AskDetailsPage() {
             <Card className="animate-in fade-in slide-in-from-left-4 duration-700 delay-300 shadow-lg border-0">
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg font-semibold"
+                    onClick={() => handleCall(askDetails.phoneNumber)}
+                  >
                     <Phone className="w-5 h-5 mr-3" />
                     Call Now
                   </Button>
-                  <Button variant="outline" className="w-full bg-transparent py-3 text-lg font-semibold border-2">
+                  <Button
+                    variant="outline"
+                    className="w-full bg-transparent py-3 text-lg font-semibold border-2"
+                    onClick={() =>
+                      handleSendMessage(
+                        askDetails.user.email,
+                        askDetails.user.username || "Client",
+                        askType || "service",
+                      )
+                    }
+                  >
                     <User className="w-5 h-5 mr-3" />
                     Send Message
                   </Button>
@@ -535,41 +607,14 @@ export function AskDetailsPage() {
                           <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Location</span>
                         </div>
                         <p className="text-xl font-bold text-gray-900">
-                          {askDetails.isInsideCompound ? "Inside Compound" : "Outside Compound"}
+                          {askDetails.city.name}, {askDetails.governorate.name}
                         </p>
                       </div>
                     </>
                   )}
-
-                  {/* Custom Package Location */}
-                  {isCustomPackageDetails(askDetails) && (
-                    <div className="bg-pink-50 rounded-xl p-4 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-pink-100 rounded-lg">
-                          <Home className="w-4 h-4 text-pink-600" />
-                        </div>
-                        <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Location</span>
-                      </div>
-                      <p className="text-xl font-bold text-gray-900">
-                        {askDetails.isInsideCompound ? "Inside Compound" : "Outside Compound"}
-                      </p>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
-
-            {/* Deadline (for Engineer) */}
-            {isEngineerDetails(askDetails) && askDetails.deadline && (
-              <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-300 shadow-lg border-0 bg-gradient-to-r from-red-500 to-orange-500">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-center gap-3 text-white">
-                    <Clock className="w-6 h-6" />
-                    <span className="text-xl font-bold">Deadline: {askDetails.deadline}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>

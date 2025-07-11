@@ -61,8 +61,8 @@ const getStatusBadge = (status: string) => {
 const getAskTypeFromProduct = (product: Product): string => {
   if (product.workerType) return "worker"
   if (product.engineerType) return "engineer"
-  if (product.unitArea && product.requiredDuration && !product.customPackage) return "request-design"
   if (product.unitStatuses || product.unitWorkTypes || product.workSkills) return "home-renovate"
+  if (product.unitArea && product.requiredDuration && !product.customPackage) return "request-design"
   if (product.customPackage) return "custom-package"
   return "engineer" // default
 }

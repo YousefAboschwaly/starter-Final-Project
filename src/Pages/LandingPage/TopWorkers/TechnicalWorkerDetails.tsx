@@ -6,7 +6,6 @@ import { motion } from "framer-motion"
 import {
   Star,
   MapPin,
-
   MessageCircle,
   Phone,
   Mail,
@@ -161,27 +160,84 @@ export default function TechnicalWorkerDetails() {
     fetchWorkerDetails()
   }, [id, pathUrl, userToken])
 
+  const handleSendMessage = () => {
+    if (worker?.user?.email) {
+      const subject = `Inquiry about ${worker.type.name} services`
+      const body = `Hello ${worker.user.firstName},
 
+I am interested in your ${worker.type.name} services. I found your profile and would like to discuss a potential project.
 
-  const handleContact = () => {
-    console.log("Contact technical worker:", worker?.id)
+Please let me know your availability for a consultation.
+
+Best regards`
+
+      const mailtoLink = `mailto:${worker.user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      window.open(mailtoLink, "_blank")
+    } else {
+      alert("Email address not available for this technical worker.")
+    }
   }
 
   const handleCall = () => {
     if (worker?.user?.phone) {
-      window.open(`tel:${worker.user.phone}`)
+      // Clean the phone number (remove spaces, dashes, etc.)
+      const cleanPhone = worker.user.phone.replace(/[\s\-$$$$]/g, "")
+
+      // Check if it's a mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+      if (isMobile) {
+        // On mobile devices, use tel: protocol
+        window.location.href = `tel:${cleanPhone}`
+      } else {
+        // On desktop, show the phone number and offer to copy it
+        if (navigator.clipboard) {
+          navigator.clipboard
+            .writeText(cleanPhone)
+            .then(() => {
+              alert(
+                `Phone number copied to clipboard: ${worker.user.phone}\n\nYou can now paste it into your phone app or calling software.`,
+              )
+            })
+            .catch(() => {
+              alert(
+                `Technical worker's phone number: ${worker.user.phone}\n\nPlease use your phone or calling software to dial this number.`,
+              )
+            })
+        } else {
+          alert(
+            `Technical worker's phone number: ${worker.user.phone}\n\nPlease use your phone or calling software to dial this number.`,
+          )
+        }
+      }
+    } else {
+      alert("Phone number not available for this technical worker.")
     }
   }
 
   const handleEmail = () => {
     if (worker?.user?.email) {
-      window.open(`mailto:${worker.user.email}`)
+      const subject = `Professional Inquiry - ${worker.type.name}`
+      const body = `Dear ${worker.user.firstName} ${worker.user.lastName},
+
+I hope this email finds you well. I am reaching out regarding your professional services as a ${worker.type.name}.
+
+I would appreciate the opportunity to discuss my project requirements with you.
+
+Thank you for your time.
+
+Best regards`
+
+      const mailtoLink = `mailto:${worker.user.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      window.open(mailtoLink, "_blank")
+    } else {
+      alert("Email address not available for this technical worker.")
     }
   }
 
   useEffect(() => {
-  window.scrollTo({ top: 0, behavior: "smooth" }); // or "auto"
-}, []);
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [])
 
   if (loading) {
     return (
@@ -241,8 +297,6 @@ export default function TechnicalWorkerDetails() {
             <motion.div variants={fadeInUp} initial="initial" animate="animate" className="lg:col-span-1">
               <Card className="shadow-lg border-0 bg-white ">
                 <CardContent className="p-8 text-center  flex flex-col">
-
-
                   {/* Profile Image - More reasonable size */}
                   <motion.div variants={scaleIn} className="relative inline-block mb-6">
                     <Avatar className="w-36 h-36 mx-auto border-4 border-gray-100 shadow-lg">
@@ -293,15 +347,13 @@ export default function TechnicalWorkerDetails() {
                     </div>
 
                     {/* Location - Larger */}
-                    
-                      <div className="flex items-center justify-center text-gray-600 text-lg mb-4">
-                        <MapPin className="h-5 w-5 mr-2" />
-                        <span>
-                          {[worker.user.city?.name, worker.user.governorate?.name].filter(Boolean).join(", ") ||
-                            "Location not specified"}
-                        </span>
-                      </div>
-                   
+                    <div className="flex items-center justify-center text-gray-600 text-lg mb-4">
+                      <MapPin className="h-5 w-5 mr-2" />
+                      <span>
+                        {[worker.user.city?.name, worker.user.governorate?.name].filter(Boolean).join(", ") ||
+                          "Location not specified"}
+                      </span>
+                    </div>
 
                     {/* Experience - Larger */}
                     <div className="flex items-center justify-center text-gray-600 text-lg mb-8">
@@ -322,7 +374,7 @@ export default function TechnicalWorkerDetails() {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={handleContact}
+                      onClick={handleSendMessage}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center text-base"
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
@@ -470,7 +522,6 @@ export default function TechnicalWorkerDetails() {
                     </CardTitle>
                   </CardHeader>
 
-                  
                   <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
