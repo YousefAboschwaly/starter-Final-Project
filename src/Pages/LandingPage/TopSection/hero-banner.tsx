@@ -152,7 +152,7 @@ export default function HeroBanner() {
         {/* Improved navigation arrows positioned better */}
         <button
           onClick={prevSlide}
-          className="absolute left-[2.8%] top-1/2 -translate-y-1/2 z-40 bg-white/80 hover:bg-white rounded-full w-8 h-8 sm:w-[30px] sm:h-[30px] md:w-[50px] md:h-[50px] flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
+          className="absolute left-[2.8%] top-1/2 -translate-y-1/2 z-30 bg-white/80 hover:bg-white rounded-full w-8 h-8 sm:w-[30px] sm:h-[30px] md:w-[50px] md:h-[50px] flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
           aria-label="Previous slide"
         >
           <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-800" />
@@ -160,7 +160,7 @@ export default function HeroBanner() {
 
         <button
           onClick={nextSlide}
-          className="absolute right-[2.8%] top-1/2 -translate-y-1/2 z-40 bg-white/80 hover:bg-white rounded-full w-8 h-8 sm:w-[30px] sm:h-[30px] md:w-[50px] md:h-[50px] flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
+          className="absolute right-[2.8%] top-1/2 -translate-y-1/2 z-30 bg-white/80 hover:bg-white rounded-full w-8 h-8 sm:w-[30px] sm:h-[30px] md:w-[50px] md:h-[50px] flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none"
           aria-label="Next slide"
         >
           <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-800" />

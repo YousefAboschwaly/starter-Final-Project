@@ -57,10 +57,29 @@ const getMyAsksUrlPath = (serviceType: string): string => {
   }
 }
 
-export default function ProductsPage() {
+export default function ProductsPage({
+  showMyAsks,
+  setShowMyAsks,
+}: { showMyAsks: boolean; setShowMyAsks: (value: boolean) => void }) {
   // Page state
-  const [showMyAsks, setShowMyAsks] = useState(false)
 
+  useEffect(() => {
+    const handlePathnameChange = () => {
+      if (window.location.pathname === "/All-Asks") {
+        setShowMyAsks(false)
+      }
+    }
+
+    // Check on mount
+    handlePathnameChange()
+
+    // Listen for popstate events (back/forward navigation)
+    window.addEventListener("popstate", handlePathnameChange)
+
+    return () => {
+      window.removeEventListener("popstate", handlePathnameChange)
+    }
+  }, [setShowMyAsks])
   // Search and service type state
   const [searchName, setSearchName] = useState("")
   const [selectedServiceType, setSelectedServiceType] = useState<string>("engineer") // Default to engineer

@@ -2,33 +2,31 @@ import { Outlet } from "react-router-dom";
 import Navbar from './Navbar'
 import { useBusinessConfig } from "@/hooks/useBusinessConfig";
 import BusinessTypeNavigation from "@/Pages/LandingPage/TopSection/BusinessTypeNavigation";
+import { UserContext } from "@/Contexts/UserContext";
+import { useContext } from "react";
 
 export default function Layout() {
+   const userContext = useContext(UserContext)
+  if (!userContext) {
+    throw new Error("UserContext must be used within a UserContextProvider")
+  }
+  const { userToken} = userContext
     const { businessTypeCategories, isLoading,isError,error,refetch ,businessTypes} = useBusinessConfig();
     console.log("Business Type Categories:", businessTypeCategories);
   return (
     <>
-      <div className="sticky inset-0 z-[9999999]" >
+      <div className="sticky inset-0 z-40" >
       {/* Navbar */}
       <Navbar />
-
-      {/* Category Navigation */}
-      {isLoading && (
-        <div className="relative py-6 bg-white">
-          <div className="px-2">
-            <div className="flex justify-center gap-4">
-              {[...Array(7)].map((_, i) => (
-                <div key={i} className="flex flex-col items-center animate-pulse">
-                  <div className="w-20 h-20 md:w-28 md:h-28 bg-gray-200 rounded-full mb-2"></div>
-                  <div className="w-16 h-3 bg-gray-200 rounded"></div>
-                </div>
-              ))}
-            </div>
-          </div>
+    {
+      isLoading && userToken && (
+        <div className="bg-gray-100 border border-gray-200 text-gray-700 px-4 py-3 rounded mx-4 my-2">
+          <p className="text-sm">Loading categories...</p>
         </div>
-      )}
-
-      {isError && (
+      )
+    }
+ 
+      {isError &&userToken&& (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mx-4 my-2">
           <div className="flex items-center justify-between">
             <p className="text-sm">Failed to load categories: {error?.message}</p>
@@ -42,11 +40,11 @@ export default function Layout() {
         </div>
       )}
 
-      {!isLoading && !isError && businessTypeCategories.length > 0 && (
+      {!isLoading && !isError && businessTypeCategories.length > 0 && userToken&& (
         <BusinessTypeNavigation businessTypeCategories={businessTypeCategories} businessTypes={businessTypes} />
       )}
 
-      {!isLoading && !isError && businessTypeCategories.length === 0 && (
+      {!isLoading && !isError && businessTypeCategories.length === 0 &&  userToken&&  (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mx-4 my-2">
           <p className="text-sm">No categories available at the moment.</p>
         </div>

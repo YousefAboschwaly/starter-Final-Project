@@ -3,10 +3,11 @@ import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "./product-card"
 import { useMyAsks } from "@/hooks/useMyAsks"
+import { useNavigate } from "react-router-dom"
 
 interface MyAsksPageProps {
   selectedServiceType: string
-  onBack: () => void
+  onBack?: () => void
 }
 
 // Map service types to display names
@@ -46,6 +47,15 @@ const getBusinessTypeFromService = (serviceType: string): string => {
 }
 
 export function MyAsksPage({ selectedServiceType, onBack }: MyAsksPageProps) {
+  const navigate = useNavigate()
+
+  const handleBack = () => {
+    // Call the callback to reset My Asks state
+    onBack?.()
+    // Navigate to All-Asks
+    navigate("/All-Asks", { replace: true })
+  }
+
   const businessTypeCode = getBusinessTypeFromService(selectedServiceType)
   const serviceDisplayName = getServiceDisplayName(selectedServiceType)
 
@@ -63,7 +73,7 @@ export function MyAsksPage({ selectedServiceType, onBack }: MyAsksPageProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={onBack}
+              onClick={handleBack}
               className="flex items-center gap-2 hover:bg-gray-50 transition-colors duration-200 bg-transparent"
             >
               <ArrowLeft className="w-4 h-4" />

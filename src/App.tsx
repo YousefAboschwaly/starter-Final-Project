@@ -20,7 +20,6 @@ import Project from "./Pages/project";
 import AddProduct from "./Pages/AddProduct";
 import ProductList from "./Pages/ProductList";
 import EditProduct from "./Pages/JoinUs/EditProduct";
-import Ask from "./Pages/Ask/Ask";
 import Viewdetails from "./Pages/Viewdetails.tsx";
 import { CartProvider } from "./Contexts/CartContext.tsx";
 import ShoppingCart from "./Pages/Cart/ShoppingCart.tsx";
@@ -36,12 +35,17 @@ import OrderDetailsPage from "./Pages/UserPages/OrderDetailsPage.tsx";
 import { FilterProvider } from "./Contexts/FilterContext.tsx";
 import EngineerDetails from "./Pages/LandingPage/TopEngineers/EngineerDetails.tsx";
 import TechnicalWorkerDetails from "./Pages/LandingPage/TopWorkers/TechnicalWorkerDetails.tsx";
-import Asks from "./Pages/AllAsks/Asks.tsx";
+import ProductsPage from "./Pages/AllAsks/Asks.tsx";
+import { MyAsksPage } from "./Pages/AllAsks/components/my-asks-page.tsx";
+import { AskDetailsPage } from "./Pages/AllAsks/components/ask-details-page.tsx";
+import { useState } from "react";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
 
 function App() {
+    const [showMyAsks, setShowMyAsks] = useState(false)
+
   const routes = createBrowserRouter([
     {
       path: "",
@@ -108,22 +112,117 @@ function App() {
             </ProtectedRoute>
           ),
         },
-        {
-          path: "Ask",
-          element: (
-            <ProtectedRoute>
-              <Ask />
-            </ProtectedRoute>
-          ),
-        },
+        // All Asks Part
         {
           path: "All-Asks",
           element: (
             <ProtectedRoute>
-              <Asks />
+              <ProductsPage
+                showMyAsks={showMyAsks}
+                setShowMyAsks={setShowMyAsks}
+              />
             </ProtectedRoute>
           ),
         },
+
+        {
+          path: "/MyAsks/AskEngineer",
+          element: (
+            <ProtectedRoute>
+              <MyAsksPage
+                selectedServiceType="engineer"
+               
+              />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/MyAsks/AskWorker",
+          element: (
+            <ProtectedRoute>
+              <MyAsksPage
+                selectedServiceType="worker"
+               
+              />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/MyAsks/RequestDesign",
+          element: (
+            <ProtectedRoute>
+              <MyAsksPage
+                selectedServiceType="request-design"
+               
+              />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/MyAsks/RenovateHome",
+          element: (
+            <ProtectedRoute>
+              <MyAsksPage
+                selectedServiceType="home-renovate"
+               
+              />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/MyAsks/CustomPackage",
+          element: (
+            <ProtectedRoute>
+              <MyAsksPage
+                selectedServiceType="custom-package"
+               
+              />
+            </ProtectedRoute>
+          ),
+        },
+        /* Ask Details pages */
+
+        {
+          path: "/worker/:askId",
+          element: (
+            <ProtectedRoute>
+              <AskDetailsPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/engineer/:askId",
+          element: (
+            <ProtectedRoute>
+              <AskDetailsPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/request-design/:askId",
+          element: (
+            <ProtectedRoute>
+              <AskDetailsPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/home-renovate/:askId",
+          element: (
+            <ProtectedRoute>
+              <AskDetailsPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/custom-package/:askId",
+          element: (
+            <ProtectedRoute>
+              <AskDetailsPage />
+            </ProtectedRoute>
+          ),
+        },
+
         {
           path: "products/:id",
           element: (

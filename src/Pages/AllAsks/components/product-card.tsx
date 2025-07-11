@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useContext } from "react"
 import { UserContext } from "@/Contexts/UserContext"
+import { useNavigate, useLocation } from "react-router-dom"
 import {
   MapPin,
   DollarSign,
@@ -56,7 +57,19 @@ const getStatusBadge = (status: string) => {
   }
 }
 
+// Helper function to determine ask type from product data
+const getAskTypeFromProduct = (product: Product): string => {
+  if (product.workerType) return "worker"
+  if (product.engineerType) return "engineer"
+  if (product.unitArea && product.requiredDuration && !product.customPackage) return "request-design"
+  if (product.unitStatuses || product.unitWorkTypes || product.workSkills) return "home-renovate"
+  if (product.customPackage) return "custom-package"
+  return "engineer" // default
+}
+
 export function ProductCard({ product }: ProductCardProps) {
+  const navigate = useNavigate()
+  const location = useLocation()
   console.log(product)
 
   const userContext = useContext(UserContext)
@@ -86,8 +99,19 @@ export function ProductCard({ product }: ProductCardProps) {
   const isHomeRenovateRequest = !!product.unitStatuses || !!product.unitWorkTypes || !!product.workSkills
   const isCustomPackageRequest = !!product.customPackage
 
+  const handleCardClick = () => {
+    const askType = getAskTypeFromProduct(product)
+    // Pass the current location as state so we can navigate back properly
+    navigate(`/${askType}/${product.id}`, {
+      state: { from: location.pathname },
+    })
+  }
+
   return (
-    <Card className="group relative overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 ease-out bg-white border-0 rounded-2xl hover:border-blue-300">
+    <Card
+      className="group relative overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 ease-out bg-white border-0 rounded-2xl hover:border-blue-300 cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Elegant gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 opacity-60"></div>
 
@@ -144,7 +168,8 @@ export function ProductCard({ product }: ProductCardProps) {
                   .toLowerCase()
                   .replace(/_/g, " ")
                   .replace(/\b\w/g, (char) => char.toUpperCase())}
-              {product.user.governorate ? "," : null} {product?.governorate?.name ||
+              {product.user.governorate ? "," : null}{" "}
+              {product?.governorate?.name ||
                 product.user.governorate.code
                   .toLowerCase()
                   .replace(/_/g, " ")
@@ -160,7 +185,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <Star className="w-4 h-4 text-purple-600" />
               <span className="text-sm font-semibold text-purple-800">Custom Package</span>
             </div>
-            <p className="font-bold text-lg text-purple-700">{product.customPackage?.name||""}</p>
+            <p className="font-bold text-lg text-purple-700">{product.customPackage?.name || ""}</p>
             <p className="text-lg font-bold text-green-600 mt-1">{product.customPackage.price.toLocaleString()} EGP</p>
           </div>
         )}

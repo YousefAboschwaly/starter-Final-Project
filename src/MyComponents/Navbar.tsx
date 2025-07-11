@@ -3,7 +3,19 @@
 import type React from "react"
 
 import { useContext, useEffect, useState } from "react"
-import { ChevronDown, List, Menu, Heart, User, Search } from "lucide-react"
+import {
+  ChevronDown,
+  List,
+  Menu,
+  Heart,
+  User,
+  Search,
+  Package,
+  UserCircle,
+  HelpCircle,
+  LogOut,
+  MessageSquareIcon as MessageSquareQuestion,
+} from "lucide-react"
 import vector from "/Vector.png"
 
 import { Button } from "@/components/ui/button"
@@ -126,7 +138,7 @@ export default function Navbar() {
           </form>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4  z-50">
           {/* Action Buttons for Different User Types */}
           {isEngineerOrTechnical && (
             <div className="hidden md:flex items-center gap-2">
@@ -186,67 +198,64 @@ export default function Navbar() {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full text-white hover:bg-white/10">
-                <User id="user-icon" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full text-white hover:text-white hover:bg-white/20 transition-all duration-200 focus-visible:ring-0"
+              >
+                <User id="user-icon" className="h-5 w-5" />
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200">
+            <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-200 shadow-lg">
               {/* Common Menu Items for All Users */}
               <DropdownMenuItem className="p-0">
-                <Link to="/orders" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>📦</span>
+                <Link
+                  to="/orders"
+                  className="flex w-full items-center gap-3 p-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200 rounded-md mx-1"
+                >
+                  <Package className="h-4 w-4 text-blue-500" />
                   Orders
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="p-0">
-                <Link to="/addresses" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>📍</span>
-                  Addresses
+                <Link
+                  to="/All-Asks"
+                  className="flex w-full items-center gap-3 p-3 text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-all duration-200 rounded-md mx-1"
+                >
+                  <MessageSquareQuestion className="h-4 w-4 text-orange-500" />
+                  All Asks
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="p-0">
-                <Link to="/payments" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>💳</span>
-                  Payments
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-0">
-                <Link to="/credits" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>💰</span>
-                  Credits
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-0">
-                <Link to="/returns" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>↩️</span>
-                  Returns
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-0">
-                <Link to="/warranty" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>🛡️</span>
-                  Warranty Claims
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-0">
-                <Link to="/profile" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>👤</span>
+                <Link
+                  to="/profile"
+                  className="flex w-full items-center gap-3 p-3 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-all duration-200 rounded-md mx-1"
+                >
+                  <UserCircle className="h-4 w-4 text-green-500" />
                   Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="p-0">
-                <Link to="/help" className="flex w-full items-center gap-2 p-2 text-gray-700 hover:bg-gray-50">
-                  <span>❓</span>
+                <button     onClick={() => {
+            const phoneNumber = "2001065823087"
+            const message = `Hello! I need help`
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
+            window.open(whatsappUrl, "_blank")
+          }}
+                  className="flex w-full items-center gap-3 p-3 text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all duration-200 rounded-md mx-1"
+                >
+                  <HelpCircle className="h-4 w-4 text-purple-500" />
                   Need Help?
-                </Link>
+                </button>
               </DropdownMenuItem>
+              <div className="border-t border-gray-100 my-1"></div>
               <DropdownMenuItem className="p-0">
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2 p-2 text-left text-gray-700 hover:bg-gray-50"
+                  className="flex w-full items-center gap-3 p-3 text-left text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200 rounded-md mx-1"
                 >
-                  <span>🚪</span>
+                  <LogOut className="h-4 w-4 text-red-500" />
                   Sign Out
                 </button>
               </DropdownMenuItem>
