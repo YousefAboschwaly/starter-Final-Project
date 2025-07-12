@@ -40,6 +40,7 @@ import { MyAsksPage } from "./Pages/AllAsks/components/my-asks-page.tsx";
 import { AskDetailsPage } from "./Pages/AllAsks/components/ask-details-page.tsx";
 import { useState } from "react";
 import Ask from "./Pages/Ask/Ask.tsx";
+import WebAiPage from "./Pages/WebAiPage.tsx";
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient();
@@ -196,6 +197,14 @@ function App() {
           element: (
             <ProtectedRoute>
               <AskDetailsPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: "/TryAI",
+          element: (
+            <ProtectedRoute>
+              <WebAiPage />
             </ProtectedRoute>
           ),
         },

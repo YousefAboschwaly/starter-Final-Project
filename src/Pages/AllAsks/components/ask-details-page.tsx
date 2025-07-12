@@ -21,6 +21,10 @@ import {
   Layers,
   Loader2,
   Mail,
+  CheckCircle,
+  XCircle,
+  MessageSquare,
+  ImageIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,6 +42,9 @@ import {
   type HomeRenovateDetails,
   type CustomPackageDetails,
 } from "@/hooks/useAskDetails"
+import { useAskRequests } from "@/hooks/use-ask-requests"
+import { useRequestActions } from "@/hooks/use-request-actions"
+
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
@@ -65,6 +72,66 @@ const getStatusBadge = (status: string) => {
   }
 }
 
+// Helper function to get photos from ask details
+const getPhotosFromAskDetails = (askDetails: AskDetails | null) => {
+  if (!askDetails) return []
+
+  // Handle different photo structures based on ask type
+  if ("photos" in askDetails && Array.isArray(askDetails.photos)) {
+    // For worker requests - photos are objects with id, askWorkerId, photoPath
+    if (
+      askDetails.photos.length > 0 &&
+      typeof askDetails.photos[0] === "object" &&
+      "photoPath" in askDetails.photos[0]
+    ) {
+      return askDetails.photos
+        .filter(
+          (photo): photo is { id: number; askWorkerId: number; photoPath: string } =>
+            typeof photo === "object" &&
+            photo !== null &&
+            "photoPath" in photo &&
+            photo.photoPath !== null &&
+            photo.photoPath !== undefined
+        )
+        .map((photo) => ({
+          id: photo.id,
+          photoPath: photo.photoPath,
+        }))
+    }
+
+    // For engineer requests - photos are strings
+    if (askDetails.photos.length > 0 && typeof askDetails.photos[0] === "string") {
+      return askDetails.photos
+        .filter((photoPath): photoPath is string => typeof photoPath === "string")
+        .map((photoPath: string, index: number) => ({
+          id: index,
+          photoPath: photoPath,
+        }))
+    }
+  }
+
+  return []
+}
+
+// Helper function to format request user name
+type User = {
+  firstName?: string
+  lastName?: string
+  username?: string
+}
+
+const getRequestUserName = (user: User) => {
+  if (user.firstName && user.lastName) {
+    return `${user.firstName} ${user.lastName}`
+  }
+  return user.username || "Unknown User"
+}
+
+// Helper function to check if ask status allows actions
+const canShowActions = (askDetails: AskDetails | null) => {
+  return askDetails?.askStatus?.toLowerCase() === "available"
+}
+
 // Type guards
 const isWorkerDetails = (data: AskDetails): data is AskWorkerDetails => {
   return "workerType" in data && "material" in data
@@ -88,12 +155,19 @@ const isCustomPackageDetails = (data: AskDetails): data is CustomPackageDetails 
 
 export function AskDetailsPage() {
   const { askType, askId } = useParams<{ askType: string; askId: string }>()
-  console.log("AskDetailsPage called with type:", askType, "and ID:", askId)
   const navigate = useNavigate()
   const location = useLocation()
   const userContext = useContext(UserContext)
 
   const { data: askDetailsData, isLoading, isError, error } = useAskDetails(askType || "", askId || "", true)
+  const {
+    data: requestsData,
+    isLoading: requestsLoading,
+    isError: requestsError,
+  } = useAskRequests(askType || "", askId || "", true)
+  const { acceptRequest, rejectRequest, isAccepting, isRejecting } = useRequestActions(askType || "", askId || "")
+
+  const requests = requestsData?.data || []
 
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
@@ -613,6 +687,291 @@ Best regards`
                     </>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Photos Section */}
+            {(() => {
+              const photos = getPhotosFromAskDetails(askDetails)
+              if (photos.length === 0) return null
+
+              return (
+                <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-150 shadow-lg border-0">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-3 text-xl">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <ImageIcon className="w-5 h-5 text-purple-600" />
+                      </div>
+                      Project Photos ({photos.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {photos.map((photo, index) => (
+                        <div key={photo.id || index} className="relative group">
+                          <img
+                            src={`${pathUrl}${photo.photoPath}`}
+                            alt={`Project photo ${index + 1}`}
+                            className="w-full h-48 object-cover rounded-lg shadow-md group-hover:shadow-lg transition-shadow duration-300"
+                            onError={(e) => {
+                              e.currentTarget.src = "/placeholder.svg?height=200&width=300"
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center justify-center">
+                            <button
+                              onClick={() => window.open(`${pathUrl}${photo.photoPath}`, "_blank")}
+                              className="opacity-0 group-hover:opacity-100 bg-white text-gray-800 px-3 py-1 rounded-full text-sm font-medium transition-opacity duration-300"
+                            >
+                              View Full Size
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })()}
+
+            {/* Requests Section - Beautiful redesign */}
+            <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-200 shadow-lg border-0 overflow-hidden">
+              <CardHeader className="pb-4 bg-gradient-to-r from-green-50 to-emerald-50">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Users className="w-5 h-5 text-green-600" />
+                  </div>
+                  Service Requests
+                  <Badge className="ml-auto bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold">
+                    {requests.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {requestsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                      <span className="text-gray-600 text-lg">Loading requests...</span>
+                      <p className="text-gray-400 text-sm mt-2">Please wait while we fetch the latest requests</p>
+                    </div>
+                  </div>
+                ) : requestsError ? (
+                  <div className="text-center py-12 px-6">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <XCircle className="w-8 h-8 text-red-500" />
+                    </div>
+                    <p className="text-red-500 mb-2 text-lg font-semibold">Error loading requests</p>
+                    <p className="text-gray-500 text-sm">Please try again later or contact support</p>
+                  </div>
+                ) : requests.length === 0 ? (
+                  <div className="text-center py-16 px-6">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <MessageSquare className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-3">No requests yet</h3>
+                    <p className="text-gray-500 text-base max-w-md mx-auto leading-relaxed">
+                      When professionals are interested in your project, their requests will appear here. Make sure your
+                      project description is detailed to attract more requests.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-100">
+                    {requests.map((request) => (
+                      <div
+                        key={request.id}
+                        className="p-6 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-300 group"
+                      >
+                        {/* Request Header */}
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="flex items-start gap-4">
+                            <div className="relative">
+                              <Avatar className="w-16 h-16 ring-3 ring-white shadow-lg group-hover:ring-blue-200 transition-all duration-300">
+                                {request.user.personalPhoto ? (
+                                  <AvatarImage
+                                    src={`${pathUrl}${request.user.personalPhoto}`}
+                                    alt={getRequestUserName(request.user)}
+                                    className="object-cover"
+                                  />
+                                ) : null}
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-xl">
+                                  {getRequestUserName(request.user).charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              {/* Online indicator */}
+                              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white"></div>
+                            </div>
+
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h4 className="font-bold text-xl text-gray-900 group-hover:text-blue-700 transition-colors">
+                                  {getRequestUserName(request.user)}
+                                </h4>
+                                <Badge variant="outline" className="text-xs px-2 py-1">
+                                  {request.user.userType?.name || "Professional"}
+                                </Badge>
+                              </div>
+
+                              <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-4 h-4 text-blue-500" />
+                                  <span className="font-medium">
+                                    {request.user.city?.name || request.user.city?.nameEn},{" "}
+                                    {request.user.governorate?.name || request.user.governorate?.nameEn}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Clock className="w-3 h-3" />
+                                <span>Requested {formatDate(request.createdDate)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status badges */}
+                          <div className="flex flex-col gap-2 items-end">
+                            {request.isAccepted === true && (
+                              <Badge className="bg-green-100 text-green-800 border-green-200 px-3 py-1 font-semibold">
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Accepted
+                              </Badge>
+                            )}
+                            {request.isRejected === true && (
+                              <Badge className="bg-red-100 text-red-800 border-red-200 px-3 py-1 font-semibold">
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Rejected
+                              </Badge>
+                            )}
+                            {request.isFinished === true && (
+                              <Badge className="bg-blue-100 text-blue-800 border-blue-200 px-3 py-1 font-semibold">
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Completed
+                              </Badge>
+                            )}
+                            {request.isAccepted === null && request.isRejected === null && (
+                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 px-3 py-1 font-semibold animate-pulse">
+                                <Clock className="w-4 h-4 mr-2" />
+                                Pending
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Comment Section */}
+                        {request.comment && (
+                          <div className="mb-6">
+                            <div className="bg-gradient-to-r from-gray-50 to-blue-50/30 rounded-xl p-4 border-l-4 border-blue-400">
+                              <div className="flex items-start gap-3">
+                                <div className="p-2 bg-blue-100 rounded-lg mt-1">
+                                  <MessageSquare className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-gray-700 mb-2">Professional's Message:</p>
+                                  <p className="text-gray-800 leading-relaxed">{request.comment}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Contact Information */}
+                        <div className="mb-6">
+                          <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-green-600" />
+                            Contact Information
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
+                              <div className="p-2 bg-blue-100 rounded-lg">
+                                <Mail className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-500 font-medium">Email</p>
+                                <p className="text-sm text-gray-900 truncate">{request.user.email}</p>
+                              </div>
+                            </div>
+
+                            {request.user.phone && (
+                              <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:border-green-300 transition-colors">
+                                <div className="p-2 bg-green-100 rounded-lg">
+                                  <Phone className="w-4 h-4 text-green-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-xs text-gray-500 font-medium">Phone</p>
+                                  <p className="text-sm text-gray-900">{request.user.phone}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        {canShowActions(askDetails) && request.isAccepted === null && request.isRejected === null && (
+                          <div className="flex gap-3 pt-4 border-t border-gray-200">
+                            <Button
+                              onClick={() => acceptRequest(request.id)}
+                              disabled={isAccepting || isRejecting}
+                              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                            >
+                              {isAccepting ? (
+                                <>
+                                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                  Accepting Request...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="w-5 h-5 mr-2" />
+                                  Accept Request
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              onClick={() => rejectRequest(request.id)}
+                              disabled={isAccepting || isRejecting}
+                              variant="outline"
+                              className="flex-1 border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 py-3 font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                            >
+                              {isRejecting ? (
+                                <>
+                                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                  Rejecting Request...
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-5 h-5 mr-2" />
+                                  Decline Request
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Quick Actions for Accepted Requests */}
+                        {request.isAccepted === true && !request.isFinished && (
+                          <div className="flex gap-3 pt-4 border-t border-gray-200">
+                            <Button
+                              onClick={() => handleCall(request.user.phone)}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2"
+                            >
+                              <Phone className="w-4 h-4 mr-2" />
+                              Call Professional
+                            </Button>
+                            <Button
+                              onClick={() =>
+                                handleSendMessage(request.user.email, getRequestUserName(request.user), askType)
+                              }
+                              variant="outline"
+                              className="flex-1 py-2"
+                            >
+                              <Mail className="w-4 h-4 mr-2" />
+                              Send Message
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

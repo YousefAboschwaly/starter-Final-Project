@@ -1,13 +1,15 @@
 "use client"
 
-import { Outlet } from "react-router-dom"
+import { Outlet, useNavigate } from "react-router-dom"
 import Navbar from "./Navbar"
 import { useBusinessConfig } from "@/hooks/useBusinessConfig"
 import BusinessTypeNavigation from "@/Pages/LandingPage/TopSection/BusinessTypeNavigation"
 import { UserContext } from "@/Contexts/UserContext"
 import { useContext, useEffect } from "react"
+import { Brain } from "lucide-react"
 
 export default function Layout() {
+  const navigate = useNavigate();
   const userContext = useContext(UserContext)
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
@@ -88,6 +90,15 @@ export default function Layout() {
       <div className="">
         <Outlet />
       </div>
+
+          {/* AI Button */}
+      <button
+        onClick={() => navigate("/TryAI")}
+        className="fixed bottom-6 right-6 bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white p-4 rounded-full shadow-xl hover:brightness-110 transition-all duration-300 z-[100000] animate-pulseGrow"
+        title="Ask AI"
+      >
+        <Brain className="w-6 h-6" />
+      </button>
     </>
   )
 }
