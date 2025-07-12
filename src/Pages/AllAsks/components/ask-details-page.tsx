@@ -25,13 +25,17 @@ import {
   XCircle,
   MessageSquare,
   ImageIcon,
+  Plus,
+  Send,
+  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { useContext } from "react"
+import { Textarea } from "@/components/ui/textarea"
+import { useContext, useState, useEffect } from "react"
 import { UserContext } from "@/Contexts/UserContext"
 import {
   useAskDetails,
@@ -42,9 +46,10 @@ import {
   type HomeRenovateDetails,
   type CustomPackageDetails,
 } from "@/hooks/useAskDetails"
+
+import axios from "axios"
 import { useAskRequests } from "@/hooks/use-ask-requests"
 import { useRequestActions } from "@/hooks/use-request-actions"
-
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
@@ -84,26 +89,19 @@ const getPhotosFromAskDetails = (askDetails: AskDetails | null) => {
       typeof askDetails.photos[0] === "object" &&
       "photoPath" in askDetails.photos[0]
     ) {
-      return askDetails.photos
-        .filter(
-          (photo): photo is { id: number; askWorkerId: number; photoPath: string } =>
-            typeof photo === "object" &&
-            photo !== null &&
-            "photoPath" in photo &&
-            photo.photoPath !== null &&
-            photo.photoPath !== undefined
-        )
+      return (askDetails.photos as Array<{ photoPath: string | null | undefined }>)
+        .filter((photo) => photo.photoPath !== null && photo.photoPath !== undefined)
         .map((photo) => ({
-          id: photo.id,
-          photoPath: photo.photoPath,
+          id: (photo as unknown as { id: number }).id,
+          photoPath: photo.photoPath as string,
         }))
     }
 
     // For engineer requests - photos are strings
     if (askDetails.photos.length > 0 && typeof askDetails.photos[0] === "string") {
-      return askDetails.photos
-        .filter((photoPath): photoPath is string => typeof photoPath === "string")
-        .map((photoPath: string, index: number) => ({
+      return (askDetails.photos as Array<string | null | undefined>)
+        .filter((photoPath): photoPath is string => photoPath !== null && photoPath !== undefined)
+        .map((photoPath, index) => ({
           id: index,
           photoPath: photoPath,
         }))
@@ -112,12 +110,11 @@ const getPhotosFromAskDetails = (askDetails: AskDetails | null) => {
 
   return []
 }
-
 // Helper function to format request user name
-type User = {
-  firstName?: string
-  lastName?: string
-  username?: string
+interface User {
+  firstName?: string;
+  lastName?: string;
+  username?: string;
 }
 
 const getRequestUserName = (user: User) => {
@@ -126,6 +123,7 @@ const getRequestUserName = (user: User) => {
   }
   return user.username || "Unknown User"
 }
+
 
 // Helper function to check if ask status allows actions
 const canShowActions = (askDetails: AskDetails | null) => {
@@ -159,21 +157,35 @@ export function AskDetailsPage() {
   const location = useLocation()
   const userContext = useContext(UserContext)
 
+  // Add Offer Modal States
+  const [showOfferModal, setShowOfferModal] = useState(false)
+  const [offerComment, setOfferComment] = useState("")
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
+  const [userType, setUserType] = useState<string | null>(null)
+
   const { data: askDetailsData, isLoading, isError, error } = useAskDetails(askType || "", askId || "", true)
   const {
     data: requestsData,
     isLoading: requestsLoading,
     isError: requestsError,
+    refetch: refetchRequests,
   } = useAskRequests(askType || "", askId || "", true)
   const { acceptRequest, rejectRequest, isAccepting, isRejecting } = useRequestActions(askType || "", askId || "")
 
   const requests = requestsData?.data || []
 
+  // Check user type from localStorage
+  useEffect(() => {
+    const storedUserType = localStorage.getItem("user-type")
+    setUserType(storedUserType)
+  }, [])
+
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
   }
 
-  const { pathUrl } = userContext
+  const { pathUrl, userToken } = userContext
   const askDetails = askDetailsData?.data
 
   // Build full image URL if personalPhoto exists
@@ -257,6 +269,145 @@ Best regards`
       alert("Email address not available.")
     }
   }
+
+  // Add Offer Functions
+  const handleAddOffer = () => {
+    setShowOfferModal(true)
+    setOfferComment("")
+  }
+
+  const handleCancelOffer = () => {
+    setShowOfferModal(false)
+    setOfferComment("")
+    setShowConfirmation(false)
+  }
+
+  const handleSubmitOffer = () => {
+    if (!offerComment.trim()) {
+      alert("Please enter a comment for your offer.")
+      return
+    }
+    setShowConfirmation(true)
+  }
+
+  const handleConfirmOffer = async () => {
+    if (!askDetails || !askId || !pathUrl || !userToken) return
+
+    setIsSubmittingOffer(true)
+
+    try {
+      let endpoint = ""
+      let requestBody = {}
+
+      // Determine API endpoint and body based on ask type
+      const normalizedAskType = askType?.toLowerCase().trim()
+
+      switch (normalizedAskType) {
+        case "engineer":
+        case "ask-engineer":
+          endpoint = `${pathUrl}/api/v1/request-ask-engineer`
+          requestBody = {
+            askEngineer: { id: Number.parseInt(askId) },
+            comment: offerComment,
+            isAccepted: null,
+            isFinished: null,
+            isRejected: null,
+          }
+          break
+
+        case "worker":
+        case "ask-worker":
+          endpoint = `${pathUrl}/api/v1/request-ask-worker`
+          requestBody = {
+            askWorker: { id: Number.parseInt(askId) },
+            comment: offerComment,
+            isAccepted: null,
+            isFinished: null,
+            isRejected: null,
+          }
+          break
+
+        case "home-renovate":
+        case "homerenovate":
+        case "home_renovate":
+          endpoint = `${pathUrl}/api/v1/request-home-renovate`
+          requestBody = {
+            homeRenovate: { id: Number.parseInt(askId) },
+            comment: offerComment,
+            isAccepted: null,
+            isFinished: null,
+            isRejected: null,
+          }
+          break
+
+        case "custom-package":
+        case "custompackage":
+        case "custom_package":
+          endpoint = `${pathUrl}/api/v1/request-select-custom-package`
+          requestBody = {
+            selectCustomPackage: { id: Number.parseInt(askId) },
+            comment: offerComment,
+            isAccepted: null,
+            isFinished: null,
+            isRejected: null,
+          }
+          break
+
+        case "request-design":
+        case "requestdesign":
+          endpoint = `${pathUrl}/api/v1/request-request-design`
+          requestBody = {
+            askWorker: { id: Number.parseInt(askId) },
+            comment: offerComment,
+            isAccepted: null,
+            isFinished: null,
+            isRejected: null,
+          }
+          break
+
+        default:
+          throw new Error(`Unsupported ask type: ${askType}`)
+      }
+
+      const response = await axios.post(endpoint, requestBody, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+          "Accept-Language": "en",
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.status === 200 || response.status === 201) {
+        alert("Your offer has been submitted successfully!")
+        setShowOfferModal(false)
+        setShowConfirmation(false)
+        setOfferComment("")
+        // Refresh the requests list
+        refetchRequests()
+      }
+    } catch (error) {
+      console.error("Error submitting offer:", error)
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400) {
+          alert("Invalid request. Please check your offer details.")
+        } else if (error.response?.status === 401) {
+          alert("You are not authorized to make this offer. Please log in again.")
+        } else if (error.response?.status === 409) {
+          alert("You have already made an offer for this request.")
+        } else {
+          alert("Failed to submit offer. Please try again later.")
+        }
+      } else {
+        alert("Network error. Please check your connection and try again.")
+      }
+    } finally {
+      setIsSubmittingOffer(false)
+    }
+  }
+
+  // Check if user can make offers (not general-user)
+  const canMakeOffer = userType && userType !== "general user"
+  console.log(userType , canMakeOffer)
 
   if (isLoading) {
     return (
@@ -690,6 +841,22 @@ Best regards`
               </CardContent>
             </Card>
 
+            {/* Add Offer Button - Only show for non-general users */}
+            {canMakeOffer && canShowActions(askDetails) && (
+              <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-250 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <CardContent className="p-6 text-center">
+                  <Button
+                    onClick={handleAddOffer}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Plus className="w-5 h-5 mr-3" />
+                    Add Offer
+                  </Button>
+                  <p className="text-gray-600 text-sm mt-3">Submit your professional offer for this project</p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Photos Section */}
             {(() => {
               const photos = getPhotosFromAskDetails(askDetails)
@@ -733,7 +900,7 @@ Best regards`
               )
             })()}
 
-            {/* Requests Section - Beautiful redesign */}
+            {/* Requests Section */}
             <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-200 shadow-lg border-0 overflow-hidden">
               <CardHeader className="pb-4 bg-gradient-to-r from-green-50 to-emerald-50">
                 <CardTitle className="flex items-center gap-3 text-xl">
@@ -976,6 +1143,110 @@ Best regards`
             </Card>
           </div>
         </div>
+
+        {/* Add Offer Modal */}
+        {showOfferModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Send className="w-6 h-6 text-blue-600" />
+                    </div>
+                    Add Your Offer
+                  </h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelOffer}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="offer-comment" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Your Professional Offer
+                    </label>
+                    <Textarea
+                      id="offer-comment"
+                      placeholder="Describe your offer, timeline, pricing, and why you're the best choice for this project..."
+                      value={offerComment}
+                      onChange={(e) => setOfferComment(e.target.value)}
+                      rows={6}
+                      className="w-full resize-none border-2 border-gray-200 focus:border-blue-500 rounded-xl p-4"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Be specific about your timeline, pricing, and what makes your offer unique.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleSubmitOffer}
+                      disabled={!offerComment.trim()}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 font-semibold"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Submit Offer
+                    </Button>
+                    <Button onClick={handleCancelOffer} variant="outline" className="flex-1 py-3 bg-transparent">
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Modal */}
+        {showConfirmation && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Your Offer</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to submit this offer? This action cannot be undone.
+                </p>
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleConfirmOffer}
+                    disabled={isSubmittingOffer}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 font-semibold"
+                  >
+                    {isSubmittingOffer ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Yes, Submit
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => setShowConfirmation(false)}
+                    disabled={isSubmittingOffer}
+                    variant="outline"
+                    className="flex-1 py-3"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
