@@ -46,10 +46,11 @@ import {
   type HomeRenovateDetails,
   type CustomPackageDetails,
 } from "@/hooks/useAskDetails"
-
+import { ConfirmOfferModal } from "./confirm-offer-modal"
 import axios from "axios"
 import { useAskRequests } from "@/hooks/use-ask-requests"
 import { useRequestActions } from "@/hooks/use-request-actions"
+import toast from "react-hot-toast"
 
 // Helper function to format date
 const formatDate = (dateString: string) => {
@@ -89,45 +90,81 @@ const getPhotosFromAskDetails = (askDetails: AskDetails | null) => {
       typeof askDetails.photos[0] === "object" &&
       "photoPath" in askDetails.photos[0]
     ) {
-      return (askDetails.photos as Array<{ photoPath: string | null | undefined }>)
-        .filter((photo) => photo.photoPath !== null && photo.photoPath !== undefined)
+      return askDetails.photos
+        .filter(
+          (photo): photo is { id: number; askWorkerId: number; photoPath: string } =>
+            typeof photo === "object" &&
+            photo !== null &&
+            "photoPath" in photo &&
+            photo.photoPath !== null &&
+            photo.photoPath !== undefined,
+        )
         .map((photo) => ({
-          id: (photo as unknown as { id: number }).id,
-          photoPath: photo.photoPath as string,
+          id: photo.id,
+          photoPath: photo.photoPath,
         }))
     }
 
     // For engineer requests - photos are strings
     if (askDetails.photos.length > 0 && typeof askDetails.photos[0] === "string") {
-      return (askDetails.photos as Array<string | null | undefined>)
-        .filter((photoPath): photoPath is string => photoPath !== null && photoPath !== undefined)
+      return askDetails.photos
+        .filter(
+          (photoPath): photoPath is string =>
+            typeof photoPath === "string" && photoPath !== null && photoPath !== undefined,
+        )
         .map((photoPath, index) => ({
           id: index,
-          photoPath: photoPath,
+          photoPath,
         }))
     }
   }
 
   return []
 }
-// Helper function to format request user name
-interface User {
-  firstName?: string;
-  lastName?: string;
-  username?: string;
+
+interface RequestUser {
+  firstName?: string
+  lastName?: string
+  username?: string
 }
 
-const getRequestUserName = (user: User) => {
+// Helper function to format request user name
+const getRequestUserName = (user: RequestUser) => {
   if (user.firstName && user.lastName) {
     return `${user.firstName} ${user.lastName}`
   }
   return user.username || "Unknown User"
 }
 
-
 // Helper function to check if ask status allows actions
 const canShowActions = (askDetails: AskDetails | null) => {
   return askDetails?.askStatus?.toLowerCase() === "available"
+}
+
+// Helper function to check if user type matches ask type
+const canUserInteractWithAskType = (userType: string | null, askType: string | undefined): boolean => {
+  if (!userType || !askType) return false
+
+  const normalizedUserType = userType.toLowerCase().trim()
+  const normalizedAskType = askType.toLowerCase().trim()
+
+  // General users can interact with all ask types
+  if (normalizedUserType === "general user") {
+    return true
+  }
+
+  // Engineers can only interact with engineer asks
+  if (normalizedUserType === "engineer") {
+    return normalizedAskType === "engineer" || normalizedAskType === "ask-engineer"
+  }
+
+  // Technical workers can only interact with worker asks
+  if (normalizedUserType === "technical worker" || normalizedUserType === "worker") {
+    return normalizedAskType === "worker" || normalizedAskType === "ask-worker"
+  }
+
+  // For other user types, allow interaction with matching ask types
+  return true
 }
 
 // Type guards
@@ -157,12 +194,16 @@ export function AskDetailsPage() {
   const location = useLocation()
   const userContext = useContext(UserContext)
 
+  // Alternative: Get email from UserContext if available
+  // const currentUserEmail = userContext.userEmail || localStorage.getItem("user-email")
+
   // Add Offer Modal States
   const [showOfferModal, setShowOfferModal] = useState(false)
   const [offerComment, setOfferComment] = useState("")
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false)
   const [userType, setUserType] = useState<string | null>(null)
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
 
   const { data: askDetailsData, isLoading, isError, error } = useAskDetails(askType || "", askId || "", true)
   const {
@@ -171,14 +212,19 @@ export function AskDetailsPage() {
     isError: requestsError,
     refetch: refetchRequests,
   } = useAskRequests(askType || "", askId || "", true)
-  const { acceptRequest, rejectRequest, isAccepting, isRejecting } = useRequestActions(askType || "", askId || "")
+  const { acceptRequest, rejectRequest, finishRequest, isAccepting, isRejecting, isFinishing } = useRequestActions(
+    askType || "",
+    askId || "",
+  )
 
   const requests = requestsData?.data || []
 
   // Check user type from localStorage
   useEffect(() => {
     const storedUserType = localStorage.getItem("user-type")
+    const storedUserEmail = localStorage.getItem("user-email") // Assuming email is stored in localStorage
     setUserType(storedUserType)
+    setCurrentUserEmail(storedUserEmail)
   }, [])
 
   if (!userContext) {
@@ -230,23 +276,17 @@ export function AskDetailsPage() {
           navigator.clipboard
             .writeText(cleanPhone)
             .then(() => {
-              alert(
-                `Phone number copied to clipboard: ${phoneNumber}\n\nYou can now paste it into your phone app or calling software.`,
-              )
+              toast.success(`Phone number copied: ${phoneNumber}`)
             })
             .catch(() => {
-              alert(
-                `Client's phone number: ${phoneNumber}\n\nPlease use your phone or calling software to dial this number.`,
-              )
+              toast.error(`Phone number: ${phoneNumber}`)
             })
         } else {
-          alert(
-            `Client's phone number: ${phoneNumber}\n\nPlease use your phone or calling software to dial this number.`,
-          )
+          toast.error(`Phone number: ${phoneNumber}`)
         }
       }
     } else {
-      alert("Phone number not available.")
+      toast.error("Phone number not available.")
     }
   }
 
@@ -266,7 +306,7 @@ Best regards`
       const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
       window.open(mailtoLink, "_blank")
     } else {
-      alert("Email address not available.")
+      toast.error("Email address not available.")
     }
   }
 
@@ -284,7 +324,7 @@ Best regards`
 
   const handleSubmitOffer = () => {
     if (!offerComment.trim()) {
-      alert("Please enter a comment for your offer.")
+      toast.error("Please enter a comment for your offer.")
       return
     }
     setShowConfirmation(true)
@@ -302,16 +342,21 @@ Best regards`
       // Determine API endpoint and body based on ask type
       const normalizedAskType = askType?.toLowerCase().trim()
 
+      // Base body structure for Add Offer (all null values)
+      const baseOfferBody = {
+        comment: offerComment,
+        isAccepted: null,
+        isFinished: null,
+        isRejected: null,
+      }
+
       switch (normalizedAskType) {
         case "engineer":
         case "ask-engineer":
           endpoint = `${pathUrl}/api/v1/request-ask-engineer`
           requestBody = {
+            ...baseOfferBody,
             askEngineer: { id: Number.parseInt(askId) },
-            comment: offerComment,
-            isAccepted: null,
-            isFinished: null,
-            isRejected: null,
           }
           break
 
@@ -319,11 +364,8 @@ Best regards`
         case "ask-worker":
           endpoint = `${pathUrl}/api/v1/request-ask-worker`
           requestBody = {
+            ...baseOfferBody,
             askWorker: { id: Number.parseInt(askId) },
-            comment: offerComment,
-            isAccepted: null,
-            isFinished: null,
-            isRejected: null,
           }
           break
 
@@ -332,11 +374,8 @@ Best regards`
         case "home_renovate":
           endpoint = `${pathUrl}/api/v1/request-home-renovate`
           requestBody = {
+            ...baseOfferBody,
             homeRenovate: { id: Number.parseInt(askId) },
-            comment: offerComment,
-            isAccepted: null,
-            isFinished: null,
-            isRejected: null,
           }
           break
 
@@ -345,11 +384,8 @@ Best regards`
         case "custom_package":
           endpoint = `${pathUrl}/api/v1/request-select-custom-package`
           requestBody = {
+            ...baseOfferBody,
             selectCustomPackage: { id: Number.parseInt(askId) },
-            comment: offerComment,
-            isAccepted: null,
-            isFinished: null,
-            isRejected: null,
           }
           break
 
@@ -357,17 +393,17 @@ Best regards`
         case "requestdesign":
           endpoint = `${pathUrl}/api/v1/request-request-design`
           requestBody = {
-            askWorker: { id: Number.parseInt(askId) },
-            comment: offerComment,
-            isAccepted: null,
-            isFinished: null,
-            isRejected: null,
+            ...baseOfferBody,
+            requestDesign: { id: Number.parseInt(askId) },
           }
           break
 
         default:
           throw new Error(`Unsupported ask type: ${askType}`)
       }
+
+      console.log("Add Offer - Endpoint:", endpoint)
+      console.log("Add Offer - Body:", requestBody)
 
       const response = await axios.post(endpoint, requestBody, {
         headers: {
@@ -378,7 +414,7 @@ Best regards`
       })
 
       if (response.status === 200 || response.status === 201) {
-        alert("Your offer has been submitted successfully!")
+        toast.success("Your offer has been submitted successfully!")
         setShowOfferModal(false)
         setShowConfirmation(false)
         setOfferComment("")
@@ -389,25 +425,81 @@ Best regards`
       console.error("Error submitting offer:", error)
       if (axios.isAxiosError(error)) {
         if (error.response?.status === 400) {
-          alert("Invalid request. Please check your offer details.")
+          toast.error("Invalid request. Please check your offer details.")
         } else if (error.response?.status === 401) {
-          alert("You are not authorized to make this offer. Please log in again.")
+          toast.error("You are not authorized to make this offer. Please log in again.")
         } else if (error.response?.status === 409) {
-          alert("You have already made an offer for this request.")
+          toast.error("You have already made an offer for this request.")
         } else {
-          alert("Failed to submit offer. Please try again later.")
+          toast.error("Failed to submit offer. Please try again later.")
         }
       } else {
-        alert("Network error. Please check your connection and try again.")
+        toast.error("Network error. Please check your connection and try again.")
       }
     } finally {
       setIsSubmittingOffer(false)
     }
   }
 
-  // Check if user can make offers (not general-user)
-  const canMakeOffer = userType && userType !== "general user"
-  console.log(userType , canMakeOffer)
+  // Enhanced accept request with finish functionality
+  const handleAcceptRequest = (requestId: number) => {
+    acceptRequest(requestId, {
+      onSuccess: () => {
+        toast.success("Request accepted successfully!")
+      },
+      onError: () => {
+        toast.error("Failed to accept request. Please try again.")
+      },
+    })
+  }
+
+  // Enhanced reject request
+  const handleRejectRequest = (requestId: number) => {
+    rejectRequest(requestId, {
+      onSuccess: () => {
+        toast.success("Request rejected successfully!")
+      },
+      onError: () => {
+        toast.error("Failed to reject request. Please try again.")
+      },
+    })
+  }
+
+  // New finish request handler
+  const handleFinishRequest = (requestId: number) => {
+    finishRequest(requestId, {
+      onSuccess: () => {
+        toast.success("Request marked as finished!")
+      },
+      onError: () => {
+        toast.error("Failed to finish request. Please try again.")
+      },
+    })
+  }
+
+  // Check if user can make offers and interact with this ask type
+  const canUserInteract = canUserInteractWithAskType(userType, askType)
+  const canMakeOffer = userType && userType !== "general user" && canUserInteract
+
+  // Check if user can show Accept/Reject/Finish buttons
+  const canShowAcceptReject = (() => {
+    // General users should never see these buttons
+    if (userType === "general user") {
+      return false
+    }
+
+    // Engineers should never see these buttons
+    if (userType === "engineer") {
+      return false
+    }
+
+    // For other user types, only show if they are the owner of the ask (same email)
+    if (userType && userType !== "general user" && userType !== "engineer") {
+      return currentUserEmail === askDetails?.user.email && canUserInteract
+    }
+
+    return false
+  })()
 
   if (isLoading) {
     return (
@@ -841,22 +933,6 @@ Best regards`
               </CardContent>
             </Card>
 
-            {/* Add Offer Button - Only show for non-general users */}
-            {canMakeOffer && canShowActions(askDetails) && (
-              <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-250 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <CardContent className="p-6 text-center">
-                  <Button
-                    onClick={handleAddOffer}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                  >
-                    <Plus className="w-5 h-5 mr-3" />
-                    Add Offer
-                  </Button>
-                  <p className="text-gray-600 text-sm mt-3">Submit your professional offer for this project</p>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Photos Section */}
             {(() => {
               const photos = getPhotosFromAskDetails(askDetails)
@@ -899,6 +975,22 @@ Best regards`
                 </Card>
               )
             })()}
+
+            {/* Add Offer Button - Only show for non-general users who can interact with this ask type */}
+            {canMakeOffer && canShowActions(askDetails) && (
+              <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-250 shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <CardContent className="p-6 text-center">
+                  <Button
+                    onClick={handleAddOffer}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Plus className="w-5 h-5 mr-3" />
+                    Add Offer
+                  </Button>
+                  <p className="text-gray-600 text-sm mt-3">Submit your professional offer for this project</p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Requests Section */}
             <Card className="animate-in fade-in slide-in-from-right-4 duration-700 delay-200 shadow-lg border-0 overflow-hidden">
@@ -944,15 +1036,12 @@ Best regards`
                 ) : (
                   <div className="divide-y divide-gray-100">
                     {requests.map((request) => (
-                      <div
-                        key={request.id}
-                        className="p-6 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-300 group"
-                      >
+                      <div key={request.id} className="p-6 transition-all duration-300">
                         {/* Request Header */}
                         <div className="flex items-start justify-between mb-6">
                           <div className="flex items-start gap-4">
                             <div className="relative">
-                              <Avatar className="w-16 h-16 ring-3 ring-white shadow-lg group-hover:ring-blue-200 transition-all duration-300">
+                              <Avatar className="w-16 h-16 ring-3 ring-white shadow-lg">
                                 {request.user.personalPhoto ? (
                                   <AvatarImage
                                     src={`${pathUrl}${request.user.personalPhoto}`}
@@ -970,9 +1059,7 @@ Best regards`
 
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <h4 className="font-bold text-xl text-gray-900 group-hover:text-blue-700 transition-colors">
-                                  {getRequestUserName(request.user)}
-                                </h4>
+                                <h4 className="font-bold text-xl text-gray-900">{getRequestUserName(request.user)}</h4>
                                 <Badge variant="outline" className="text-xs px-2 py-1">
                                   {request.user.userType?.name || "Professional"}
                                 </Badge>
@@ -995,9 +1082,9 @@ Best regards`
                             </div>
                           </div>
 
-                          {/* Status badges */}
+                          {/* Status badges - No hover effects */}
                           <div className="flex flex-col gap-2 items-end">
-                            {request.isAccepted === true && (
+                            {request.isAccepted === true && request.isFinished !== true && (
                               <Badge className="bg-green-100 text-green-800 border-green-200 px-3 py-1 font-semibold">
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Accepted
@@ -1015,12 +1102,14 @@ Best regards`
                                 Completed
                               </Badge>
                             )}
-                            {request.isAccepted === null && request.isRejected === null && (
-                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 px-3 py-1 font-semibold animate-pulse">
-                                <Clock className="w-4 h-4 mr-2" />
-                                Pending
-                              </Badge>
-                            )}
+                            {request.isAccepted === null &&
+                              request.isRejected === null &&
+                              request.isFinished === null && (
+                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 px-3 py-1 font-semibold animate-pulse">
+                                  <Clock className="w-4 h-4 mr-2" />
+                                  Pending
+                                </Badge>
+                              )}
                           </div>
                         </div>
 
@@ -1072,41 +1161,67 @@ Best regards`
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        {canShowActions(askDetails) && request.isAccepted === null && request.isRejected === null && (
+                        {/* Action Buttons - Only show Accept/Reject for non-general users who can interact with this ask type */}
+                        {canShowActions(askDetails) &&
+                          request.isAccepted === null &&
+                          request.isRejected === null &&
+                          canShowAcceptReject && (
+                            <div className="flex gap-3 pt-4 border-t border-gray-200">
+                              <Button
+                                onClick={() => handleAcceptRequest(request.id)}
+                                disabled={isAccepting || isRejecting}
+                                className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                              >
+                                {isAccepting ? (
+                                  <>
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                    Accepting Request...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-5 h-5 mr-2" />
+                                    Accept Request
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                onClick={() => handleRejectRequest(request.id)}
+                                disabled={isAccepting || isRejecting}
+                                variant="outline"
+                                className="flex-1 border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 py-3 font-semibold transition-all duration-300 transform hover:scale-[1.02]"
+                              >
+                                {isRejecting ? (
+                                  <>
+                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                    Rejecting Request...
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle className="w-5 h-5 mr-2" />
+                                    Decline Request
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+
+                        {/* Finish Button - Only show for non-general users when request is accepted but not finished */}
+                        {canShowAcceptReject && request.isAccepted === true && request.isFinished !== true && (
                           <div className="flex gap-3 pt-4 border-t border-gray-200">
                             <Button
-                              onClick={() => acceptRequest(request.id)}
-                              disabled={isAccepting || isRejecting}
-                              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+                              onClick={() => handleFinishRequest(request.id)}
+                              disabled={isFinishing}
+                              className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
                             >
-                              {isAccepting ? (
+                              {isFinishing ? (
                                 <>
                                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                  Accepting Request...
+                                  Finishing...
                                 </>
                               ) : (
                                 <>
                                   <CheckCircle className="w-5 h-5 mr-2" />
-                                  Accept Request
-                                </>
-                              )}
-                            </Button>
-                            <Button
-                              onClick={() => rejectRequest(request.id)}
-                              disabled={isAccepting || isRejecting}
-                              variant="outline"
-                              className="flex-1 border-2 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 py-3 font-semibold transition-all duration-300 transform hover:scale-[1.02]"
-                            >
-                              {isRejecting ? (
-                                <>
-                                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                  Rejecting Request...
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="w-5 h-5 mr-2" />
-                                  Decline Request
+                                  Finish
                                 </>
                               )}
                             </Button>
@@ -1146,7 +1261,15 @@ Best regards`
 
         {/* Add Offer Modal */}
         {showOfferModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={(e) => {
+              // Close modal if clicking on backdrop
+              if (e.target === e.currentTarget) {
+                handleCancelOffer()
+              }
+            }}
+          >
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -1204,49 +1327,13 @@ Best regards`
         )}
 
         {/* Confirmation Modal */}
-        {showConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full">
-              <div className="p-6 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare className="w-8 h-8 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Your Offer</h3>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to submit this offer? This action cannot be undone.
-                </p>
-
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleConfirmOffer}
-                    disabled={isSubmittingOffer}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 font-semibold"
-                  >
-                    {isSubmittingOffer ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Yes, Submit
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={() => setShowConfirmation(false)}
-                    disabled={isSubmittingOffer}
-                    variant="outline"
-                    className="flex-1 py-3"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <ConfirmOfferModal
+          isOpen={showConfirmation}
+          onClose={() => setShowConfirmation(false)}
+          onConfirm={handleConfirmOffer}
+          isSubmitting={isSubmittingOffer}
+          offerComment={offerComment}
+        />
       </div>
     </div>
   )
