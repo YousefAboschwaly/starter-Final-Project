@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import axios from "axios"
+import { useLocation, useNavigate } from "react-router-dom"
 
 // Import components
 import { SearchBar } from "./SearchBar"
@@ -57,6 +58,8 @@ interface Product {
 export default function ShopNow() {
   const userContext = useContext(UserContext)
   const { appliedFilters, clearAppliedFilters, clearSpecificFilter } = useFilterContext()
+  const location = useLocation()
+  const navigate = useNavigate()
 
   // Ref to track if component is actually being used (not just mounting/remounting)
   const hasInteractedRef = useRef(false)
@@ -90,6 +93,18 @@ export default function ShopNow() {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoadingConfig, setIsLoadingConfig] = useState(true)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+
+  // Extract search query from URL parameters on component mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const searchQuery = searchParams.get("search")
+
+    if (searchQuery) {
+      setSearchName(searchQuery)
+      // Clear the URL parameter after extracting it
+      navigate("/shop-now", { replace: true })
+    }
+  }, [location.search, navigate])
 
   // Mark component as "interacted with" after a short delay to avoid Strict Mode issues
   useEffect(() => {

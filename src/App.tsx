@@ -10,7 +10,6 @@ import ProtectedRoute from "./MyComponents/ProtectedRoute"
 import UserContextProvider from "./Contexts/UserContext"
 import { CartProvider } from "./Contexts/CartContext.tsx"
 import { FilterProvider } from "./Contexts/FilterContext.tsx"
-import { ErrorBoundary } from "./MyComponents/error-boundary"
 import { RouteLoading } from "./MyComponents/route-loading"
 
 // Lazy load all components
@@ -52,16 +51,17 @@ const AskDetailsPage = lazy(() =>
 )
 const Ask = lazy(() => import("./Pages/Ask/Ask.tsx"))
 const WebAiPage = lazy(() => import("./Pages/WebAiPage.tsx"))
+const ShopNow = lazy(() => import("./Pages/Ask/ShopNow/ShopNow.tsx"))
 
 // Initialize QueryClient outside the component
 const queryClient = new QueryClient()
 
-// Higher-order component using RouteLoading (combines Suspense + ErrorBoundary)
+// Higher-order component to wrap routes with Suspense and Error Boundary
 const SuspenseWrapper = ({ children, loadingMessage }: { children: React.ReactNode; loadingMessage?: string }) => (
   <RouteLoading loadingMessage={loadingMessage}>{children}</RouteLoading>
 )
 
-// Protected Route with RouteLoading (combines ProtectedRoute + Suspense + ErrorBoundary)
+// Protected Route with Suspense and Error Boundary
 const ProtectedSuspenseRoute = ({
   children,
   loadingMessage,
@@ -78,7 +78,7 @@ function App() {
     {
       path: "",
       element: (
-        <SuspenseWrapper loadingMessage="Loading application...">
+        <SuspenseWrapper>
           <Layout />
         </SuspenseWrapper>
       ),
@@ -86,15 +86,23 @@ function App() {
         {
           index: true,
           element: (
-            <SuspenseWrapper loadingMessage="Loading home page...">
+            <SuspenseWrapper>
               <Home />
             </SuspenseWrapper>
           ),
         },
         {
+          path: "shop-now",
+          element: (
+            <ProtectedSuspenseRoute loadingMessage="Loading shop...">
+              <ShopNow />
+            </ProtectedSuspenseRoute>
+          ),
+        },
+        {
           path: "edit_profile",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading profile editor...">
+            <ProtectedSuspenseRoute>
               <ProfileEditor />
             </ProtectedSuspenseRoute>
           ),
@@ -102,7 +110,7 @@ function App() {
         {
           path: "profile",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading profile...">
+            <ProtectedSuspenseRoute>
               <Profile />
             </ProtectedSuspenseRoute>
           ),
@@ -110,7 +118,7 @@ function App() {
         {
           path: "about",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading about page...">
+            <ProtectedSuspenseRoute>
               <About />
             </ProtectedSuspenseRoute>
           ),
@@ -118,7 +126,7 @@ function App() {
         {
           path: "project/:projectId",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading project details...">
+            <ProtectedSuspenseRoute>
               <Project />
             </ProtectedSuspenseRoute>
           ),
@@ -126,7 +134,7 @@ function App() {
         {
           path: "addproduct",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading product form...">
+            <ProtectedSuspenseRoute>
               <AddProduct />
             </ProtectedSuspenseRoute>
           ),
@@ -134,7 +142,7 @@ function App() {
         {
           path: "editproduct/:productId",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading product editor...">
+            <ProtectedSuspenseRoute>
               <EditProduct />
             </ProtectedSuspenseRoute>
           ),
@@ -142,7 +150,7 @@ function App() {
         {
           path: "productlist",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading product list...">
+            <ProtectedSuspenseRoute>
               <ProductList />
             </ProtectedSuspenseRoute>
           ),
@@ -150,7 +158,7 @@ function App() {
         {
           path: "Ask",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading ask form...">
+            <ProtectedSuspenseRoute>
               <Ask />
             </ProtectedSuspenseRoute>
           ),
@@ -167,7 +175,7 @@ function App() {
         {
           path: "/MyAsks/AskEngineer",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading engineer asks...">
+            <ProtectedSuspenseRoute>
               <MyAsksPage selectedServiceType="engineer" />
             </ProtectedSuspenseRoute>
           ),
@@ -175,7 +183,7 @@ function App() {
         {
           path: "/MyAsks/AskWorker",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading worker asks...">
+            <ProtectedSuspenseRoute>
               <MyAsksPage selectedServiceType="worker" />
             </ProtectedSuspenseRoute>
           ),
@@ -183,7 +191,7 @@ function App() {
         {
           path: "/MyAsks/RequestDesign",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading design requests...">
+            <ProtectedSuspenseRoute>
               <MyAsksPage selectedServiceType="request-design" />
             </ProtectedSuspenseRoute>
           ),
@@ -191,7 +199,7 @@ function App() {
         {
           path: "/MyAsks/RenovateHome",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading renovation requests...">
+            <ProtectedSuspenseRoute>
               <MyAsksPage selectedServiceType="home-renovate" />
             </ProtectedSuspenseRoute>
           ),
@@ -199,7 +207,7 @@ function App() {
         {
           path: "/MyAsks/CustomPackage",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading custom packages...">
+            <ProtectedSuspenseRoute>
               <MyAsksPage selectedServiceType="custom-package" />
             </ProtectedSuspenseRoute>
           ),
@@ -208,7 +216,7 @@ function App() {
         {
           path: "/:askType/:askId",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading ask details...">
+            <ProtectedSuspenseRoute>
               <AskDetailsPage />
             </ProtectedSuspenseRoute>
           ),
@@ -216,7 +224,7 @@ function App() {
         {
           path: "/TryAI",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading AI assistant...">
+            <ProtectedSuspenseRoute>
               <WebAiPage />
             </ProtectedSuspenseRoute>
           ),
@@ -224,7 +232,7 @@ function App() {
         {
           path: "products/:id",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading product details...">
+            <ProtectedSuspenseRoute>
               <Viewdetails />
             </ProtectedSuspenseRoute>
           ),
@@ -240,7 +248,7 @@ function App() {
         {
           path: "order-success",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading order confirmation...">
+            <ProtectedSuspenseRoute>
               <OrderSuccess />
             </ProtectedSuspenseRoute>
           ),
@@ -248,7 +256,7 @@ function App() {
         {
           path: "engineers/:id",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading engineer profile...">
+            <ProtectedSuspenseRoute>
               <EngineerDetails />
             </ProtectedSuspenseRoute>
           ),
@@ -256,7 +264,7 @@ function App() {
         {
           path: "technical-workers/:id",
           element: (
-            <ProtectedSuspenseRoute loadingMessage="Loading worker profile...">
+            <ProtectedSuspenseRoute>
               <TechnicalWorkerDetails />
             </ProtectedSuspenseRoute>
           ),
@@ -264,7 +272,7 @@ function App() {
         {
           path: "/",
           element: (
-            <SuspenseWrapper loadingMessage="Loading dashboard...">
+            <SuspenseWrapper>
               <UsrLayout />
             </SuspenseWrapper>
           ),
@@ -272,7 +280,7 @@ function App() {
             {
               index: true,
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading orders...">
+                <ProtectedSuspenseRoute>
                   <OrdersPage />
                 </ProtectedSuspenseRoute>
               ),
@@ -280,7 +288,7 @@ function App() {
             {
               path: "orders",
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading orders...">
+                <ProtectedSuspenseRoute>
                   <OrdersPage />
                 </ProtectedSuspenseRoute>
               ),
@@ -288,7 +296,7 @@ function App() {
             {
               path: "orders/:id",
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading order details...">
+                <ProtectedSuspenseRoute>
                   <OrderDetailsPage />
                 </ProtectedSuspenseRoute>
               ),
@@ -296,7 +304,7 @@ function App() {
             {
               path: "wishlist",
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading wishlist...">
+                <ProtectedSuspenseRoute>
                   <WishlistPage />
                 </ProtectedSuspenseRoute>
               ),
@@ -304,7 +312,7 @@ function App() {
             {
               path: "user-profile",
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading user profile...">
+                <ProtectedSuspenseRoute>
                   <ProfilePage />
                 </ProtectedSuspenseRoute>
               ),
@@ -312,7 +320,7 @@ function App() {
             {
               path: "addresses",
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading addresses...">
+                <ProtectedSuspenseRoute>
                   <AddressesPage />
                 </ProtectedSuspenseRoute>
               ),
@@ -320,7 +328,7 @@ function App() {
             {
               path: "payments",
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading payment methods...">
+                <ProtectedSuspenseRoute>
                   <PaymentsPage />
                 </ProtectedSuspenseRoute>
               ),
@@ -328,7 +336,7 @@ function App() {
             {
               path: "notifications",
               element: (
-                <ProtectedSuspenseRoute loadingMessage="Loading notifications...">
+                <ProtectedSuspenseRoute>
                   <NotificationsPage />
                 </ProtectedSuspenseRoute>
               ),
@@ -338,7 +346,7 @@ function App() {
         {
           path: "client",
           element: (
-            <SuspenseWrapper loadingMessage="Loading authentication...">
+            <SuspenseWrapper>
               <Client />
             </SuspenseWrapper>
           ),
@@ -346,7 +354,7 @@ function App() {
             {
               index: true,
               element: (
-                <SuspenseWrapper loadingMessage="Loading login...">
+                <SuspenseWrapper>
                   <Login />
                 </SuspenseWrapper>
               ),
@@ -354,7 +362,7 @@ function App() {
             {
               path: "signup",
               element: (
-                <SuspenseWrapper loadingMessage="Loading signup...">
+                <SuspenseWrapper>
                   <SignUp />
                 </SuspenseWrapper>
               ),
@@ -364,7 +372,7 @@ function App() {
         {
           path: "forgot-password",
           element: (
-            <SuspenseWrapper loadingMessage="Loading password recovery...">
+            <SuspenseWrapper>
               <ForgetPassword />
             </SuspenseWrapper>
           ),
@@ -372,7 +380,7 @@ function App() {
         {
           path: "access-account/:email",
           element: (
-            <SuspenseWrapper loadingMessage="Loading account access...">
+            <SuspenseWrapper>
               <AccessAccount />
             </SuspenseWrapper>
           ),
@@ -380,7 +388,7 @@ function App() {
         {
           path: "join-as/:userType",
           element: (
-            <SuspenseWrapper loadingMessage="Loading registration...">
+            <SuspenseWrapper>
               <Company />
             </SuspenseWrapper>
           ),
@@ -388,7 +396,7 @@ function App() {
         {
           path: "*",
           element: (
-            <SuspenseWrapper loadingMessage="Loading page...">
+            <SuspenseWrapper>
               <NotFound />
             </SuspenseWrapper>
           ),
@@ -398,18 +406,16 @@ function App() {
   ])
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ReactQueryDevtools initialIsOpen={false} />
-        <UserContextProvider>
-          <CartProvider>
-            <FilterProvider>
-              <RouterProvider router={routes} />
-            </FilterProvider>
-          </CartProvider>
-        </UserContextProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ReactQueryDevtools initialIsOpen={false} />
+      <UserContextProvider>
+        <CartProvider>
+          <FilterProvider>
+            <RouterProvider router={routes} />
+          </FilterProvider>
+        </CartProvider>
+      </UserContextProvider>
+    </QueryClientProvider>
   )
 }
 

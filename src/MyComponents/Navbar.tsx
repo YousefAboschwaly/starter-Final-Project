@@ -33,7 +33,6 @@ export default function Navbar() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
 
-
   const userContext = useContext(UserContext)
   if (!userContext) {
     throw new Error("UserContext must be used within a UserContextProvider")
@@ -52,10 +51,10 @@ export default function Navbar() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (searchQuery.trim()) {
-      // Handle search functionality here
-      console.log("Searching for:", searchQuery)
-      // You can navigate to search results page or trigger search
-      // navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+      // Navigate to ShopNow page with search query as URL parameter
+      navigate(`/shop-now?search=${encodeURIComponent(searchQuery.trim())}`)
+      // Remove this line to keep the search query in the navbar
+      // setSearchQuery("")
     }
   }
 
@@ -145,7 +144,10 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-2">
               <Button
                 className="text-white border border-white/30 font-bold bg-transparent hover:bg-white/10 transition-all duration-300 ease-in-out"
-                onClick={() => {navigate('/profile');setShowAddProject(true)}}
+                onClick={() => {
+                  navigate("/profile")
+                  setShowAddProject(true)
+                }}
               >
                 Add Project
               </Button>
@@ -325,8 +327,6 @@ export default function Navbar() {
           </Sheet>
         </div>
       </div>
-
-  
     </header>
   )
 }
