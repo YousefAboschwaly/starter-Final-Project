@@ -497,7 +497,7 @@ export function OrderDetails({ order, onBack }: OrderDetailsProps) {
 
       {/* Help Button */}
       <motion.div
-        className="fixed bottom-6 right-6"
+        className="fixed bottom-24 right-6"
         initial={{ opacity: 0, scale: 0, rotate: -180 }}
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
         transition={{

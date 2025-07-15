@@ -237,14 +237,5 @@ export default function OrderDetailsPage() {
     userId: orderData.userId,
   }
 
-  // IMPORTANT: Enhanced debug log
-  console.log("=== CRITICAL ORDER STATUS DEBUG ===")
-  console.log("Navigation State:", navigationState)
-  console.log("Dropdown Selection:", navigationState?.selectedDropdownStatus)
-  console.log("Readable Status from Dropdown:", navigationState?.readableStatus)
-  console.log("Final Transformed Status:", transformedOrder.status)
-  console.log("Will Show Review Buttons:", transformedOrder.status === "Delivered")
-  console.log("================================")
-
   return <OrderDetails order={transformedOrder} onBack={() => navigate("/orders")} />
 }
