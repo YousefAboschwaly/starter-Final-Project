@@ -1,354 +1,416 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+"use client"
 
-import Home from "./Pages/Home/Home";
-import About from "./MyComponents/About";
-import NotFound from "./MyComponents/NotFound";
-import Layout from "./MyComponents/Layout";
-import Login from "./MyComponents/Login";
-import SignUp from "./MyComponents/SignUp";
-import Client from "./Pages/Client";
-import Company from "./Pages/JoinUs/Company";
-import ForgetPassword from "./Pages/ForgetPassword";
-import ProtectedRoute from "./MyComponents/ProtectedRoute";
-import UserContextProvider from "./Contexts/UserContext";
-import AccessAccount from "./MyComponents/AccessAccount";
-import ProfileEditor from "./Pages/profile-editor";
-import Profile from "./Pages/profile";
-import Project from "./Pages/project";
-import AddProduct from "./Pages/AddProduct";
-import ProductList from "./Pages/ProductList";
-import EditProduct from "./Pages/JoinUs/EditProduct";
-import Viewdetails from "./Pages/Viewdetails.tsx";
-import { CartProvider } from "./Contexts/CartContext.tsx";
-import ShoppingCart from "./Pages/Cart/ShoppingCart.tsx";
-import OrderSuccess from "./Pages/Cart/Order-Success.tsx";
-import OrdersPage from "./Pages/UserPages/OrdersPage.tsx";
-import WishlistPage from "./Pages/UserPages/WishlistPage.tsx";
-import ProfilePage from "./Pages/UserPages/ProfilePage.tsx";
-import AddressesPage from "./Pages/UserPages/AddressesPage.tsx";
-import PaymentsPage from "./Pages/UserPages/PaymentsPage.tsx";
-import NotificationsPage from "./Pages/UserPages/NotificationsPage.tsx";
-import UsrLayout from "./Pages/UserPages/components/Layout";
-import OrderDetailsPage from "./Pages/UserPages/OrderDetailsPage.tsx";
-import { FilterProvider } from "./Contexts/FilterContext.tsx";
-import EngineerDetails from "./Pages/LandingPage/TopEngineers/EngineerDetails.tsx";
-import TechnicalWorkerDetails from "./Pages/LandingPage/TopWorkers/TechnicalWorkerDetails.tsx";
-import ProductsPage from "./Pages/AllAsks/Asks.tsx";
-import { MyAsksPage } from "./Pages/AllAsks/components/my-asks-page.tsx";
-import { AskDetailsPage } from "./Pages/AllAsks/components/ask-details-page.tsx";
-import { useState } from "react";
-import Ask from "./Pages/Ask/Ask.tsx";
-import WebAiPage from "./Pages/WebAiPage.tsx";
+import type React from "react"
+
+import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
+import { lazy, useState } from "react"
+import ProtectedRoute from "./MyComponents/ProtectedRoute"
+import UserContextProvider from "./Contexts/UserContext"
+import { CartProvider } from "./Contexts/CartContext.tsx"
+import { FilterProvider } from "./Contexts/FilterContext.tsx"
+import { ErrorBoundary } from "./MyComponents/error-boundary"
+import { RouteLoading } from "./MyComponents/route-loading"
+
+// Lazy load all components
+const Home = lazy(() => import("./Pages/Home/Home"))
+const About = lazy(() => import("./MyComponents/About"))
+const NotFound = lazy(() => import("./MyComponents/NotFound"))
+const Layout = lazy(() => import("./MyComponents/Layout"))
+const Login = lazy(() => import("./MyComponents/Login"))
+const SignUp = lazy(() => import("./MyComponents/SignUp"))
+const Client = lazy(() => import("./Pages/Client"))
+const Company = lazy(() => import("./Pages/JoinUs/Company"))
+const ForgetPassword = lazy(() => import("./Pages/ForgetPassword"))
+const AccessAccount = lazy(() => import("./MyComponents/AccessAccount"))
+const ProfileEditor = lazy(() => import("./Pages/profile-editor"))
+const Profile = lazy(() => import("./Pages/profile"))
+const Project = lazy(() => import("./Pages/project"))
+const AddProduct = lazy(() => import("./Pages/AddProduct"))
+const ProductList = lazy(() => import("./Pages/ProductList"))
+const EditProduct = lazy(() => import("./Pages/JoinUs/EditProduct"))
+const Viewdetails = lazy(() => import("./Pages/Viewdetails.tsx"))
+const ShoppingCart = lazy(() => import("./Pages/Cart/ShoppingCart.tsx"))
+const OrderSuccess = lazy(() => import("./Pages/Cart/Order-Success.tsx"))
+const OrdersPage = lazy(() => import("./Pages/UserPages/OrdersPage.tsx"))
+const WishlistPage = lazy(() => import("./Pages/UserPages/WishlistPage.tsx"))
+const ProfilePage = lazy(() => import("./Pages/UserPages/ProfilePage.tsx"))
+const AddressesPage = lazy(() => import("./Pages/UserPages/AddressesPage.tsx"))
+const PaymentsPage = lazy(() => import("./Pages/UserPages/PaymentsPage.tsx"))
+const NotificationsPage = lazy(() => import("./Pages/UserPages/NotificationsPage.tsx"))
+const UsrLayout = lazy(() => import("./Pages/UserPages/components/Layout"))
+const OrderDetailsPage = lazy(() => import("./Pages/UserPages/OrderDetailsPage.tsx"))
+const EngineerDetails = lazy(() => import("./Pages/LandingPage/TopEngineers/EngineerDetails.tsx"))
+const TechnicalWorkerDetails = lazy(() => import("./Pages/LandingPage/TopWorkers/TechnicalWorkerDetails.tsx"))
+const ProductsPage = lazy(() => import("./Pages/AllAsks/Asks.tsx"))
+const MyAsksPage = lazy(() =>
+  import("./Pages/AllAsks/components/my-asks-page.tsx").then((module) => ({ default: module.MyAsksPage })),
+)
+const AskDetailsPage = lazy(() =>
+  import("./Pages/AllAsks/components/ask-details-page.tsx").then((module) => ({ default: module.AskDetailsPage })),
+)
+const Ask = lazy(() => import("./Pages/Ask/Ask.tsx"))
+const WebAiPage = lazy(() => import("./Pages/WebAiPage.tsx"))
 
 // Initialize QueryClient outside the component
-const queryClient = new QueryClient();
+const queryClient = new QueryClient()
+
+// Higher-order component using RouteLoading (combines Suspense + ErrorBoundary)
+const SuspenseWrapper = ({ children, loadingMessage }: { children: React.ReactNode; loadingMessage?: string }) => (
+  <RouteLoading loadingMessage={loadingMessage}>{children}</RouteLoading>
+)
+
+// Protected Route with RouteLoading (combines ProtectedRoute + Suspense + ErrorBoundary)
+const ProtectedSuspenseRoute = ({
+  children,
+  loadingMessage,
+}: { children: React.ReactNode; loadingMessage?: string }) => (
+  <ProtectedRoute>
+    <RouteLoading loadingMessage={loadingMessage}>{children}</RouteLoading>
+  </ProtectedRoute>
+)
 
 function App() {
-    const [showMyAsks, setShowMyAsks] = useState(false)
+  const [showMyAsks, setShowMyAsks] = useState(false)
 
   const routes = createBrowserRouter([
     {
       path: "",
-      element: <Layout />,
+      element: (
+        <SuspenseWrapper loadingMessage="Loading application...">
+          <Layout />
+        </SuspenseWrapper>
+      ),
       children: [
         {
           index: true,
-          element: <Home />,
+          element: (
+            <SuspenseWrapper loadingMessage="Loading home page...">
+              <Home />
+            </SuspenseWrapper>
+          ),
         },
         {
           path: "edit_profile",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading profile editor...">
               <ProfileEditor />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "profile",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading profile...">
               <Profile />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
-
         {
           path: "about",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading about page...">
               <About />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "project/:projectId",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading project details...">
               <Project />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "addproduct",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading product form...">
               <AddProduct />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "editproduct/:productId",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading product editor...">
               <EditProduct />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "productlist",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading product list...">
               <ProductList />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "Ask",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading ask form...">
               <Ask />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         // All Asks Part
         {
           path: "All-Asks",
           element: (
-            <ProtectedRoute>
-              <ProductsPage
-                showMyAsks={showMyAsks}
-                setShowMyAsks={setShowMyAsks}
-              />
-            </ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading asks...">
+              <ProductsPage showMyAsks={showMyAsks} setShowMyAsks={setShowMyAsks} />
+            </ProtectedSuspenseRoute>
           ),
         },
-
         {
           path: "/MyAsks/AskEngineer",
           element: (
-            <ProtectedRoute>
-              <MyAsksPage
-                selectedServiceType="engineer"
-               
-              />
-            </ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading engineer asks...">
+              <MyAsksPage selectedServiceType="engineer" />
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "/MyAsks/AskWorker",
           element: (
-            <ProtectedRoute>
-              <MyAsksPage
-                selectedServiceType="worker"
-               
-              />
-            </ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading worker asks...">
+              <MyAsksPage selectedServiceType="worker" />
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "/MyAsks/RequestDesign",
           element: (
-            <ProtectedRoute>
-              <MyAsksPage
-                selectedServiceType="request-design"
-               
-              />
-            </ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading design requests...">
+              <MyAsksPage selectedServiceType="request-design" />
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "/MyAsks/RenovateHome",
           element: (
-            <ProtectedRoute>
-              <MyAsksPage
-                selectedServiceType="home-renovate"
-               
-              />
-            </ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading renovation requests...">
+              <MyAsksPage selectedServiceType="home-renovate" />
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "/MyAsks/CustomPackage",
           element: (
-            <ProtectedRoute>
-              <MyAsksPage
-                selectedServiceType="custom-package"
-               
-              />
-            </ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading custom packages...">
+              <MyAsksPage selectedServiceType="custom-package" />
+            </ProtectedSuspenseRoute>
           ),
         },
         /* Ask Details pages */
-
         {
           path: "/:askType/:askId",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading ask details...">
               <AskDetailsPage />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "/TryAI",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading AI assistant...">
               <WebAiPage />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
-  
         {
           path: "products/:id",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading product details...">
               <Viewdetails />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "cart",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading shopping cart...">
               <ShoppingCart />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "order-success",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading order confirmation...">
               <OrderSuccess />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "engineers/:id",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading engineer profile...">
               <EngineerDetails />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "technical-workers/:id",
           element: (
-            <ProtectedRoute>
+            <ProtectedSuspenseRoute loadingMessage="Loading worker profile...">
               <TechnicalWorkerDetails />
-            </ProtectedRoute>
+            </ProtectedSuspenseRoute>
           ),
         },
         {
           path: "/",
-          element: <UsrLayout />,
+          element: (
+            <SuspenseWrapper loadingMessage="Loading dashboard...">
+              <UsrLayout />
+            </SuspenseWrapper>
+          ),
           children: [
             {
               index: true,
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading orders...">
                   <OrdersPage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
             {
               path: "orders",
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading orders...">
                   <OrdersPage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
             {
               path: "orders/:id",
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading order details...">
                   <OrderDetailsPage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
             {
               path: "wishlist",
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading wishlist...">
                   <WishlistPage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
             {
               path: "user-profile",
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading user profile...">
                   <ProfilePage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
             {
               path: "addresses",
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading addresses...">
                   <AddressesPage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
             {
               path: "payments",
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading payment methods...">
                   <PaymentsPage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
             {
               path: "notifications",
               element: (
-                <ProtectedRoute>
+                <ProtectedSuspenseRoute loadingMessage="Loading notifications...">
                   <NotificationsPage />
-                </ProtectedRoute>
+                </ProtectedSuspenseRoute>
               ),
             },
           ],
         },
-
         {
           path: "client",
-          element: <Client />,
+          element: (
+            <SuspenseWrapper loadingMessage="Loading authentication...">
+              <Client />
+            </SuspenseWrapper>
+          ),
           children: [
-            { index: true, element: <Login /> },
-            { path: "signup", element: <SignUp /> },
+            {
+              index: true,
+              element: (
+                <SuspenseWrapper loadingMessage="Loading login...">
+                  <Login />
+                </SuspenseWrapper>
+              ),
+            },
+            {
+              path: "signup",
+              element: (
+                <SuspenseWrapper loadingMessage="Loading signup...">
+                  <SignUp />
+                </SuspenseWrapper>
+              ),
+            },
           ],
         },
-        { path: "forgot-password", element: <ForgetPassword /> },
-        { path: "access-account/:email", element: <AccessAccount /> },
-        { path: "join-as/:userType", element: <Company /> },
-        { path: "*", element: <NotFound /> }, // Wildcard route for 404
+        {
+          path: "forgot-password",
+          element: (
+            <SuspenseWrapper loadingMessage="Loading password recovery...">
+              <ForgetPassword />
+            </SuspenseWrapper>
+          ),
+        },
+        {
+          path: "access-account/:email",
+          element: (
+            <SuspenseWrapper loadingMessage="Loading account access...">
+              <AccessAccount />
+            </SuspenseWrapper>
+          ),
+        },
+        {
+          path: "join-as/:userType",
+          element: (
+            <SuspenseWrapper loadingMessage="Loading registration...">
+              <Company />
+            </SuspenseWrapper>
+          ),
+        },
+        {
+          path: "*",
+          element: (
+            <SuspenseWrapper loadingMessage="Loading page...">
+              <NotFound />
+            </SuspenseWrapper>
+          ),
+        },
       ],
     },
-  ]);
+  ])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ReactQueryDevtools initialIsOpen={false} />
-
-      <UserContextProvider>
-        <CartProvider>
-          <FilterProvider>
-            <RouterProvider router={routes} />
-          </FilterProvider>
-        </CartProvider>
-      </UserContextProvider>
-    </QueryClientProvider>
-  );
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ReactQueryDevtools initialIsOpen={false} />
+        <UserContextProvider>
+          <CartProvider>
+            <FilterProvider>
+              <RouterProvider router={routes} />
+            </FilterProvider>
+          </CartProvider>
+        </UserContextProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  )
 }
 
-export default App;
+export default App
