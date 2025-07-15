@@ -179,20 +179,43 @@ export default function LandingPage() {
   const [topTechnicalWorkers, setTopTechnicalWorkers] = useState<TechnicalWorker[]>([])
   console.log(userToken)
 
-useEffect(() => {
-  window.scrollTo({ top: 0, behavior: "smooth" }); // or "auto"
-}, []);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" }) // or "auto"
+  }, [])
 
-  // Simplified API fetching - all 5 APIs together
+  // Modified API fetching - works with or without authentication
   useEffect(() => {
     const fetchAllData = async () => {
-      if (!pathUrl || !userToken) return
+      // Only require pathUrl, userToken is optional
+      if (!pathUrl) {
+        console.warn("pathUrl is not available, cannot fetch data")
+        setLoading(false)
+        return
+      }
 
       try {
         setLoading(true)
         setError(null)
 
-        // Fetch all 5 APIs together
+        console.log("Fetching data with:", { pathUrl, userToken: !!userToken, userId })
+
+        // Create headers - include Authorization only if userToken exists
+        const createHeaders = () => {
+          const headers: Record<string, string> = {
+            "Accept-language": "en",
+            "Content-Type": "application/json",
+          }
+
+          if (userToken) {
+            headers.Authorization = `Bearer ${userToken}`
+          }
+
+          return headers
+        }
+
+        const headers = createHeaders()
+
+        // Fetch all 6 APIs together
         const [
           businessConfigRes,
           highestRatedRes,
@@ -202,40 +225,22 @@ useEffect(() => {
           topTechnicalWorkersRes,
         ] = await Promise.allSettled([
           fetch(`${pathUrl}/api/v1/business-config`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
+            headers,
           }),
           fetch(`${pathUrl}/api/v1/products/highest-rated`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
+            headers,
           }),
           fetch(`${pathUrl}/api/v1/products/top-best-seller`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
+            headers,
           }),
-          fetch(`${pathUrl}/api/v1/products/recommended-for-you?userId=${userId || ""}`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
+          fetch(`${pathUrl}/api/v1/products/recommended-for-you${userId ? `?userId=${userId}` : ""}`, {
+            headers,
           }),
           fetch(`${pathUrl}/api/v1/engineers/top-engineers`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
+            headers,
           }),
           fetch(`${pathUrl}/api/v1/technical-workers/top-workers`, {
-            headers: {
-              "Accept-language": "en",
-              Authorization: `Bearer ${userToken}`,
-            },
+            headers,
           }),
         ])
 
@@ -243,24 +248,35 @@ useEffect(() => {
         let businessTypesData: BusinessType[] = []
         let businessTypeCategoriesData: BusinessTypeCategory[] = []
 
-        if (businessConfigRes.status === "fulfilled" && businessConfigRes.value.ok) {
-          try {
-            const businessConfig: BusinessConfigResponse = await businessConfigRes.value.json()
-            console.log("Business config response:", businessConfig)
-            businessTypesData = businessConfig.data.businessTypes || []
-            businessTypeCategoriesData = businessConfig.data.businessTypeCategories || []
+        if (businessConfigRes.status === "fulfilled") {
+          if (businessConfigRes.value.ok) {
+            try {
+              const businessConfig: BusinessConfigResponse = await businessConfigRes.value.json()
+              console.log("Business config response:", businessConfig)
+              businessTypesData = businessConfig.data?.businessTypes || []
+              businessTypeCategoriesData = businessConfig.data?.businessTypeCategories || []
 
-            console.log("Business config response:", {
-              businessTypes: businessTypesData,
-              businessTypeCategories: businessTypeCategoriesData,
-            })
-          } catch (e) {
-            console.warn("Failed to parse business config:", e)
+              console.log("Business config parsed:", {
+                businessTypes: businessTypesData.length,
+                businessTypeCategories: businessTypeCategoriesData.length,
+              })
+            } catch (e) {
+              console.warn("Failed to parse business config:", e)
+            }
+          } else {
+            console.warn(
+              "Business config API failed:",
+              businessConfigRes.value.status,
+              businessConfigRes.value.statusText,
+            )
           }
+        } else {
+          console.warn("Business config API rejected:", businessConfigRes.reason)
         }
 
         // Use fallback if no business types
         if (businessTypesData.length === 0) {
+          console.log("Using fallback business types")
           businessTypesData = [
             { id: 1, code: "FURNITURE", name: "furniture" },
             { id: 2, code: "KITCHENS_DRESSINGS", name: "kitchens and dressing" },
@@ -278,55 +294,99 @@ useEffect(() => {
         let topBestSeller: ApiProduct[] = []
         let recommendedForYou: ApiProduct[] = []
 
-        if (highestRatedRes.status === "fulfilled" && highestRatedRes.value.ok) {
-          try {
-            const data = await highestRatedRes.value.json()
-            highestRated = data.data || data || []
-          } catch (e) {
-            console.warn("Failed to parse highest rated:", e)
+        if (highestRatedRes.status === "fulfilled") {
+          if (highestRatedRes.value.ok) {
+            try {
+              const data = await highestRatedRes.value.json()
+              highestRated = data.data || data || []
+              console.log("Highest rated products:", highestRated.length)
+            } catch (e) {
+              console.warn("Failed to parse highest rated:", e)
+            }
+          } else {
+            console.warn("Highest rated API failed:", highestRatedRes.value.status, highestRatedRes.value.statusText)
           }
+        } else {
+          console.warn("Highest rated API rejected:", highestRatedRes.reason)
         }
 
-        if (topBestSellerRes.status === "fulfilled" && topBestSellerRes.value.ok) {
-          try {
-            const data = await topBestSellerRes.value.json()
-            topBestSeller = data.data || data || []
-          } catch (e) {
-            console.warn("Failed to parse top best seller:", e)
+        if (topBestSellerRes.status === "fulfilled") {
+          if (topBestSellerRes.value.ok) {
+            try {
+              const data = await topBestSellerRes.value.json()
+              topBestSeller = data.data || data || []
+              console.log("Top best seller products:", topBestSeller.length)
+            } catch (e) {
+              console.warn("Failed to parse top best seller:", e)
+            }
+          } else {
+            console.warn(
+              "Top best seller API failed:",
+              topBestSellerRes.value.status,
+              topBestSellerRes.value.statusText,
+            )
           }
+        } else {
+          console.warn("Top best seller API rejected:", topBestSellerRes.reason)
         }
 
-        if (recommendedRes.status === "fulfilled" && recommendedRes.value.ok) {
-          try {
-            const data = await recommendedRes.value.json()
-            console.log("Recommended:", data)
-            recommendedForYou = data.data || data || []
-          } catch (e) {
-            console.warn("Failed to parse recommended:", e)
+        if (recommendedRes.status === "fulfilled") {
+          if (recommendedRes.value.ok) {
+            try {
+              const data = await recommendedRes.value.json()
+              console.log("Recommended API response:", data)
+              recommendedForYou = data.data || data || []
+              console.log("Recommended products:", recommendedForYou.length)
+            } catch (e) {
+              console.warn("Failed to parse recommended:", e)
+            }
+          } else {
+            console.warn("Recommended API failed:", recommendedRes.value.status, recommendedRes.value.statusText)
           }
+        } else {
+          console.warn("Recommended API rejected:", recommendedRes.reason)
         }
 
         // Handle top engineers data
         let engineersData: Engineer[] = []
-        if (topEngineersRes.status === "fulfilled" && topEngineersRes.value.ok) {
-          try {
-            const data = await topEngineersRes.value.json()
-            console.log("Top Engineers:", data)
-            engineersData = data.data || data || []
-          } catch (e) {
-            console.warn("Failed to parse top engineers:", e)
+        if (topEngineersRes.status === "fulfilled") {
+          if (topEngineersRes.value.ok) {
+            try {
+              const data = await topEngineersRes.value.json()
+              console.log("Top Engineers API response:", data)
+              engineersData = data.data || data || []
+              console.log("Top engineers:", engineersData.length)
+            } catch (e) {
+              console.warn("Failed to parse top engineers:", e)
+            }
+          } else {
+            console.warn("Top engineers API failed:", topEngineersRes.value.status, topEngineersRes.value.statusText)
           }
+        } else {
+          console.warn("Top engineers API rejected:", topEngineersRes.reason)
         }
 
+        // Handle top technical workers data
         let technicalWorkersData: TechnicalWorker[] = []
-        if (topTechnicalWorkersRes.status === "fulfilled" && topTechnicalWorkersRes.value.ok) {
-          try {
-            const data = await topTechnicalWorkersRes.value.json()
-            console.log("Top Technical Workers:", data)
-            technicalWorkersData = data.data || data || []
-          } catch (e) {
-            console.warn("Failed to parse top technical workers:", e)
+        if (topTechnicalWorkersRes.status === "fulfilled") {
+          if (topTechnicalWorkersRes.value.ok) {
+            try {
+              const data = await topTechnicalWorkersRes.value.json()
+              console.log("Top Technical Workers API response:", data)
+              technicalWorkersData = data.data || data || []
+              console.log("Top technical workers:", technicalWorkersData.length)
+            } catch (e) {
+              console.warn("Failed to parse top technical workers:", e)
+            }
+          } else {
+            console.warn(
+              "Top technical workers API failed:",
+              topTechnicalWorkersRes.value.status,
+              topTechnicalWorkersRes.value.statusText,
+            )
           }
+        } else {
+          console.warn("Top technical workers API rejected:", topTechnicalWorkersRes.reason)
         }
 
         setProductsData({
@@ -338,7 +398,7 @@ useEffect(() => {
         setTopEngineers(engineersData)
         setTopTechnicalWorkers(technicalWorkersData)
 
-        console.log("All APIs fetched:", {
+        console.log("All APIs processed:", {
           businessTypes: businessTypesData.length,
           businessTypeCategories: businessTypeCategoriesData.length,
           highestRated: highestRated.length,
@@ -347,6 +407,21 @@ useEffect(() => {
           topEngineers: engineersData.length,
           topTechnicalWorkers: technicalWorkersData.length,
         })
+
+        // Show success message if we got some data
+        const totalDataFetched =
+          businessTypesData.length +
+          highestRated.length +
+          topBestSeller.length +
+          recommendedForYou.length +
+          engineersData.length +
+          technicalWorkersData.length
+
+        if (totalDataFetched > 0) {
+          console.log("Successfully loaded landing page data")
+        } else {
+          console.warn("No data was loaded from any API")
+        }
       } catch (err) {
         console.error("Error fetching data:", err)
         setError(err instanceof Error ? err.message : "Failed to fetch data")
@@ -366,7 +441,7 @@ useEffect(() => {
     }
 
     fetchAllData()
-  }, [pathUrl, userId, userToken])
+  }, [pathUrl, userId, userToken]) // Keep all dependencies but don't require userToken
 
   // Handle login alert
   useEffect(() => {
@@ -387,22 +462,28 @@ useEffect(() => {
       <main className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Loading products...</p>
+          <p className="mt-4 text-lg text-gray-600">Loading Home4U...</p>
+          <p className="mt-2 text-sm text-gray-500">Fetching products, engineers, and services...</p>
         </div>
       </main>
     )
   }
 
-  if (error) {
+  if (error && businessTypes.length === 0) {
     return (
       <main className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-600 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Unable to Load Content</h2>
           <p className="text-red-600 text-lg mb-4">Error: {error}</p>
+          <p className="text-gray-600 mb-6">
+            We're having trouble connecting to our services. Please check your internet connection and try again.
+          </p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-semibold"
           >
-            Retry
+            Retry Loading
           </button>
         </div>
       </main>
