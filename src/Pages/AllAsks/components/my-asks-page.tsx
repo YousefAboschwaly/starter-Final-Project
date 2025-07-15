@@ -52,8 +52,14 @@ export function MyAsksPage({ selectedServiceType, onBack }: MyAsksPageProps) {
   const handleBack = () => {
     // Call the callback to reset My Asks state
     onBack?.()
-    // Navigate to All-Asks
-    navigate("/All-Asks", { replace: true })
+    // Navigate to All-Asks with the service type preserved
+    navigate("/All-Asks", {
+      state: {
+        activeServiceType: selectedServiceType,
+        preserveCategory: true,
+      },
+      replace: true,
+    })
   }
 
   const businessTypeCode = getBusinessTypeFromService(selectedServiceType)

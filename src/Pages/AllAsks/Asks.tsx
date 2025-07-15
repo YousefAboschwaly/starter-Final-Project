@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import { Search, Filter } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { DynamicFilterSidebar } from "./components/dynamic-filter-sidebar"
@@ -61,8 +62,9 @@ export default function ProductsPage({
   showMyAsks,
   setShowMyAsks,
 }: { showMyAsks: boolean; setShowMyAsks: (value: boolean) => void }) {
-  // Page state
+  const location = useLocation()
 
+  // Page state
   useEffect(() => {
     const handlePathnameChange = () => {
       if (window.location.pathname === "/All-Asks") {
@@ -80,9 +82,39 @@ export default function ProductsPage({
       window.removeEventListener("popstate", handlePathnameChange)
     }
   }, [setShowMyAsks])
+
   // Search and service type state
   const [searchName, setSearchName] = useState("")
   const [selectedServiceType, setSelectedServiceType] = useState<string>("engineer") // Default to engineer
+
+  // Preserve active service type from navigation state
+  useEffect(() => {
+    if (location.state?.preserveCategory && location.state?.activeServiceType) {
+      console.log("Preserving category:", location.state.activeServiceType)
+      setSelectedServiceType(location.state.activeServiceType)
+      setShowMyAsks(false) // Ensure we're not in MyAsks mode when coming back
+
+      // Clear the state to prevent it from persisting on future navigations
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state, setShowMyAsks])
+
+  // Store the active service type in sessionStorage for additional persistence
+  useEffect(() => {
+    if (selectedServiceType) {
+      sessionStorage.setItem("activeServiceType", selectedServiceType)
+    }
+  }, [selectedServiceType])
+
+  // Restore from sessionStorage on initial load (only if no navigation state)
+  useEffect(() => {
+    if (!location.state?.preserveCategory) {
+      const stored = sessionStorage.getItem("activeServiceType")
+      if (stored && stored !== selectedServiceType) {
+        setSelectedServiceType(stored)
+      }
+    }
+  }, [location.state?.preserveCategory, selectedServiceType])
 
   // Filter states - all single values
   const [minPrice, setMinPrice] = useState("")
@@ -231,6 +263,7 @@ export default function ProductsPage({
 
   // Handler functions - all single value selection
   const handleServiceTypeChange = (serviceType: string) => {
+    console.log("Service type changed to:", serviceType)
     setSelectedServiceType(serviceType)
     setShowMyAsks(false) // Reset to browse mode when changing service type
     // Clear all filters when service type changes
@@ -252,11 +285,13 @@ export default function ProductsPage({
   }
 
   const handleMyAsksClick = (serviceType: string) => {
+    console.log("My Asks clicked for service type:", serviceType)
     setSelectedServiceType(serviceType)
     setShowMyAsks(true)
   }
 
   const handleBackToBrowse = () => {
+    console.log("Back to browse, maintaining service type:", selectedServiceType)
     setShowMyAsks(false)
     // Don't change selectedServiceType here - keep it as is to maintain active category
   }

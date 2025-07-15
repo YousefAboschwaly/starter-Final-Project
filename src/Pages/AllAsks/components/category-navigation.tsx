@@ -16,6 +16,31 @@ interface CategoryNavigationProps {
   activeServiceType?: string
 }
 
+// Helper function to normalize service type for comparison
+const normalizeServiceType = (type: string): string => {
+  switch (type) {
+    case "ask-engineer":
+    case "engineer":
+      return "engineer"
+    case "ask-worker":
+    case "worker":
+      return "worker"
+    case "home-renovate":
+    case "homerenovate":
+    case "home_renovate":
+      return "home-renovate"
+    case "request-design":
+    case "requestdesign":
+      return "request-design"
+    case "custom-package":
+    case "custompackage":
+    case "custom_package":
+      return "custom-package"
+    default:
+      return type
+  }
+}
+
 const services: Service[] = [
   {
     iconSrc: "/Icons/AskEngineer.png",
@@ -104,7 +129,7 @@ export function CategoryNavigation({
               key={service.type}
               onClick={() => handleCategoryClick(service.type)}
               className={`flex items-center gap-2 whitespace-nowrap transition-all duration-300 hover:scale-105 min-w-fit px-4 py-3 rounded-full font-medium ${
-                activeServiceType === service.type
+                normalizeServiceType(activeServiceType || "") === normalizeServiceType(service.type)
                   ? "bg-[#2D2D4C] text-white shadow-lg transform scale-105"
                   : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
               }`}
@@ -119,7 +144,11 @@ export function CategoryNavigation({
                 }}
               />
               <span
-                className={`text-sm lg:text-base font-medium ${activeServiceType === service.type ? "text-white" : ""}`}
+                className={`text-sm lg:text-base font-medium ${
+                  normalizeServiceType(activeServiceType || "") === normalizeServiceType(service.type)
+                    ? "text-white"
+                    : ""
+                }`}
               >
                 {service.label}
               </span>

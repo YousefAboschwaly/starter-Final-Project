@@ -250,11 +250,16 @@ export function AskDetailsPage() {
     const isFromMyAsks = referrer.includes("/MyAsks/") || location.state?.from?.includes("/MyAsks/")
 
     if (isFromMyAsks) {
-      // Go back to the specific MyAsks page
+      // Go back to the specific MyAsks page with the service type preserved
       navigate(-1)
     } else {
-      // Go to All-Asks
-      navigate("/All-Asks")
+      // Go to All-Asks with the current askType preserved in state
+      navigate("/All-Asks", {
+        state: {
+          activeServiceType: askType,
+          preserveCategory: true,
+        },
+      })
     }
   }
 
