@@ -267,8 +267,8 @@ async function sendOtp() {
   const { values, handleBlur, handleChange, handleSubmit, errors, touched } =
     useFormik({
       initialValues: {
-        emailOrPhone: "",
-        password: "",
+        emailOrPhone: "yousefshwaly@gmail.com",
+        password: "12345678",
       },
       validationSchema,
       onSubmit: handleLogIn,
